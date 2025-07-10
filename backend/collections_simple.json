@@ -1,0 +1,174 @@
+[
+  {
+    "name": "companies",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "name": "name",
+        "type": "text",
+        "required": true,
+        "unique": true,
+        "options": {
+          "min": 1,
+          "max": 100
+        }
+      },
+      {
+        "name": "settings",
+        "type": "json",
+        "required": false,
+        "options": {}
+      }
+    ]
+  },
+  {
+    "name": "checkIns",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "name": "user",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "users",
+          "cascadeDelete": true,
+          "maxSelect": 1
+        }
+      },
+      {
+        "name": "checkInTime",
+        "type": "date",
+        "required": true,
+        "options": {}
+      },
+      {
+        "name": "type",
+        "type": "select",
+        "required": true,
+        "options": {
+          "maxSelect": 1,
+          "values": ["early", "ontime", "late"]
+        }
+      },
+      {
+        "name": "pointsEarned",
+        "type": "number",
+        "required": true,
+        "options": {
+          "min": 0,
+          "noDecimal": true
+        }
+      },
+      {
+        "name": "qrCodeData",
+        "type": "text",
+        "required": true,
+        "options": {}
+      }
+    ]
+  },
+  {
+    "name": "bonusPoints",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "name": "user",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "users",
+          "cascadeDelete": true,
+          "maxSelect": 1
+        }
+      },
+      {
+        "name": "points",
+        "type": "number",
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 100,
+          "noDecimal": true
+        }
+      },
+      {
+        "name": "reason",
+        "type": "text",
+        "required": true,
+        "options": {}
+      },
+      {
+        "name": "awardedBy",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "users",
+          "cascadeDelete": false,
+          "maxSelect": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "rewards",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "name": "name",
+        "type": "text",
+        "required": true,
+        "options": {}
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "required": true,
+        "options": {}
+      },
+      {
+        "name": "pointsCost",
+        "type": "number",
+        "required": true,
+        "options": {
+          "min": 1,
+          "noDecimal": true
+        }
+      },
+      {
+        "name": "category",
+        "type": "select",
+        "required": true,
+        "options": {
+          "maxSelect": 1,
+          "values": ["weekly", "monthly", "quarterly", "annual"]
+        }
+      },
+      {
+        "name": "icon",
+        "type": "text",
+        "required": true,
+        "options": {}
+      },
+      {
+        "name": "available",
+        "type": "bool",
+        "required": false,
+        "options": {}
+      },
+      {
+        "name": "company",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "companies",
+          "cascadeDelete": true,
+          "maxSelect": 1
+        }
+      }
+    ]
+  }
+]

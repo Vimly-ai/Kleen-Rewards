@@ -1,0 +1,9 @@
+# PocketBase data directory
+pb_data/
+
+# Local environment files
+.env
+.env.local
+
+# Logs
+*.log
