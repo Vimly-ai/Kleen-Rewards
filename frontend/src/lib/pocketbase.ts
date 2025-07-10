@@ -1,11 +1,3 @@
-import PocketBase from 'pocketbase';
-
-export const pb = new PocketBase('http://localhost:8090');
-
-// Enable auto-cancellation of pending requests
-pb.autoCancellation(false);
-
-// Listen to auth state changes
-pb.authStore.onChange(() => {
-  console.log('Auth state changed:', pb.authStore.isValid);
-});
+// PocketBase is no longer used - using Clerk for authentication
+// This file is kept for reference but exports empty object
+export const pb = {};

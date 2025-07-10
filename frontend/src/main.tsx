@@ -1,12 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { RouterProvider, createBrowserRouter } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ClerkProvider } from '@clerk/clerk-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { 
   SignedIn,
   SignedOut,
   RedirectToSignIn,
+  useUser
 } from '@clerk/clerk-react'
 import { Toaster } from 'sonner'
 import './index.css'
@@ -31,85 +32,55 @@ if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Clerk Publishable Key")
 }
 
-// Protected route wrapper
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function AuthenticatedApp() {
+  const { user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === 'admin' || user?.publicMetadata?.role === 'super_admin';
+
   return (
-    <>
-      <SignedIn>
-        <Layout>{children}</Layout>
-      </SignedIn>
-      <SignedOut>
-        <RedirectToSignIn />
-      </SignedOut>
-    </>
-  )
+    <Layout>
+      <Routes>
+        {isAdmin ? (
+          <>
+            <Route path="/" element={<AdminDashboardPage />} />
+            <Route path="/dashboard" element={<AdminDashboardPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </>
+        ) : (
+          <>
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/rewards" element={<RewardsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </>
+        )}
+      </Routes>
+    </Layout>
+  );
 }
 
-// App wrapper with providers
-function AppWrapper() {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <Toaster position="top-right" />
+      <BrowserRouter>
+        <SignedIn>
+          <AuthenticatedApp />
+        </SignedIn>
+        <SignedOut>
+          <RedirectToSignIn />
+        </SignedOut>
+        <Toaster position="top-right" />
+      </BrowserRouter>
     </QueryClientProvider>
-  )
+  );
 }
-
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: (
-      <ProtectedRoute>
-        <DashboardPage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/dashboard",
-    element: (
-      <ProtectedRoute>
-        <DashboardPage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/leaderboard",
-    element: (
-      <ProtectedRoute>
-        <LeaderboardPage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/rewards",
-    element: (
-      <ProtectedRoute>
-        <RewardsPage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/profile",
-    element: (
-      <ProtectedRoute>
-        <ProfilePage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/admin",
-    element: (
-      <ProtectedRoute>
-        <AdminDashboardPage />
-      </ProtectedRoute>
-    ),
-  },
-])
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-      <AppWrapper />
+      <App />
     </ClerkProvider>
   </React.StrictMode>,
 )
