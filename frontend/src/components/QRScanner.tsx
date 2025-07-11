@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { BrowserMultiFormatReader } from '@zxing/browser'
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/browser'
 import { X, Camera } from 'lucide-react'
 
 interface QRScannerProps {
@@ -29,18 +29,49 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
       setError(null)
       setIsScanning(true)
 
+      // Initialize the reader
       if (!readerRef.current) {
         readerRef.current = new BrowserMultiFormatReader()
       }
 
-      const videoInputDevices = await readerRef.current.listVideoInputDevices()
+      // Check for camera permissions first
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'environment' // Prefer back camera
+          } 
+        })
+        
+        // Stop the test stream
+        stream.getTracks().forEach(track => track.stop())
+      } catch (permissionError) {
+        throw new Error('Camera permission denied. Please allow camera access and try again.')
+      }
+
+      // Get available video devices
+      let videoInputDevices
+      try {
+        videoInputDevices = await readerRef.current.listVideoInputDevices()
+      } catch (deviceError) {
+        // Fallback: try to get devices directly from navigator
+        const devices = await navigator.mediaDevices.enumerateDevices()
+        videoInputDevices = devices.filter(device => device.kind === 'videoinput')
+      }
       
-      if (videoInputDevices.length === 0) {
+      if (!videoInputDevices || videoInputDevices.length === 0) {
         throw new Error('No camera devices found')
       }
 
-      // Use the first available camera (usually back camera on mobile)
-      const selectedDeviceId = videoInputDevices[0].deviceId
+      // Find back camera if available, otherwise use first camera
+      let selectedDeviceId = videoInputDevices[0].deviceId
+      const backCamera = videoInputDevices.find(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('rear') ||
+        device.label.toLowerCase().includes('environment')
+      )
+      if (backCamera) {
+        selectedDeviceId = backCamera.deviceId
+      }
 
       if (videoRef.current) {
         await readerRef.current.decodeFromVideoDevice(
@@ -48,20 +79,22 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
           videoRef.current,
           (result, error) => {
             if (result) {
+              console.log('QR Code detected:', result.getText())
               onScanSuccess(result.getText())
               stopScanning()
               onClose()
             }
-            if (error && !(error instanceof Error)) {
-              // Only log unexpected errors
-              console.log('Scanning...', error)
+            if (error && !(error instanceof NotFoundException)) {
+              // Only log non-NotFoundException errors
+              console.log('Scanning error:', error)
             }
           }
         )
+        setIsScanning(true)
       }
     } catch (err: any) {
       console.error('Error starting scanner:', err)
-      setError(err.message || 'Failed to start camera')
+      setError(err.message || 'Failed to start camera. Please check camera permissions.')
       setIsScanning(false)
     }
   }

@@ -3,7 +3,7 @@ import { QrCode, Camera, Clock } from 'lucide-react'
 import { useData } from '../contexts/DataContext'
 import SupabaseService from '../services/supabase'
 import { toast } from 'sonner'
-import QRScanner from './QRScanner'
+import SimpleQRScanner from './SimpleQRScanner'
 
 export function CheckInPage() {
   const { user: dbUser, loading } = useData()
@@ -254,7 +254,7 @@ export function CheckInPage() {
       </div>
 
       {/* QR Scanner Modal */}
-      <QRScanner
+      <SimpleQRScanner
         isOpen={showQRScanner}
         onClose={() => setShowQRScanner(false)}
         onScanSuccess={handleQRScan}
