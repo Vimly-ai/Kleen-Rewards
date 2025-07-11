@@ -637,6 +637,113 @@ export class SupabaseService {
 
     return data || []
   }
+
+  // Additional Reward Management Methods
+  static async deleteReward(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('rewards')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      throw error
+    }
+  }
+
+  // Badge Management Methods
+  static async createBadge(badgeData: Omit<Badge, 'id' | 'created_at' | 'updated_at'>): Promise<Badge> {
+    const { data, error } = await supabase
+      .from('badges')
+      .insert([badgeData])
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
+
+    return data
+  }
+
+  static async updateBadge(id: string, updates: Partial<Badge>): Promise<Badge> {
+    const { data, error } = await supabase
+      .from('badges')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
+
+    return data
+  }
+
+  static async deleteBadge(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('badges')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      throw error
+    }
+  }
+
+  // Motivational Quote Management
+  static async getMotivationalQuotes(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('motivational_quotes')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      throw error
+    }
+
+    return data || []
+  }
+
+  static async createMotivationalQuote(quoteData: { text: string; author: string; category?: string }): Promise<any> {
+    const { data, error } = await supabase
+      .from('motivational_quotes')
+      .insert([quoteData])
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
+
+    return data
+  }
+
+  static async updateMotivationalQuote(id: string, updates: Partial<{ text: string; author: string; category: string }>): Promise<any> {
+    const { data, error } = await supabase
+      .from('motivational_quotes')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
+
+    return data
+  }
+
+  static async deleteMotivationalQuote(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('motivational_quotes')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      throw error
+    }
+  }
 }
 
 export default SupabaseService
