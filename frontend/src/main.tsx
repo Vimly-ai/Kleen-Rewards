@@ -3050,7 +3050,8 @@ function App() {
           {/* Catch all - redirect based on role */}
           <Route path="*" element={<ProtectedRoute><Navigate to="/" replace /></ProtectedRoute>} />
         </Routes>
-        <PWAInstallBanner />
+        {/* PWA Install Banner temporarily disabled */}
+        {/* <PWAInstallBanner /> */}
       </SignedIn>
       <SignedOut>
         <RedirectToSignIn />
