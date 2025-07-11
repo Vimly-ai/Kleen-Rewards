@@ -87,6 +87,13 @@ const BookOpenIcon = () => (
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_Z29sZGVuLWdyYWNrbGUtODguY2xlcmsuYWNjb3VudHMuZGV2JA'
 
+// Debug logging for deployment issues
+console.log('App starting...', {
+  clerkKey: PUBLISHABLE_KEY.slice(0, 20) + '...',
+  environment: import.meta.env.MODE,
+  url: window.location.href
+})
+
 if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Clerk Publishable Key")
 }
@@ -3061,12 +3068,86 @@ function App() {
   )
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-      <DataProvider>
-        <App />
-      </DataProvider>
-    </ClerkProvider>
-  </React.StrictMode>,
-)
+// Error Boundary Component
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error?: Error}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('App Error:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          padding: '20px',
+          textAlign: 'center',
+          fontFamily: 'system-ui, sans-serif'
+        }}>
+          <h1 style={{color: '#dc2626'}}>Something went wrong</h1>
+          <p>The Employee Rewards app encountered an error.</p>
+          <details style={{marginTop: '20px', textAlign: 'left'}}>
+            <summary>Error Details</summary>
+            <pre style={{
+              background: '#f3f4f6',
+              padding: '10px',
+              borderRadius: '5px',
+              overflow: 'auto'
+            }}>
+              {this.state.error?.toString()}
+            </pre>
+          </details>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{
+              marginTop: '20px',
+              padding: '10px 20px',
+              background: '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}
+          >
+            Reload Page
+          </button>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
+
+try {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+          <DataProvider>
+            <App />
+          </DataProvider>
+        </ClerkProvider>
+      </ErrorBoundary>
+    </React.StrictMode>,
+  )
+} catch (error) {
+  console.error('Failed to render app:', error)
+  document.getElementById('root')!.innerHTML = `
+    <div style="padding: 20px; text-align: center; font-family: system-ui, sans-serif;">
+      <h1 style="color: #dc2626;">App Failed to Load</h1>
+      <p>There was a critical error loading the Employee Rewards app.</p>
+      <p>Error: ${error}</p>
+      <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        Reload Page
+      </button>
+    </div>
+  `
+}
