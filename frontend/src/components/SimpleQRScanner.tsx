@@ -222,42 +222,47 @@ export const SimpleQRScanner: React.FC<SimpleQRScannerProps> = ({ onScanSuccess,
                 </div>
               </div>
             )}
-            <div className="absolute bottom-2 left-2 right-2 space-y-1">
-              <button
-                onClick={() => {
-                  // Trigger a manual scan attempt
-                  if (canvasRef.current && videoRef.current) {
-                    const canvas = canvasRef.current
-                    const video = videoRef.current
-                    const context = canvas.getContext('2d')
-                    if (context && video.readyState === video.HAVE_ENOUGH_DATA) {
-                      canvas.width = video.videoWidth || 640
-                      canvas.height = video.videoHeight || 480
-                      context.drawImage(video, 0, 0, canvas.width, canvas.height)
-                      const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
-                      tryDetectQR(imageData)
-                    }
-                  }
-                }}
-                className="w-full bg-blue-600 bg-opacity-90 text-white text-sm py-2 px-4 rounded font-medium"
-              >
-                📸 Scan Now
-              </button>
+            {/* Keep only the Test Check-In button inside the scanner for quick testing */}
+            <div className="absolute bottom-2 left-2 right-2">
               <button
                 onClick={handleTestCheckIn}
                 className="w-full bg-green-600 bg-opacity-90 text-white text-sm py-2 px-4 rounded font-medium"
               >
                 ✅ Test Check-In (Demo)
               </button>
-              <button
-                onClick={handleManualInput}
-                className="w-full bg-gray-800 bg-opacity-75 text-white text-xs py-1 px-4 rounded"
-              >
-                Manual QR Input
-              </button>
             </div>
           </div>
         )}
+
+        {/* Scanner control buttons below the video */}
+        <div className="mt-4 space-y-2">
+          <button
+            onClick={() => {
+              // Trigger a manual scan attempt
+              if (canvasRef.current && videoRef.current) {
+                const canvas = canvasRef.current
+                const video = videoRef.current
+                const context = canvas.getContext('2d')
+                if (context && video.readyState === video.HAVE_ENOUGH_DATA) {
+                  canvas.width = video.videoWidth || 640
+                  canvas.height = video.videoHeight || 480
+                  context.drawImage(video, 0, 0, canvas.width, canvas.height)
+                  const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+                  tryDetectQR(imageData)
+                }
+              }
+            }}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 font-medium"
+          >
+            📸 Scan Now
+          </button>
+          <button
+            onClick={handleManualInput}
+            className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700"
+          >
+            Manual QR Input
+          </button>
+        </div>
 
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-500">
