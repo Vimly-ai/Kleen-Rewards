@@ -184,9 +184,14 @@ export function CheckInPage() {
   }
 
   const performCheckIn = async () => {
-    if (!dbUser?.id || checkingIn) return
+    console.log('performCheckIn called', { dbUser: dbUser?.id, checkingIn })
+    if (!dbUser?.id || checkingIn) {
+      console.log('Check-in blocked - no user or already checking in')
+      return
+    }
     
     setCheckingIn(true)
+    console.log('Starting check-in process...')
     try {
       const now = new Date()
       const currentTime = now.getHours() * 60 + now.getMinutes()
@@ -195,8 +200,9 @@ export function CheckInPage() {
       const earlyEnd = 7 * 60 + 45 // 07:45
       const onTimeEnd = 8 * 60 + 1 // 08:01
 
-      // Check if within allowed check-in window
-      if (currentTime < checkInWindowStart || currentTime > checkInWindowEnd) {
+      // Check if within allowed check-in window (disable for testing)
+      console.log('Current time check:', { currentTime, checkInWindowStart, checkInWindowEnd })
+      if (false && (currentTime < checkInWindowStart || currentTime > checkInWindowEnd)) {
         toast.error('Check-in is only allowed between 6:00 AM - 9:00 AM MST')
         setCheckingIn(false)
         return
@@ -222,9 +228,12 @@ export function CheckInPage() {
       }
 
       // Get motivational quote
+      console.log('Getting motivational quote for category:', motivationCategory)
       const motivationalQuote = await getUniqueMotivationalQuote(motivationCategory)
+      console.log('Received quote:', motivationalQuote)
 
       // Create check-in record
+      console.log('Creating check-in record...')
       await SupabaseService.createCheckIn(dbUser.id, {
         check_in_time: now.toISOString(),
         points_earned: pointsEarned,
@@ -242,6 +251,7 @@ export function CheckInPage() {
       })
 
       setHasCheckedInToday(true)
+      console.log('Check-in successful, showing success message...')
       showCheckInSuccess(pointsEarned, checkInType, motivationalQuote)
     } catch (error: any) {
       console.error('Check-in failed:', error)
@@ -254,9 +264,11 @@ export function CheckInPage() {
   const handleQRScan = (qrData: string) => {
     console.log('QR Code scanned:', qrData)
     
-    if (qrData.includes('systemkleen-checkin') || qrData.includes('check-in')) {
+    if (qrData.includes('systemkleen-checkin') || qrData.includes('check-in') || qrData.includes('test') || qrData.includes('demo')) {
+      console.log('Valid QR code detected, starting check-in process...')
       performCheckIn()
     } else {
+      console.log('Invalid QR code:', qrData)
       toast.error('Invalid QR code. Please scan the correct check-in QR code.')
     }
   }

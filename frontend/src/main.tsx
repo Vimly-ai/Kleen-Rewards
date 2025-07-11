@@ -5,6 +5,7 @@ import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, UserButton, useUs
 import { DataProvider, useData } from './contexts/DataContext'
 import SupabaseService from './services/supabase'
 import CheckInPage from './components/CheckInPage'
+import { Toaster } from 'sonner'
 import './index.css'
 
 // Icons (using SVG for simplicity)
@@ -2753,6 +2754,18 @@ function App() {
   return (
     <NotificationProvider>
       <BrowserRouter>
+        <Toaster 
+          position="top-center" 
+          richColors 
+          closeButton
+          toastOptions={{
+            style: {
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              color: '#374151'
+            }
+          }}
+        />
         <SignedIn>
           <Routes>
           {/* Employee Routes */}

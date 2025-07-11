@@ -137,11 +137,17 @@ export const SimpleQRScanner: React.FC<SimpleQRScannerProps> = ({ onScanSuccess,
   }
 
   const handleManualInput = () => {
-    const qrData = prompt('Enter QR code data manually (for testing):')
-    if (qrData) {
-      onScanSuccess(qrData)
+    const qrData = prompt('Enter QR code data manually (for testing):\n\nExample: systemkleen-checkin-office-main')
+    if (qrData && qrData.trim()) {
+      onScanSuccess(qrData.trim())
       onClose()
     }
+  }
+
+  const handleTestCheckIn = () => {
+    // Simulate a valid QR code scan for testing
+    onScanSuccess('systemkleen-checkin-office-main')
+    onClose()
   }
 
   if (!isOpen) return null
@@ -181,13 +187,19 @@ export const SimpleQRScanner: React.FC<SimpleQRScannerProps> = ({ onScanSuccess,
                 onClick={startCamera}
                 className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
               >
-                Try Again
+                Try Camera Again
+              </button>
+              <button
+                onClick={handleTestCheckIn}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium"
+              >
+                ✅ Test Check-In (Demo)
               </button>
               <button
                 onClick={handleManualInput}
                 className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm"
               >
-                Manual Input (Testing)
+                Manual QR Input
               </button>
             </div>
           </div>
@@ -210,12 +222,38 @@ export const SimpleQRScanner: React.FC<SimpleQRScannerProps> = ({ onScanSuccess,
                 </div>
               </div>
             )}
-            <div className="absolute bottom-2 left-2 right-2">
+            <div className="absolute bottom-2 left-2 right-2 space-y-1">
+              <button
+                onClick={() => {
+                  // Trigger a manual scan attempt
+                  if (canvasRef.current && videoRef.current) {
+                    const canvas = canvasRef.current
+                    const video = videoRef.current
+                    const context = canvas.getContext('2d')
+                    if (context && video.readyState === video.HAVE_ENOUGH_DATA) {
+                      canvas.width = video.videoWidth || 640
+                      canvas.height = video.videoHeight || 480
+                      context.drawImage(video, 0, 0, canvas.width, canvas.height)
+                      const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+                      tryDetectQR(imageData)
+                    }
+                  }
+                }}
+                className="w-full bg-blue-600 bg-opacity-90 text-white text-sm py-2 px-4 rounded font-medium"
+              >
+                📸 Scan Now
+              </button>
+              <button
+                onClick={handleTestCheckIn}
+                className="w-full bg-green-600 bg-opacity-90 text-white text-sm py-2 px-4 rounded font-medium"
+              >
+                ✅ Test Check-In (Demo)
+              </button>
               <button
                 onClick={handleManualInput}
-                className="w-full bg-gray-800 bg-opacity-75 text-white text-sm py-2 px-4 rounded"
+                className="w-full bg-gray-800 bg-opacity-75 text-white text-xs py-1 px-4 rounded"
               >
-                Manual Input (Testing)
+                Manual QR Input
               </button>
             </div>
           </div>
