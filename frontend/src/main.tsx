@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, UserButton, useUser } from '@clerk/clerk-react'
+import { DataProvider, useData } from './contexts/DataContext'
 import './index.css'
 
 // Icons (using SVG for simplicity)
@@ -248,27 +249,44 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 // Dashboard page
 function Dashboard() {
+  const { user, loading } = useData()
+  
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="animate-pulse">
+          <div className="bg-gray-300 rounded-xl h-32 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gray-300 rounded-lg h-24"></div>
+            <div className="bg-gray-300 rounded-lg h-24"></div>
+            <div className="bg-gray-300 rounded-lg h-24"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl text-white p-6 mb-6">
-        <h2 className="text-2xl font-bold">Welcome to System Kleen!</h2>
+        <h2 className="text-2xl font-bold">Welcome to System Kleen{user?.name ? `, ${user.name}` : ''}!</h2>
         <p className="mt-2">Your Employee Rewards Dashboard</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg p-6 shadow">
           <h3 className="text-lg font-semibold mb-2">Total Points</h3>
-          <p className="text-3xl font-bold text-blue-600">245</p>
+          <p className="text-3xl font-bold text-blue-600">{user?.points_balance || 0}</p>
         </div>
         
         <div className="bg-white rounded-lg p-6 shadow">
           <h3 className="text-lg font-semibold mb-2">Current Streak</h3>
-          <p className="text-3xl font-bold text-green-600">7 days</p>
+          <p className="text-3xl font-bold text-green-600">{user?.current_streak || 0} days</p>
         </div>
         
         <div className="bg-white rounded-lg p-6 shadow">
-          <h3 className="text-lg font-semibold mb-2">Rank</h3>
-          <p className="text-3xl font-bold text-purple-600">#3</p>
+          <h3 className="text-lg font-semibold mb-2">Total Earned</h3>
+          <p className="text-3xl font-bold text-purple-600">{user?.total_points_earned || 0}</p>
         </div>
       </div>
 
@@ -279,24 +297,28 @@ function Dashboard() {
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center">
               <div className="h-2 w-2 bg-green-400 rounded-full mr-3"></div>
-              <span className="text-gray-600">Check-in completed</span>
+              <span className="text-gray-600">Welcome to the Employee Rewards System!</span>
             </div>
-            <span className="text-sm text-gray-500">Today, 7:45 AM</span>
+            <span className="text-sm text-gray-500">Today</span>
           </div>
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center">
-              <div className="h-2 w-2 bg-blue-400 rounded-full mr-3"></div>
-              <span className="text-gray-600">Points earned: +2</span>
+          {user?.current_streak > 0 && (
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center">
+                <div className="h-2 w-2 bg-orange-400 rounded-full mr-3"></div>
+                <span className="text-gray-600">{user.current_streak}-day streak maintained!</span>
+              </div>
+              <span className="text-sm text-gray-500">Current</span>
             </div>
-            <span className="text-sm text-gray-500">Today, 7:45 AM</span>
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center">
-              <div className="h-2 w-2 bg-orange-400 rounded-full mr-3"></div>
-              <span className="text-gray-600">7-day streak achieved!</span>
+          )}
+          {user?.total_points_earned > 0 && (
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center">
+                <div className="h-2 w-2 bg-blue-400 rounded-full mr-3"></div>
+                <span className="text-gray-600">Total points earned: {user.total_points_earned}</span>
+              </div>
+              <span className="text-sm text-gray-500">Lifetime</span>
             </div>
-            <span className="text-sm text-gray-500">Today, 7:45 AM</span>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -971,7 +993,9 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-      <App />
+      <DataProvider>
+        <App />
+      </DataProvider>
     </ClerkProvider>
   </React.StrictMode>,
 )
