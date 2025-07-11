@@ -37,6 +37,16 @@ export function CheckInPage() {
           { text: "Champions start their day before the rest of the world wakes up.", author: "System Kleen" },
           { text: "Your commitment to excellence shines brighter than the morning sun!", author: "System Kleen" },
           { text: "Early birds don't just catch worms - they catch opportunities!", author: "System Kleen" },
+          { text: "While others sleep, you're building your future. That's the spirit of a champion!", author: "System Kleen" },
+          { text: "Your morning energy is contagious. You're setting the tone for an amazing day!", author: "System Kleen" },
+          { text: "First to arrive, first to succeed. Your dedication doesn't go unnoticed.", author: "System Kleen" },
+          { text: "The sunrise rewards those who show up early. You're already winning!", author: "System Kleen" },
+          { text: "Excellence is not an accident - it's a habit. And you're proving it every morning!", author: "System Kleen" },
+          { text: "Your early arrival is a gift to your team and yourself. Keep leading by example!", author: "System Kleen" },
+          { text: "Morning warriors like you make the impossible possible. What a way to start!", author: "System Kleen" },
+          { text: "The world belongs to those who show up early. Today, it belongs to you!", author: "System Kleen" },
+          { text: "Your discipline at dawn sets you apart from the crowd. Absolutely inspiring!", author: "System Kleen" },
+          { text: "Early risers shape the world. You're molding tomorrow with today's dedication!", author: "System Kleen" },
         ],
         ontime: [
           { text: "Punctuality is the politeness of kings. You're royalty today!", author: "System Kleen" },
@@ -44,6 +54,16 @@ export function CheckInPage() {
           { text: "Consistency breeds excellence. Keep up the great work!", author: "System Kleen" },
           { text: "Right on time means right on track for success!", author: "System Kleen" },
           { text: "Reliability is a superpower - and you've got it!", author: "System Kleen" },
+          { text: "Your consistent timing shows respect for your team and yourself. Well done!", author: "System Kleen" },
+          { text: "Being on time is being ready for opportunity. You're perfectly positioned!", author: "System Kleen" },
+          { text: "Punctuality is the foundation of trust. You're building something great!", author: "System Kleen" },
+          { text: "Your timely arrival energizes the whole team. Thank you for your reliability!", author: "System Kleen" },
+          { text: "Right on schedule, right on target. You're hitting all the right notes!", author: "System Kleen" },
+          { text: "Time management is life management, and you're mastering both beautifully!", author: "System Kleen" },
+          { text: "Your punctuality speaks volumes about your character. Impressive as always!", author: "System Kleen" },
+          { text: "Being on time is a sign of respect, and you show it every single day!", author: "System Kleen" },
+          { text: "Clock in, level up! Your timing is a testament to your professionalism.", author: "System Kleen" },
+          { text: "Perfect timing creates perfect moments. You're making today count!", author: "System Kleen" },
         ],
         late: [
           { text: "Every champion faces setbacks. What matters is how you bounce back!", author: "System Kleen" },
@@ -51,12 +71,62 @@ export function CheckInPage() {
           { text: "Progress, not perfection. You're here and that's what counts!", author: "System Kleen" },
           { text: "The best time to plant a tree was yesterday. The second best time is now!", author: "System Kleen" },
           { text: "Your presence makes a difference, no matter what time you arrive.", author: "System Kleen" },
+          { text: "Every moment is a fresh start. You're here now, and that's what matters!", author: "System Kleen" },
+          { text: "Life happens, but showing up shows character. You're demonstrating resilience!", author: "System Kleen" },
+          { text: "Better late than never isn't just a saying - it's a reminder of your commitment!", author: "System Kleen" },
+          { text: "Your dedication to still be here speaks volumes. Tomorrow is a new opportunity!", author: "System Kleen" },
+          { text: "Even the greatest athletes have off days. Champions keep moving forward!", author: "System Kleen" },
+          { text: "You turned a challenging morning into a learning experience. That's growth!", author: "System Kleen" },
+          { text: "Persistence beats perfection every time. You're showing true persistence!", author: "System Kleen" },
+          { text: "The clock doesn't define your worth - your presence does. Thank you for being here!", author: "System Kleen" },
+          { text: "Every sunrise brings new possibilities. Tomorrow's sunrise is waiting for you!", author: "System Kleen" },
+          { text: "Your commitment to the team shines through, regardless of timing. Appreciated!", author: "System Kleen" },
         ]
       }
 
+      // Get quotes user has already seen for this category
+      let seenQuotes: string[] = []
+      if (dbUser?.id) {
+        try {
+          const { data: history } = await SupabaseService.supabase
+            .from('user_quote_history')
+            .select('quote_text')
+            .eq('user_id', dbUser.id)
+            .eq('category', category)
+
+          seenQuotes = history?.map(h => h.quote_text) || []
+        } catch (error) {
+          console.log('Could not fetch quote history, continuing with random selection')
+        }
+      }
+
+      // Filter out quotes user has already seen
       const categoryQuotes = quotes[category]
-      const randomQuote = categoryQuotes[Math.floor(Math.random() * categoryQuotes.length)]
-      return randomQuote
+      const availableQuotes = categoryQuotes.filter(quote => !seenQuotes.includes(quote.text))
+      
+      // If user has seen all quotes in this category, reset and use all quotes
+      const quotesToUse = availableQuotes.length > 0 ? availableQuotes : categoryQuotes
+      
+      // Select random quote from available options
+      const selectedQuote = quotesToUse[Math.floor(Math.random() * quotesToUse.length)]
+
+      // Record that user has seen this quote
+      if (dbUser?.id) {
+        try {
+          await SupabaseService.supabase
+            .from('user_quote_history')
+            .insert({
+              user_id: dbUser.id,
+              quote_text: selectedQuote.text,
+              quote_author: selectedQuote.author,
+              category: category
+            })
+        } catch (error) {
+          console.log('Could not save quote history, but continuing')
+        }
+      }
+
+      return selectedQuote
     } catch (error) {
       console.error('Error getting motivational quote:', error)
       return { text: "Every day is a new opportunity to excel!", author: "System Kleen" }
@@ -70,16 +140,45 @@ export function CheckInPage() {
       late: `📅 Better Late Than Never! Thanks for checking in!`
     }
 
+    const icons = {
+      early: '🌅',
+      ontime: '⏰', 
+      late: '💪'
+    }
+
+    const colors = {
+      early: 'from-yellow-400 to-orange-500',
+      ontime: 'from-blue-400 to-blue-600',
+      late: 'from-purple-400 to-purple-600'
+    }
+
+    // Show success message first
     toast.success(messages[type])
 
+    // Show motivational quote with enhanced styling after a delay
     setTimeout(() => {
       toast(
-        <div className="p-2">
-          <p className="font-medium text-gray-800 mb-2">💪 Daily Motivation</p>
-          <p className="text-sm text-gray-600 italic">"{quote.text}"</p>
-          <p className="text-xs text-gray-500 mt-1">- {quote.author}</p>
+        <div className={`p-4 rounded-lg bg-gradient-to-r ${colors[type]} text-white`}>
+          <div className="text-center">
+            <div className="text-2xl mb-2">{icons[type]}</div>
+            <p className="font-bold text-lg mb-2">Daily Inspiration</p>
+            <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-2">
+              <p className="text-sm font-medium italic">"{quote.text}"</p>
+            </div>
+            <p className="text-xs opacity-90">- {quote.author}</p>
+            <div className="mt-2 text-xs opacity-75">
+              You're doing amazing! Keep up the great work! ✨
+            </div>
+          </div>
         </div>,
-        { duration: 6000 }
+        { 
+          duration: 8000,
+          style: {
+            background: 'transparent',
+            boxShadow: 'none',
+            border: 'none'
+          }
+        }
       )
     }, 1500)
   }
