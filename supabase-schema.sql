@@ -1,14 +1,13 @@
 -- Supabase Database Schema for Employee Rewards System
 -- Run these commands in the Supabase SQL Editor
 
--- Enable Row Level Security
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
-
 -- Create employees table (users synced from Clerk)
 CREATE TABLE IF NOT EXISTS public.employees (
     id text PRIMARY KEY, -- Clerk user ID
     email text UNIQUE NOT NULL,
     name text NOT NULL,
+    first_name text,
+    last_name text,
     employee_id text UNIQUE NOT NULL,
     department text DEFAULT 'General',
     hire_date date NOT NULL,
@@ -18,6 +17,8 @@ CREATE TABLE IF NOT EXISTS public.employees (
     total_points_earned integer DEFAULT 0,
     current_streak integer DEFAULT 0,
     longest_streak integer DEFAULT 0,
+    last_check_in timestamp with time zone,
+    phone text,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -41,6 +42,7 @@ CREATE TABLE IF NOT EXISTS public.rewards (
     name text NOT NULL,
     description text NOT NULL,
     category text CHECK (category IN ('weekly', 'monthly', 'quarterly', 'annual', 'special')) NOT NULL,
+    availability text CHECK (availability IN ('available', 'unavailable')) DEFAULT 'available',
     points_cost integer NOT NULL,
     quantity_available integer DEFAULT -1, -- -1 means unlimited
     is_active boolean DEFAULT true,

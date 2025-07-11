@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 // Supabase configuration
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://widztbcqvrpijjcpczwl.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpZHp0YmNxdnJwaWpqY3BjendpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1MDg4MDAsImV4cCI6MjA1MzA4NDgwMH0.xStBmf7YsQ0e4iRvEJPwCo0Ql_Vg8-jYGIBZ9-8PjOo'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpZHp0YmNxdnJwaWpqY3BjendsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxOTUyNjcsImV4cCI6MjA2Nzc3MTI2N30.ud6FYEeHdAkT5MCklo3NMK89B7UIzT2yBkOPd6SihB4'
 
 // Check if we're in development mode and can use mock data
 const USE_MOCK_DATA = !supabaseAnonKey || supabaseAnonKey.length < 50
