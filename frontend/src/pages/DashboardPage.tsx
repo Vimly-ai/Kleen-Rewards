@@ -2,42 +2,101 @@ import { useUser } from '@clerk/clerk-react';
 import { Clock, Flame, Calendar, Star, QrCode } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import QRScanner from '../components/QRScanner';
+import { useData } from '../contexts/DataContext';
+import SupabaseService from '../services/supabase';
 
 export function DashboardPage() {
-  const { user } = useUser();
+  const { user: clerkUser } = useUser();
+  const { user: dbUser, loading } = useData();
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
+  const [recentCheckIns, setRecentCheckIns] = useState<any[]>([]);
+  const [checkingIn, setCheckingIn] = useState(false);
 
-  // Mock stats for now (replace with actual backend integration later)
-  const stats = {
-    totalPoints: 245,
-    weeklyPoints: 28,
-    monthlyPoints: 115,
-    currentStreak: 7,
-    lastCheckIn: new Date().toISOString(),
-    weeklyCheckIns: 4,
-    monthlyAverage: 18,
-    totalCheckIns: 67,
-    rank: 3,
-    recentCheckIns: [
-      {
-        id: '1',
-        checkInTime: new Date().toISOString(),
-        type: 'early' as const,
-        pointsEarned: 2
-      }
-    ]
+  useEffect(() => {
+    if (dbUser?.id) {
+      checkTodaysCheckIn();
+      loadRecentCheckIns();
+    }
+  }, [dbUser]);
+
+  const checkTodaysCheckIn = async () => {
+    if (!dbUser?.id) return;
+    
+    try {
+      const todayCheckIn = await SupabaseService.getTodaysCheckIn(dbUser.id);
+      setHasCheckedInToday(!!todayCheckIn);
+    } catch (error) {
+      console.error('Error checking today\'s check-in:', error);
+    }
   };
 
-  const handleCheckIn = async () => {
-    // Mock check-in for now
-    toast.success('Check-in successful! You earned 2 points.');
+  const loadRecentCheckIns = async () => {
+    if (!dbUser?.id) return;
+    
+    try {
+      const checkIns = await SupabaseService.getUserCheckIns(dbUser.id, 5);
+      setRecentCheckIns(checkIns);
+    } catch (error) {
+      console.error('Error loading recent check-ins:', error);
+    }
+  };
+
+  const performCheckIn = async () => {
+    if (!dbUser?.id || checkingIn) return;
+    
+    setCheckingIn(true);
+    try {
+      // Determine check-in type based on current time
+      const now = new Date();
+      const hour = now.getHours();
+      let checkInType: 'early' | 'ontime' | 'late';
+      let pointsEarned: number;
+      
+      if (hour >= 6 && hour < 7) {
+        checkInType = 'early';
+        pointsEarned = 2;
+      } else if (hour >= 7 && hour < 9) {
+        checkInType = 'ontime';
+        pointsEarned = 1;
+      } else {
+        checkInType = 'late';
+        pointsEarned = 0;
+      }
+
+      // Create check-in record
+      await SupabaseService.createCheckIn(dbUser.id, {
+        check_in_time: now.toISOString(),
+        points_earned: pointsEarned,
+        check_in_type: checkInType,
+        streak_day: (dbUser.current_streak || 0) + 1
+      });
+
+      // Update user points and streak
+      await SupabaseService.updateUser(dbUser.id, {
+        points_balance: (dbUser.points_balance || 0) + pointsEarned,
+        total_points_earned: (dbUser.total_points_earned || 0) + pointsEarned,
+        current_streak: (dbUser.current_streak || 0) + 1,
+        longest_streak: Math.max(dbUser.longest_streak || 0, (dbUser.current_streak || 0) + 1),
+        last_check_in: now.toISOString()
+      });
+
+      setHasCheckedInToday(true);
+      await loadRecentCheckIns();
+      
+      toast.success(`Check-in successful! You earned ${pointsEarned} points.`);
+    } catch (error: any) {
+      console.error('Check-in failed:', error);
+      toast.error('Check-in failed. Please try again.');
+    } finally {
+      setCheckingIn(false);
+    }
   };
 
   const handleDemoCheckIn = () => {
-    // For demo purposes, simulate check-in
-    handleCheckIn();
+    performCheckIn();
   };
 
   const handleQRScan = (qrData: string) => {
@@ -46,7 +105,7 @@ export function DashboardPage() {
     
     // Validate QR code (in real app, this would verify against server)
     if (qrData.includes('systemkleen-checkin') || qrData.includes('check-in')) {
-      toast.success('QR Check-in successful! You earned 2 points.');
+      performCheckIn();
     } else {
       toast.error('Invalid QR code. Please scan the correct check-in QR code.');
     }
@@ -60,7 +119,7 @@ export function DashboardPage() {
   };
 
   const getNextRewardTier = () => {
-    const points = stats?.totalPoints || 0;
+    const points = dbUser?.points_balance || 0;
     if (points < 25) return { name: 'Monthly Rewards', needed: 25 - points };
     if (points < 75) return { name: 'Quarterly Rewards', needed: 75 - points };
     if (points < 300) return { name: 'Annual Rewards', needed: 300 - points };
@@ -69,7 +128,13 @@ export function DashboardPage() {
 
   const nextTier = getNextRewardTier();
 
-  const hasCheckedInToday = false; // Mock for now
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -78,7 +143,7 @@ export function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">
-              {greeting()}, {user?.firstName || 'Employee'}!
+              {greeting()}, {clerkUser?.firstName || dbUser?.name || 'Employee'}!
             </h1>
             <p className="mt-1 text-primary-100">
               Ready to earn some points today?
@@ -86,7 +151,7 @@ export function DashboardPage() {
           </div>
           <div className="text-right">
             <p className="text-primary-100 text-sm">Total Points</p>
-            <p className="text-3xl font-bold">{stats.totalPoints}</p>
+            <p className="text-3xl font-bold">{dbUser?.points_balance || 0}</p>
           </div>
         </div>
       </div>
@@ -138,9 +203,10 @@ export function DashboardPage() {
               
               <button
                 onClick={handleDemoCheckIn}
-                className="bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                disabled={checkingIn}
+                className="bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50"
               >
-                Demo Check-in
+                {checkingIn ? 'Checking in...' : 'Manual Check-in'}
               </button>
             </div>
           </div>
@@ -157,7 +223,7 @@ export function DashboardPage() {
               <div
                 className="bg-primary-600 h-2 rounded-full transition-all duration-300"
                 style={{
-                  width: `${Math.max(10, ((stats?.totalPoints || 0) / ((stats?.totalPoints || 0) + nextTier.needed)) * 100)}%`
+                  width: `${Math.max(10, ((dbUser?.points_balance || 0) / ((dbUser?.points_balance || 0) + nextTier.needed)) * 100)}%`
                 }}
               />
             </div>
@@ -174,7 +240,7 @@ export function DashboardPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Current Streak</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.currentStreak || 0}</p>
+              <p className="text-2xl font-bold text-gray-900">{dbUser?.current_streak || 0}</p>
             </div>
           </div>
         </div>
@@ -185,8 +251,8 @@ export function DashboardPage() {
               <Calendar className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">This Week</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.weeklyPoints || 0}</p>
+              <p className="text-sm text-gray-600">Total Earned</p>
+              <p className="text-2xl font-bold text-gray-900">{dbUser?.total_points_earned || 0}</p>
             </div>
           </div>
         </div>
@@ -197,8 +263,8 @@ export function DashboardPage() {
               <Star className="h-5 w-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">This Month</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.monthlyPoints || 0}</p>
+              <p className="text-sm text-gray-600">Best Streak</p>
+              <p className="text-2xl font-bold text-gray-900">{dbUser?.longest_streak || 0}</p>
             </div>
           </div>
         </div>
@@ -210,7 +276,7 @@ export function DashboardPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Check-ins</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.totalCheckIns || 0}</p>
+              <p className="text-2xl font-bold text-gray-900">{recentCheckIns.length}</p>
             </div>
           </div>
         </div>
@@ -222,29 +288,29 @@ export function DashboardPage() {
           <h2 className="text-lg font-semibold text-gray-900">Recent Check-ins</h2>
         </div>
         <div className="p-6">
-          {stats?.recentCheckIns && stats.recentCheckIns.length > 0 ? (
+          {recentCheckIns && recentCheckIns.length > 0 ? (
             <div className="space-y-3">
-              {stats.recentCheckIns.slice(0, 5).map((checkIn) => (
+              {recentCheckIns.slice(0, 5).map((checkIn) => (
                 <div key={checkIn.id} className="flex items-center justify-between py-2">
                   <div className="flex items-center space-x-3">
                     <div className={`p-1 rounded-full ${
-                      checkIn.type === 'early' ? 'bg-green-100' :
-                      checkIn.type === 'ontime' ? 'bg-blue-100' : 'bg-gray-100'
+                      checkIn.check_in_type === 'early' ? 'bg-green-100' :
+                      checkIn.check_in_type === 'ontime' ? 'bg-blue-100' : 'bg-gray-100'
                     }`}>
                       <Clock className={`h-4 w-4 ${
-                        checkIn.type === 'early' ? 'text-green-600' :
-                        checkIn.type === 'ontime' ? 'text-blue-600' : 'text-gray-600'
+                        checkIn.check_in_type === 'early' ? 'text-green-600' :
+                        checkIn.check_in_type === 'ontime' ? 'text-blue-600' : 'text-gray-600'
                       }`} />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {format(new Date(checkIn.checkInTime), 'MMM d, h:mm a')}
+                        {format(new Date(checkIn.check_in_time), 'MMM d, h:mm a')}
                       </p>
-                      <p className="text-xs text-gray-500 capitalize">{checkIn.type}</p>
+                      <p className="text-xs text-gray-500 capitalize">{checkIn.check_in_type}</p>
                     </div>
                   </div>
                   <span className="text-sm font-medium text-primary-600">
-                    +{checkIn.pointsEarned}
+                    +{checkIn.points_earned}
                   </span>
                 </div>
               ))}
