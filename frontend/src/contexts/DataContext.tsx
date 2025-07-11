@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useUser } from '@clerk/clerk-react'
-import PocketBaseService, { User as PBUser } from '../services/pocketbase'
+import SupabaseService, { User as SBUser } from '../services/supabase'
 
 interface DataContextType {
-  user: PBUser | null
+  user: SBUser | null
   loading: boolean
   refreshUser: () => Promise<void>
   updateUserPoints: (points: number) => Promise<void>
@@ -14,7 +14,7 @@ const DataContext = createContext<DataContextType | null>(null)
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user: clerkUser, isLoaded } = useUser()
-  const [user, setUser] = useState<PBUser | null>(null)
+  const [user, setUser] = useState<SBUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -42,9 +42,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         role: role as 'employee' | 'admin'
       }
 
-      // Get or create user in PocketBase
-      const pbUser = await PocketBaseService.getOrCreateUser(clerkUser.id, userData)
-      setUser(pbUser)
+      // Get or create user in Supabase
+      const sbUser = await SupabaseService.getOrCreateUser(clerkUser.id, userData)
+      setUser(sbUser)
     } catch (err) {
       console.error('Failed to initialize user:', err)
       setError('Failed to load user data')
@@ -53,13 +53,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Refresh user data from PocketBase
+  // Refresh user data from Supabase
   const refreshUser = async () => {
     if (!clerkUser) return
 
     try {
-      const pbUser = await PocketBaseService.getUser(clerkUser.id)
-      setUser(pbUser)
+      const sbUser = await SupabaseService.getUser(clerkUser.id)
+      setUser(sbUser)
     } catch (err) {
       console.error('Failed to refresh user:', err)
       setError('Failed to refresh user data')
@@ -71,7 +71,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (!user) return
 
     try {
-      const updatedUser = await PocketBaseService.updateUser(user.id, {
+      const updatedUser = await SupabaseService.updateUser(user.id, {
         points_balance: user.points_balance + points,
         total_points_earned: user.total_points_earned + (points > 0 ? points : 0)
       })
