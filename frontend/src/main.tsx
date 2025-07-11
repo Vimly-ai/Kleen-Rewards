@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, UserButton, useUser } from '@clerk/clerk-react'
 import { DataProvider, useData } from './contexts/DataContext'
+import SupabaseService from './services/supabase'
 import './index.css'
 
 // Icons (using SVG for simplicity)
@@ -327,33 +328,126 @@ function Dashboard() {
 
 // Check-in page
 function CheckIn() {
+  const { user, updateUserPoints, refreshUser } = useData()
   const [isCheckingIn, setIsCheckingIn] = useState(false)
   const [checkInStatus, setCheckInStatus] = useState<string | null>(null)
+  const [todaysCheckIn, setTodaysCheckIn] = useState<any>(null)
+  const [qrCode, setQrCode] = useState<string>('')
+  const [showQrScanner, setShowQrScanner] = useState(false)
+  const [motivationalQuote, setMotivationalQuote] = useState<any>(null)
+
+  // Check if user already checked in today
+  useEffect(() => {
+    const checkTodaysCheckIn = async () => {
+      if (!user) return
+      
+      try {
+        const checkIn = await SupabaseService.getTodaysCheckIn(user.id)
+        setTodaysCheckIn(checkIn)
+      } catch (error) {
+        console.error('Error checking today\'s check-in:', error)
+      }
+    }
+
+    checkTodaysCheckIn()
+  }, [user])
+
+  // Generate QR code for check-in
+  useEffect(() => {
+    const generateQrCode = async () => {
+      if (!user) return
+      
+      try {
+        const QRCode = await import('qrcode')
+        const qrData = JSON.stringify({
+          userId: user.id,
+          timestamp: new Date().toISOString(),
+          type: 'checkin'
+        })
+        const qrCodeUrl = await QRCode.toDataURL(qrData)
+        setQrCode(qrCodeUrl)
+      } catch (error) {
+        console.error('Error generating QR code:', error)
+      }
+    }
+
+    generateQrCode()
+  }, [user])
+
+  const calculatePoints = () => {
+    const now = new Date()
+    const hour = now.getHours()
+    
+    if (hour >= 6 && hour < 7) {
+      return { points: 2, type: 'early', message: 'Early check-in! You earned 2 points.' }
+    } else if (hour >= 7 && hour < 9) {
+      return { points: 1, type: 'ontime', message: 'On-time check-in! You earned 1 point.' }
+    } else {
+      return { points: 0, type: 'late', message: 'Late check-in. No points earned, but thanks for checking in!' }
+    }
+  }
+
+  const calculateStreakDay = () => {
+    // Simple streak calculation - in production, this would be more sophisticated
+    return (user?.current_streak || 0) + 1
+  }
 
   const handleCheckIn = async () => {
+    if (!user || todaysCheckIn) return
+
     setIsCheckingIn(true)
     setCheckInStatus(null)
     
-    // Simulate check-in process
-    setTimeout(() => {
-      const hour = new Date().getHours()
-      let pointsEarned = 0
-      let status = ''
+    try {
+      const pointsInfo = calculatePoints()
+      const streakDay = calculateStreakDay()
       
-      if (hour >= 6 && hour < 7) {
-        pointsEarned = 2
-        status = 'Early check-in! You earned 2 points.'
-      } else if (hour >= 7 && hour < 9) {
-        pointsEarned = 1
-        status = 'On-time check-in! You earned 1 point.'
-      } else {
-        pointsEarned = 0
-        status = 'Late check-in. No points earned, but thanks for checking in!'
+      // Create check-in record
+      await SupabaseService.createCheckIn(user.id, {
+        user_id: user.id,
+        check_in_time: new Date().toISOString(),
+        points_earned: pointsInfo.points,
+        check_in_type: pointsInfo.type as 'early' | 'ontime' | 'late',
+        location: 'Web App',
+        streak_day: streakDay
+      })
+
+      // Create point transaction
+      if (pointsInfo.points > 0) {
+        await SupabaseService.createPointTransaction({
+          user_id: user.id,
+          transaction_type: 'earned',
+          points_amount: pointsInfo.points,
+          reference_type: 'checkin',
+          reference_id: user.id,
+          description: `Check-in points: ${pointsInfo.type}`
+        })
       }
+
+      // Update user points and streak
+      await SupabaseService.updateUser(user.id, {
+        points_balance: user.points_balance + pointsInfo.points,
+        total_points_earned: user.total_points_earned + pointsInfo.points,
+        current_streak: streakDay,
+        longest_streak: Math.max(user.longest_streak, streakDay)
+      })
+
+      // Get motivational quote
+      const quote = await SupabaseService.getRandomQuote()
+      setMotivationalQuote(quote)
+
+      setCheckInStatus(pointsInfo.message)
+      setTodaysCheckIn({ points_earned: pointsInfo.points, check_in_type: pointsInfo.type })
       
-      setCheckInStatus(status)
+      // Refresh user data
+      await refreshUser()
+      
+    } catch (error) {
+      console.error('Check-in failed:', error)
+      setCheckInStatus('Check-in failed. Please try again.')
+    } finally {
       setIsCheckingIn(false)
-    }, 2000)
+    }
   }
 
   const getCurrentTime = () => {
@@ -362,6 +456,16 @@ function CheckIn() {
       minute: '2-digit',
       timeZoneName: 'short'
     })
+  }
+
+  if (!user) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+          <div className="animate-pulse">Loading...</div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -375,53 +479,88 @@ function CheckIn() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Employee Check-In</h2>
           <p className="text-gray-600 mb-6">Check in to earn points and maintain your streak!</p>
           
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <p className="text-sm text-gray-600">Current Time</p>
-            <p className="text-lg font-semibold">{getCurrentTime()}</p>
-          </div>
-
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3">Point System</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="bg-green-50 p-3 rounded-lg">
-                <div className="font-semibold text-green-800">Early (6:00-7:00 AM)</div>
-                <div className="text-green-600">2 Points</div>
-              </div>
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <div className="font-semibold text-blue-800">On Time (7:00-9:00 AM)</div>
-                <div className="text-blue-600">1 Point</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="font-semibold text-gray-800">Late (After 9:00 AM)</div>
-                <div className="text-gray-600">0 Points</div>
-              </div>
+          {todaysCheckIn ? (
+            <div className="mb-6 p-6 bg-green-50 border border-green-200 rounded-lg">
+              <div className="text-green-800 text-lg font-semibold">✅ Already Checked In Today!</div>
+              <p className="text-green-600 mt-2">You earned {todaysCheckIn.points_earned} points</p>
+              <p className="text-sm text-green-600 mt-1">
+                Current streak: {user.current_streak} days
+              </p>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-600">Current Time</p>
+                <p className="text-lg font-semibold">{getCurrentTime()}</p>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Point System</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="font-semibold text-green-800">Early (6:00-7:00 AM)</div>
+                    <div className="text-green-600">2 Points</div>
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="font-semibold text-blue-800">On Time (7:00-9:00 AM)</div>
+                    <div className="text-blue-600">1 Point</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="font-semibold text-gray-800">Late (After 9:00 AM)</div>
+                    <div className="text-gray-600">0 Points</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* QR Code Display */}
+              {qrCode && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3">Your Check-in QR Code</h3>
+                  <div className="bg-white p-4 rounded-lg border">
+                    <img src={qrCode} alt="Check-in QR Code" className="mx-auto w-32 h-32" />
+                    <p className="text-xs text-gray-500 mt-2">
+                      Scan this code or click the button below to check in
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={handleCheckIn}
+                disabled={isCheckingIn}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-4 px-6 rounded-lg transition-colors text-lg mb-4"
+              >
+                {isCheckingIn ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Checking In...
+                  </div>
+                ) : (
+                  'Check In Now'
+                )}
+              </button>
+
+              <p className="text-sm text-gray-500">
+                Check-in window: 6:00 AM - 9:00 AM MST
+              </p>
+            </>
+          )}
 
           {checkInStatus && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-800">{checkInStatus}</p>
+            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800 font-semibold">{checkInStatus}</p>
             </div>
           )}
 
-          <button
-            onClick={handleCheckIn}
-            disabled={isCheckingIn}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-4 px-6 rounded-lg transition-colors text-lg"
-          >
-            {isCheckingIn ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Checking In...
-              </div>
-            ) : (
-              'Check In Now'
-            )}
-          </button>
-
-          <p className="mt-4 text-sm text-gray-500">
-            Check-in window: 6:00 AM - 9:00 AM MST
-          </p>
+          {motivationalQuote && (
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800 mb-2">Daily Inspiration</h4>
+              <p className="text-blue-700 italic">"{motivationalQuote.quote_text}"</p>
+              {motivationalQuote.author && (
+                <p className="text-blue-600 text-sm mt-2">— {motivationalQuote.author}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -430,54 +569,107 @@ function CheckIn() {
 
 // Leaderboard page
 function Leaderboard() {
-  const leaderboardData = [
-    { rank: 1, name: 'Sarah Johnson', points: 387, streak: 12 },
-    { rank: 2, name: 'Mike Chen', points: 298, streak: 8 },
-    { rank: 3, name: 'You', points: 245, streak: 7 },
-    { rank: 4, name: 'Emily Davis', points: 221, streak: 5 },
-    { rank: 5, name: 'Alex Rodriguez', points: 198, streak: 4 },
-  ]
+  const { user } = useData()
+  const [leaderboardData, setLeaderboardData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        setLoading(true)
+        const leaders = await SupabaseService.getLeaderboard(10)
+        
+        // Add rank and format data
+        const formattedData = leaders.map((leader, index) => ({
+          rank: index + 1,
+          id: leader.id,
+          name: leader.name,
+          points: leader.points_balance,
+          streak: leader.current_streak,
+          isCurrentUser: user?.id === leader.id
+        }))
+        
+        setLeaderboardData(formattedData)
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLeaderboard()
+  }, [user])
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="animate-pulse">
+            <div className="h-6 bg-gray-300 rounded mb-4"></div>
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="bg-white rounded-xl shadow-lg">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">Leaderboard</h2>
-          <p className="text-gray-600">Top performers this month</p>
+          <p className="text-gray-600">Top performers by points and streaks</p>
         </div>
         
         <div className="p-6">
-          <div className="space-y-4">
-            {leaderboardData.map((employee) => (
-              <div
-                key={employee.rank}
-                className={`flex items-center justify-between p-4 rounded-lg border ${
-                  employee.name === 'You'
-                    ? 'bg-blue-50 border-blue-200'
-                    : 'bg-gray-50 border-gray-200'
-                }`}
-              >
-                <div className="flex items-center space-x-4">
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
-                    employee.rank === 1 ? 'bg-yellow-100 text-yellow-800' :
-                    employee.rank === 2 ? 'bg-gray-100 text-gray-800' :
-                    employee.rank === 3 ? 'bg-orange-100 text-orange-800' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>
-                    #{employee.rank}
+          {leaderboardData.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No employees found. Be the first to check in!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {leaderboardData.map((employee) => (
+                <div
+                  key={employee.id}
+                  className={`flex items-center justify-between p-4 rounded-lg border ${
+                    employee.isCurrentUser
+                      ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-300'
+                      : 'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${
+                      employee.rank === 1 ? 'bg-yellow-100 text-yellow-800' :
+                      employee.rank === 2 ? 'bg-gray-100 text-gray-800' :
+                      employee.rank === 3 ? 'bg-orange-100 text-orange-800' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {employee.rank === 1 ? '🥇' : 
+                       employee.rank === 2 ? '🥈' : 
+                       employee.rank === 3 ? '🥉' : 
+                       `#${employee.rank}`}
+                    </div>
+                    <div>
+                      <div className={`font-semibold ${employee.isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
+                        {employee.isCurrentUser ? `${employee.name} (You)` : employee.name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {employee.streak > 0 ? `${employee.streak} day streak` : 'No current streak'}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">{employee.name}</div>
-                    <div className="text-sm text-gray-500">{employee.streak} day streak</div>
+                  <div className="text-right">
+                    <div className="font-bold text-lg text-blue-600">{employee.points}</div>
+                    <div className="text-sm text-gray-500">points</div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-bold text-lg text-blue-600">{employee.points}</div>
-                  <div className="text-sm text-gray-500">points</div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -486,13 +678,85 @@ function Leaderboard() {
 
 // Rewards page
 function Rewards() {
-  const rewards = [
-    { id: 1, name: 'Coffee Gift Card', cost: 50, category: 'Food & Drink', available: true },
-    { id: 2, name: 'Extra PTO Day', cost: 100, category: 'Time Off', available: true },
-    { id: 3, name: 'Premium Parking Spot', cost: 75, category: 'Perks', available: true },
-    { id: 4, name: 'Team Lunch', cost: 150, category: 'Team Events', available: true },
-    { id: 5, name: 'Work From Home Day', cost: 80, category: 'Flexibility', available: false },
-  ]
+  const { user, refreshUser } = useData()
+  const [rewards, setRewards] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [redeeming, setRedeeming] = useState<string | null>(null)
+  const [redeemStatus, setRedeemStatus] = useState<string | null>(null)
+
+  const categories = ['all', 'weekly', 'monthly', 'quarterly', 'annual', 'special']
+
+  useEffect(() => {
+    const fetchRewards = async () => {
+      try {
+        setLoading(true)
+        const allRewards = await SupabaseService.getRewards()
+        setRewards(allRewards)
+      } catch (error) {
+        console.error('Error fetching rewards:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRewards()
+  }, [])
+
+  const filteredRewards = selectedCategory === 'all' 
+    ? rewards 
+    : rewards.filter(reward => reward.category === selectedCategory)
+
+  const handleRedeem = async (reward: any) => {
+    if (!user || user.points_balance < reward.points_cost || redeeming) return
+
+    setRedeeming(reward.id)
+    setRedeemStatus(null)
+
+    try {
+      // Create redemption request
+      await SupabaseService.createRedemption(user.id, reward.id, reward.points_cost)
+
+      // Deduct points from user balance
+      await SupabaseService.updateUser(user.id, {
+        points_balance: user.points_balance - reward.points_cost
+      })
+
+      // Create point transaction
+      await SupabaseService.createPointTransaction({
+        user_id: user.id,
+        transaction_type: 'spent',
+        points_amount: -reward.points_cost,
+        reference_type: 'redemption',
+        reference_id: reward.id,
+        description: `Redeemed: ${reward.name}`
+      })
+
+      setRedeemStatus(`Successfully redeemed ${reward.name}! Your request is pending approval.`)
+      await refreshUser()
+
+    } catch (error) {
+      console.error('Redemption failed:', error)
+      setRedeemStatus('Redemption failed. Please try again.')
+    } finally {
+      setRedeeming(null)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-300 rounded mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-48 bg-gray-200 rounded-lg"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -501,101 +765,383 @@ function Rewards() {
         <p className="text-gray-600">Redeem your points for amazing rewards</p>
         <div className="mt-2 text-lg">
           <span className="text-gray-700">Your Points: </span>
-          <span className="font-bold text-blue-600">245</span>
+          <span className="font-bold text-blue-600">{user?.points_balance || 0}</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {rewards.map((reward) => (
-          <div key={reward.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">{reward.name}</h3>
-                <span className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                  {reward.category}
-                </span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div className="text-2xl font-bold text-blue-600">{reward.cost} pts</div>
-                <button
-                  disabled={!reward.available || reward.cost > 245}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    !reward.available
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : reward.cost > 245
-                      ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                >
-                  {!reward.available
-                    ? 'Unavailable'
-                    : reward.cost > 245
-                    ? 'Need More Points'
-                    : 'Redeem'
-                  }
-                </button>
+      {/* Category Filter */}
+      <div className="mb-6">
+        <div className="flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                selectedCategory === category
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {category.charAt(0).toUpperCase() + category.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {redeemStatus && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-800">{redeemStatus}</p>
+        </div>
+      )}
+
+      {filteredRewards.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <p>No rewards available in this category.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredRewards.map((reward) => (
+            <div key={reward.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">{reward.name}</h3>
+                  <span className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                    {reward.category}
+                  </span>
+                </div>
+                
+                <p className="text-gray-600 text-sm mb-4">{reward.description}</p>
+                
+                {reward.terms && (
+                  <p className="text-xs text-gray-500 mb-4 italic">{reward.terms}</p>
+                )}
+
+                {reward.quantity_available !== -1 && (
+                  <p className="text-sm text-gray-600 mb-4">
+                    Available: {reward.quantity_available}
+                  </p>
+                )}
+                
+                <div className="flex justify-between items-center">
+                  <div className="text-2xl font-bold text-blue-600">{reward.points_cost} pts</div>
+                  <button
+                    onClick={() => handleRedeem(reward)}
+                    disabled={
+                      !reward.is_active || 
+                      (reward.quantity_available !== -1 && reward.quantity_available <= 0) ||
+                      !user ||
+                      reward.points_cost > user.points_balance ||
+                      redeeming === reward.id
+                    }
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      !reward.is_active || (reward.quantity_available !== -1 && reward.quantity_available <= 0)
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : !user || reward.points_cost > (user?.points_balance || 0)
+                        ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                        : redeeming === reward.id
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                  >
+                    {!reward.is_active
+                      ? 'Unavailable'
+                      : reward.quantity_available !== -1 && reward.quantity_available <= 0
+                      ? 'Out of Stock'
+                      : !user || reward.points_cost > (user?.points_balance || 0)
+                      ? 'Need More Points'
+                      : redeeming === reward.id
+                      ? 'Redeeming...'
+                      : 'Redeem'
+                    }
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
 // Profile page
 function Profile() {
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Profile</h2>
+  const { user } = useData()
+  const [checkIns, setCheckIns] = useState<any[]>([])
+  const [userBadges, setUserBadges] = useState<any[]>([])
+  const [userRank, setUserRank] = useState<number>(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!user) return
+
+      try {
+        setLoading(true)
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Employee Stats</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Points</span>
-                <span className="font-semibold">245</span>
+        // Fetch user's check-ins
+        const userCheckIns = await SupabaseService.getUserCheckIns(user.id, 50)
+        setCheckIns(userCheckIns)
+
+        // Fetch user's badges
+        const badges = await SupabaseService.getUserBadges(user.id)
+        setUserBadges(badges)
+
+        // Calculate user rank
+        const leaderboard = await SupabaseService.getLeaderboard(100)
+        const rank = leaderboard.findIndex(leader => leader.id === user.id) + 1
+        setUserRank(rank || leaderboard.length + 1)
+
+        // Check for new badge eligibility
+        await checkAndAwardBadges(user, userCheckIns, badges)
+
+      } catch (error) {
+        console.error('Error fetching profile data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfileData()
+  }, [user])
+
+  const checkAndAwardBadges = async (user: any, checkIns: any[], currentBadges: any[]) => {
+    try {
+      // Get all available badges
+      const { data: allBadges } = await SupabaseService.supabase
+        .from('badges')
+        .select('*')
+        .eq('is_active', true)
+
+      if (!allBadges) return
+
+      const currentBadgeIds = currentBadges.map(ub => ub.badge_id)
+
+      for (const badge of allBadges) {
+        if (currentBadgeIds.includes(badge.id)) continue // Already has this badge
+
+        let shouldAward = false
+
+        switch (badge.criteria_type) {
+          case 'points':
+            shouldAward = user.total_points_earned >= badge.criteria_value
+            break
+          case 'streak':
+            shouldAward = user.current_streak >= badge.criteria_value
+            break
+          case 'checkins':
+            shouldAward = checkIns.length >= badge.criteria_value
+            break
+        }
+
+        if (shouldAward) {
+          await SupabaseService.awardBadge(user.id, badge.id)
+          console.log(`Awarded badge: ${badge.name}`)
+        }
+      }
+    } catch (error) {
+      console.error('Error checking badge eligibility:', error)
+    }
+  }
+
+  const getThisMonthStats = () => {
+    const thisMonth = new Date().getMonth()
+    const thisYear = new Date().getFullYear()
+    
+    const thisMonthCheckIns = checkIns.filter(checkIn => {
+      const checkInDate = new Date(checkIn.check_in_time)
+      return checkInDate.getMonth() === thisMonth && checkInDate.getFullYear() === thisYear
+    })
+
+    const pointsThisMonth = thisMonthCheckIns.reduce((sum, checkIn) => sum + checkIn.points_earned, 0)
+    const earlyCheckIns = thisMonthCheckIns.filter(checkIn => checkIn.check_in_type === 'early').length
+    const onTimeCheckIns = thisMonthCheckIns.filter(checkIn => checkIn.check_in_type === 'ontime').length
+
+    return {
+      checkIns: thisMonthCheckIns.length,
+      pointsEarned: pointsThisMonth,
+      earlyCheckIns,
+      onTimeCheckIns
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 rounded mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-6 bg-gray-200 rounded"></div>
+                ))}
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Current Streak</span>
-                <span className="font-semibold">7 days</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Check-ins</span>
-                <span className="font-semibold">67</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Rank</span>
-                <span className="font-semibold">#3</span>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-semibold mb-4">This Month</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Points Earned</span>
-                <span className="font-semibold">28</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Check-ins</span>
-                <span className="font-semibold">14</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Early Check-ins</span>
-                <span className="font-semibold">5</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">On-time Check-ins</span>
-                <span className="font-semibold">9</span>
+              <div className="space-y-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-6 bg-gray-200 rounded"></div>
+                ))}
               </div>
             </div>
           </div>
         </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+          <p>Please log in to view your profile.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const monthStats = getThisMonthStats()
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      {/* Profile Header */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex items-center space-x-4">
+          <div className="h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center">
+            <span className="text-white font-bold text-xl">{user.name?.charAt(0) || 'U'}</span>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
+            <p className="text-gray-600">{user.department} • Employee since {new Date(user.hire_date).getFullYear()}</p>
+            <p className="text-sm text-gray-500">{user.email}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">Employee Stats</h3>
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Total Points</span>
+              <span className="font-semibold">{user.points_balance}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Points Earned</span>
+              <span className="font-semibold">{user.total_points_earned}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Current Streak</span>
+              <span className="font-semibold">{user.current_streak} days</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Best Streak</span>
+              <span className="font-semibold">{user.longest_streak} days</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Total Check-ins</span>
+              <span className="font-semibold">{checkIns.length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Company Rank</span>
+              <span className="font-semibold">#{userRank}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">This Month</h3>
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Points Earned</span>
+              <span className="font-semibold">{monthStats.pointsEarned}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Check-ins</span>
+              <span className="font-semibold">{monthStats.checkIns}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Early Check-ins</span>
+              <span className="font-semibold">{monthStats.earlyCheckIns}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">On-time Check-ins</span>
+              <span className="font-semibold">{monthStats.onTimeCheckIns}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Badges Section */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-lg font-semibold mb-4">Achievements ({userBadges.length} badges earned)</h3>
+        {userBadges.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>No badges earned yet. Keep checking in to unlock achievements!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {userBadges.map((userBadge) => (
+              <div key={userBadge.id} className="text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-3xl mb-2">{userBadge.badge?.icon || '🏆'}</div>
+                <div className="font-semibold text-sm">{userBadge.badge?.name}</div>
+                <div className="text-xs text-gray-500 mt-1">{userBadge.badge?.description}</div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Earned {new Date(userBadge.earned_date).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Recent Check-ins */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-lg font-semibold mb-4">Recent Check-ins</h3>
+        {checkIns.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>No check-ins yet. Start your journey today!</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {checkIns.slice(0, 10).map((checkIn) => (
+              <div key={checkIn.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-3 h-3 rounded-full ${
+                    checkIn.check_in_type === 'early' ? 'bg-green-400' :
+                    checkIn.check_in_type === 'ontime' ? 'bg-blue-400' :
+                    'bg-gray-400'
+                  }`}></div>
+                  <span className="text-gray-900">
+                    {new Date(checkIn.check_in_time).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    at {new Date(checkIn.check_in_time).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className={`text-sm font-medium ${
+                    checkIn.check_in_type === 'early' ? 'text-green-600' :
+                    checkIn.check_in_type === 'ontime' ? 'text-blue-600' :
+                    'text-gray-600'
+                  }`}>
+                    {checkIn.check_in_type === 'early' ? 'Early' :
+                     checkIn.check_in_type === 'ontime' ? 'On-time' :
+                     'Late'}
+                  </span>
+                  <span className="font-semibold text-blue-600">+{checkIn.points_earned}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
