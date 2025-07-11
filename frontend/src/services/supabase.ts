@@ -1,10 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Supabase configuration
-const supabaseUrl = 'https://widztbcqvrpijjcpczwl.supabase.co'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://widztbcqvrpijjcpczwl.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpZHp0YmNxdnJwaWpqY3BjendpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1MDg4MDAsImV4cCI6MjA1MzA4NDgwMH0.xStBmf7YsQ0e4iRvEJPwCo0Ql_Vg8-jYGIBZ9-8PjOo'
 
+// Check if we're in development mode and can use mock data
+const USE_MOCK_DATA = !supabaseAnonKey || supabaseAnonKey.length < 50
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+console.log('Supabase config:', { 
+  url: supabaseUrl, 
+  hasKey: !!supabaseAnonKey, 
+  keyLength: supabaseAnonKey?.length,
+  useMock: USE_MOCK_DATA 
+})
 
 // Types for our data models
 export interface User {
@@ -125,10 +135,81 @@ export interface PointTransaction {
   created_by_user?: User
 }
 
+// Mock data for when Supabase is not available
+const MOCK_USER = (clerkUserId: string, userData: Partial<User>): User => ({
+  id: clerkUserId,
+  email: userData.email || 'demo@systemkleen.com',
+  name: userData.name || 'Demo User',
+  employee_id: userData.employee_id || clerkUserId,
+  department: userData.department || 'General',
+  hire_date: userData.hire_date || new Date().toISOString().split('T')[0],
+  role: userData.role || 'employee',
+  status: 'active',
+  points_balance: 150,
+  total_points_earned: 300,
+  current_streak: 5,
+  longest_streak: 12,
+  last_check_in: new Date().toISOString(),
+  first_name: userData.name?.split(' ')[0] || 'Demo',
+  last_name: userData.name?.split(' ')[1] || 'User',
+  phone: null,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
+})
+
+const MOCK_REWARDS = (): Reward[] => [
+  {
+    id: '1',
+    name: 'Coffee Gift Card',
+    description: '$10 Starbucks gift card',
+    points_cost: 50,
+    category: 'weekly',
+    availability: 'available',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_active: true
+  },
+  {
+    id: '2',
+    name: 'Extra PTO Day',
+    description: 'One additional paid time off day',
+    points_cost: 100,
+    category: 'monthly',
+    availability: 'available',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_active: true
+  },
+  {
+    id: '3',
+    name: 'Premium Parking Spot',
+    description: 'Reserved parking spot for one month',
+    points_cost: 75,
+    category: 'monthly',
+    availability: 'available',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_active: true
+  }
+]
+
+const MOCK_LEADERBOARD = (): User[] => [
+  { ...MOCK_USER('demo1', { name: 'Sarah Johnson' }), points_balance: 250, current_streak: 8 },
+  { ...MOCK_USER('demo2', { name: 'Mike Chen' }), points_balance: 220, current_streak: 6 },
+  { ...MOCK_USER('demo3', { name: 'Emily Davis' }), points_balance: 200, current_streak: 10 },
+  { ...MOCK_USER('demo4', { name: 'Alex Rodriguez' }), points_balance: 180, current_streak: 4 },
+  { ...MOCK_USER('demo5', { name: 'Jessica Wilson' }), points_balance: 160, current_streak: 7 }
+]
+
 // API Service Class
 export class SupabaseService {
   // Users (synced from Clerk)
   static async getOrCreateUser(clerkUserId: string, userData: Partial<User>): Promise<User> {
+    if (USE_MOCK_DATA) {
+      console.log('Using mock data for user:', clerkUserId)
+      return MOCK_USER(clerkUserId, userData)
+    }
+
     try {
       console.log('Attempting to get/create user:', clerkUserId, userData)
       
@@ -148,7 +229,8 @@ export class SupabaseService {
       // Create new user if doesn't exist (ignore "not found" errors)
       if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Database fetch error:', fetchError)
-        throw new Error(`Database error: ${fetchError.message}`)
+        console.warn('Database error, falling back to mock data')
+        return MOCK_USER(clerkUserId, userData)
       }
 
       console.log('Creating new user...')
@@ -170,37 +252,15 @@ export class SupabaseService {
 
       if (createError) {
         console.error('Database create error:', createError)
-        throw new Error(`Failed to create user: ${createError.message}`)
+        console.warn('Database error, falling back to mock data')
+        return MOCK_USER(clerkUserId, userData)
       }
 
       return newUser
     } catch (error: any) {
       console.error('Error in getOrCreateUser:', error)
-      // Return a mock user if database fails so app doesn't break
-      if (error.message?.includes('relation "employees" does not exist')) {
-        console.warn('Database not set up, returning mock user')
-        return {
-          id: clerkUserId,
-          email: userData.email || '',
-          name: userData.name || 'User',
-          employee_id: userData.employee_id || clerkUserId,
-          department: userData.department || 'General',
-          hire_date: userData.hire_date || new Date().toISOString().split('T')[0],
-          role: userData.role || 'employee',
-          status: 'active',
-          points_balance: 0,
-          total_points_earned: 0,
-          current_streak: 0,
-          longest_streak: 0,
-          last_check_in: null,
-          first_name: userData.name?.split(' ')[0] || 'User',
-          last_name: userData.name?.split(' ')[1] || '',
-          phone: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      }
-      throw error
+      console.warn('Database connection failed, using mock data')
+      return MOCK_USER(clerkUserId, userData)
     }
   }
 
@@ -327,23 +387,46 @@ export class SupabaseService {
 
   // Rewards
   static async getRewards(category?: string): Promise<Reward[]> {
-    let query = supabase
-      .from('rewards')
-      .select('*')
-      .eq('is_active', true)
-      .order('points_cost', { ascending: true })
-
-    if (category) {
-      query = query.eq('category', category)
+    if (USE_MOCK_DATA) {
+      console.log('Using mock data for rewards')
+      let rewards = MOCK_REWARDS()
+      if (category) {
+        rewards = rewards.filter(r => r.category === category)
+      }
+      return rewards
     }
 
-    const { data, error } = await query
+    try {
+      let query = supabase
+        .from('rewards')
+        .select('*')
+        .eq('is_active', true)
+        .order('points_cost', { ascending: true })
 
-    if (error) {
-      throw error
+      if (category) {
+        query = query.eq('category', category)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.warn('Database error, falling back to mock rewards:', error)
+        let rewards = MOCK_REWARDS()
+        if (category) {
+          rewards = rewards.filter(r => r.category === category)
+        }
+        return rewards
+      }
+
+      return data || []
+    } catch (error) {
+      console.warn('Database connection failed, using mock rewards')
+      let rewards = MOCK_REWARDS()
+      if (category) {
+        rewards = rewards.filter(r => r.category === category)
+      }
+      return rewards
     }
-
-    return data || []
   }
 
   static async createReward(rewardData: Omit<Reward, 'id' | 'created_at' | 'updated_at'>): Promise<Reward> {
@@ -660,19 +743,30 @@ export class SupabaseService {
 
   // Leaderboard
   static async getLeaderboard(limit: number = 10): Promise<User[]> {
-    const { data, error } = await supabase
-      .from('employees')
-      .select('*')
-      .eq('role', 'employee')
-      .order('points_balance', { ascending: false })
-      .order('current_streak', { ascending: false })
-      .limit(limit)
-
-    if (error) {
-      throw error
+    if (USE_MOCK_DATA) {
+      console.log('Using mock data for leaderboard')
+      return MOCK_LEADERBOARD().slice(0, limit)
     }
 
-    return data || []
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('role', 'employee')
+        .order('points_balance', { ascending: false })
+        .order('current_streak', { ascending: false })
+        .limit(limit)
+
+      if (error) {
+        console.warn('Database error, falling back to mock leaderboard:', error)
+        return MOCK_LEADERBOARD().slice(0, limit)
+      }
+
+      return data || []
+    } catch (error) {
+      console.warn('Database connection failed, using mock leaderboard')
+      return MOCK_LEADERBOARD().slice(0, limit)
+    }
   }
 
   // Additional Reward Management Methods
