@@ -10,6 +10,10 @@ cd frontend
 echo "Installing dependencies..."
 npm ci
 
+# Update version.json with current timestamp
+echo "Updating version..."
+echo "{\"version\": \"1.0.0\", \"buildTime\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > public/version.json
+
 # Build the app
 echo "Building app..."
 npm run build
