@@ -44,27 +44,107 @@ export function DashboardPage() {
     }
   };
 
+  const getUniqueMotivationalQuote = async (category: 'early' | 'ontime' | 'late') => {
+    try {
+      // Get quotes based on category and time
+      const quotes = {
+        early: [
+          { text: "The early bird catches the worm! Your dedication sets you apart.", author: "System Kleen" },
+          { text: "Success is where preparation meets opportunity - and you're prepared!", author: "System Kleen" },
+          { text: "Champions start their day before the rest of the world wakes up.", author: "System Kleen" },
+          { text: "Your commitment to excellence shines brighter than the morning sun!", author: "System Kleen" },
+          { text: "Early birds don't just catch worms - they catch opportunities!", author: "System Kleen" },
+        ],
+        ontime: [
+          { text: "Punctuality is the politeness of kings. You're royalty today!", author: "System Kleen" },
+          { text: "Perfect timing! You're exactly where you need to be.", author: "System Kleen" },
+          { text: "Consistency breeds excellence. Keep up the great work!", author: "System Kleen" },
+          { text: "Right on time means right on track for success!", author: "System Kleen" },
+          { text: "Reliability is a superpower - and you've got it!", author: "System Kleen" },
+        ],
+        late: [
+          { text: "Every champion faces setbacks. What matters is how you bounce back!", author: "System Kleen" },
+          { text: "Tomorrow is a new opportunity to shine. We believe in you!", author: "System Kleen" },
+          { text: "Progress, not perfection. You're here and that's what counts!", author: "System Kleen" },
+          { text: "The best time to plant a tree was yesterday. The second best time is now!", author: "System Kleen" },
+          { text: "Your presence makes a difference, no matter what time you arrive.", author: "System Kleen" },
+        ]
+      };
+
+      // For now, just return a random quote from the category
+      // In a full implementation, we'd track which quotes the user has seen
+      const categoryQuotes = quotes[category];
+      const randomQuote = categoryQuotes[Math.floor(Math.random() * categoryQuotes.length)];
+      return randomQuote;
+    } catch (error) {
+      console.error('Error getting motivational quote:', error);
+      return { text: "Every day is a new opportunity to excel!", author: "System Kleen" };
+    }
+  };
+
+  const showCheckInSuccess = (points: number, type: 'early' | 'ontime' | 'late', quote: any) => {
+    const messages = {
+      early: `🌅 Early Bird Success! +${points} points earned!`,
+      ontime: `⏰ Perfect Timing! +${points} point earned!`,
+      late: `📅 Better Late Than Never! Thanks for checking in!`
+    };
+
+    // Show success toast
+    toast.success(messages[type]);
+
+    // Show motivational quote in a separate toast after a delay
+    setTimeout(() => {
+      toast(
+        <div className="p-2">
+          <p className="font-medium text-gray-800 mb-2">💪 Daily Motivation</p>
+          <p className="text-sm text-gray-600 italic">"{quote.text}"</p>
+          <p className="text-xs text-gray-500 mt-1">- {quote.author}</p>
+        </div>,
+        { duration: 6000 }
+      );
+    }, 1500);
+  };
+
   const performCheckIn = async () => {
     if (!dbUser?.id || checkingIn) return;
     
     setCheckingIn(true);
     try {
-      // Determine check-in type based on current time
       const now = new Date();
-      const hour = now.getHours();
+      const currentTime = now.getHours() * 60 + now.getMinutes(); // Convert to minutes since midnight
+      const checkInWindowStart = 6 * 60; // 06:00 in minutes
+      const checkInWindowEnd = 9 * 60; // 09:00 in minutes
+      const earlyEnd = 7 * 60 + 45; // 07:45 in minutes  
+      const onTimeEnd = 8 * 60 + 1; // 08:01 in minutes
+
+      // Check if within allowed check-in window
+      if (currentTime < checkInWindowStart || currentTime > checkInWindowEnd) {
+        toast.error('Check-in is only allowed between 6:00 AM - 9:00 AM MST');
+        setCheckingIn(false);
+        return;
+      }
+
+      // Determine check-in type and points based on precise time
       let checkInType: 'early' | 'ontime' | 'late';
       let pointsEarned: number;
+      let motivationCategory: 'early' | 'ontime' | 'late';
       
-      if (hour >= 6 && hour < 7) {
+      if (currentTime <= earlyEnd) {
         checkInType = 'early';
         pointsEarned = 2;
-      } else if (hour >= 7 && hour < 9) {
+        motivationCategory = 'early';
+      } else if (currentTime <= onTimeEnd) {
         checkInType = 'ontime';
         pointsEarned = 1;
+        motivationCategory = 'ontime';
       } else {
         checkInType = 'late';
         pointsEarned = 0;
+        motivationCategory = 'late';
       }
+
+      // Get a motivational quote they haven't seen
+      const motivationalQuote = await getUniqueMotivationalQuote(motivationCategory);
 
       // Create check-in record
       await SupabaseService.createCheckIn(dbUser.id, {
@@ -86,7 +166,8 @@ export function DashboardPage() {
       setHasCheckedInToday(true);
       await loadRecentCheckIns();
       
-      toast.success(`Check-in successful! You earned ${pointsEarned} points.`);
+      // Show success message with motivational quote
+      showCheckInSuccess(pointsEarned, checkInType, motivationalQuote);
     } catch (error: any) {
       console.error('Check-in failed:', error);
       toast.error('Check-in failed. Please try again.');
@@ -96,6 +177,7 @@ export function DashboardPage() {
   };
 
   const handleDemoCheckIn = () => {
+    // Demo function for development - bypasses QR scanner
     performCheckIn();
   };
 
@@ -178,36 +260,40 @@ export function DashboardPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center space-x-3">
-                <QrCode className="h-6 w-6 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    Check-in Window: 6:00 AM - 9:00 AM MST
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Scan the QR code to earn points
-                  </p>
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
+              <div className="text-center">
+                <QrCode className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Ready to Check In?
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Check-in Window: 6:00 AM - 9:00 AM MST
+                </p>
+                <div className="bg-white rounded-lg p-3 mb-4 text-xs text-gray-600">
+                  <p><strong>🌅 Early (before 7:45 AM):</strong> 2 points</p>
+                  <p><strong>⏰ On-Time (7:46 - 8:01 AM):</strong> 1 point</p>
+                  <p><strong>📅 Late (8:02 - 9:00 AM):</strong> 0 points</p>
                 </div>
+                <button
+                  onClick={() => setShowQRScanner(true)}
+                  disabled={checkingIn}
+                  className="w-full flex items-center justify-center space-x-2 bg-primary-600 text-white py-4 px-6 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 shadow-lg"
+                >
+                  <QrCode className="h-5 w-5" />
+                  <span>{checkingIn ? 'Processing...' : 'Scan QR Code to Check In'}</span>
+                </button>
+                
+                {/* Development/Demo Mode - Remove in production */}
+                {import.meta.env.DEV && (
+                  <button
+                    onClick={handleDemoCheckIn}
+                    disabled={checkingIn}
+                    className="w-full mt-2 bg-gray-500 text-white py-2 px-4 rounded-lg text-sm hover:bg-gray-600 transition-colors disabled:opacity-50"
+                  >
+                    Demo Check-in (Dev Only)
+                  </button>
+                )}
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                onClick={() => setShowQRScanner(true)}
-                className="flex items-center justify-center space-x-2 bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors"
-              >
-                <QrCode className="h-5 w-5" />
-                <span>Scan QR Code</span>
-              </button>
-              
-              <button
-                onClick={handleDemoCheckIn}
-                disabled={checkingIn}
-                className="bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50"
-              >
-                {checkingIn ? 'Checking in...' : 'Manual Check-in'}
-              </button>
             </div>
           </div>
         )}

@@ -87,8 +87,16 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
 
         <div className="text-center mb-6">
           <Camera className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">QR Code Scanner</h3>
-          <p className="text-gray-600">Point your camera at the QR code to check in</p>
+          <h3 className="text-xl font-semibold mb-2">Employee Check-In</h3>
+          <p className="text-gray-600 mb-2">Point your camera at the office QR code</p>
+          <div className="text-sm text-gray-500">
+            <p>Current Time: {new Date().toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              timeZone: 'America/Denver' 
+            })} MST</p>
+            <p className="text-xs mt-1">Check-in window: 6:00 AM - 9:00 AM</p>
+          </div>
         </div>
 
         {error ? (
