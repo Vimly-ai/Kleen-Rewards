@@ -2,9 +2,12 @@ import { useUser } from '@clerk/clerk-react';
 import { Clock, Flame, Calendar, Star, QrCode } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useState } from 'react';
+import QRScanner from '../components/QRScanner';
 
 export function DashboardPage() {
   const { user } = useUser();
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   // Mock stats for now (replace with actual backend integration later)
   const stats = {
@@ -35,6 +38,18 @@ export function DashboardPage() {
   const handleDemoCheckIn = () => {
     // For demo purposes, simulate check-in
     handleCheckIn();
+  };
+
+  const handleQRScan = (qrData: string) => {
+    // Process QR code data for check-in
+    console.log('QR Code scanned:', qrData);
+    
+    // Validate QR code (in real app, this would verify against server)
+    if (qrData.includes('systemkleen-checkin') || qrData.includes('check-in')) {
+      toast.success('QR Check-in successful! You earned 2 points.');
+    } else {
+      toast.error('Invalid QR code. Please scan the correct check-in QR code.');
+    }
   };
 
   const greeting = () => {
@@ -112,12 +127,22 @@ export function DashboardPage() {
               </div>
             </div>
             
-            <button
-              onClick={handleDemoCheckIn}
-              className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors"
-            >
-              Demo Check-in (Click to Test)
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowQRScanner(true)}
+                className="flex items-center justify-center space-x-2 bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+              >
+                <QrCode className="h-5 w-5" />
+                <span>Scan QR Code</span>
+              </button>
+              
+              <button
+                onClick={handleDemoCheckIn}
+                className="bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+              >
+                Demo Check-in
+              </button>
+            </div>
           </div>
         )}
 
@@ -231,6 +256,13 @@ export function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* QR Scanner Modal */}
+      <QRScanner
+        isOpen={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+        onScanSuccess={handleQRScan}
+      />
     </div>
   );
 }
