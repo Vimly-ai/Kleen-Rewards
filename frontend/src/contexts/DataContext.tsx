@@ -46,9 +46,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       // Get or create user in Supabase
       const sbUser = await SupabaseService.getOrCreateUser(clerkUser.id, userData)
       setUser(sbUser)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to initialize user:', err)
-      setError('Failed to load user data')
+      setError(`Failed to load user data: ${err.message || err}`)
+      // Still set loading to false so UI isn't stuck
+      setLoading(false)
     } finally {
       setLoading(false)
     }

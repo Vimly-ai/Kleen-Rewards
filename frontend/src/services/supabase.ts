@@ -130,6 +130,8 @@ export class SupabaseService {
   // Users (synced from Clerk)
   static async getOrCreateUser(clerkUserId: string, userData: Partial<User>): Promise<User> {
     try {
+      console.log('Attempting to get/create user:', clerkUserId, userData)
+      
       // Try to get existing user
       const { data: existingUser, error: fetchError } = await supabase
         .from('employees')
@@ -137,11 +139,19 @@ export class SupabaseService {
         .eq('id', clerkUserId)
         .single()
 
+      console.log('Fetch result:', { existingUser, fetchError })
+
       if (existingUser && !fetchError) {
         return existingUser
       }
 
-      // Create new user if doesn't exist
+      // Create new user if doesn't exist (ignore "not found" errors)
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Database fetch error:', fetchError)
+        throw new Error(`Database error: ${fetchError.message}`)
+      }
+
+      console.log('Creating new user...')
       const { data: newUser, error: createError } = await supabase
         .from('employees')
         .insert([{
@@ -156,13 +166,40 @@ export class SupabaseService {
         .select()
         .single()
 
+      console.log('Create result:', { newUser, createError })
+
       if (createError) {
-        throw createError
+        console.error('Database create error:', createError)
+        throw new Error(`Failed to create user: ${createError.message}`)
       }
 
       return newUser
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in getOrCreateUser:', error)
+      // Return a mock user if database fails so app doesn't break
+      if (error.message?.includes('relation "employees" does not exist')) {
+        console.warn('Database not set up, returning mock user')
+        return {
+          id: clerkUserId,
+          email: userData.email || '',
+          name: userData.name || 'User',
+          employee_id: userData.employee_id || clerkUserId,
+          department: userData.department || 'General',
+          hire_date: userData.hire_date || new Date().toISOString().split('T')[0],
+          role: userData.role || 'employee',
+          status: 'active',
+          points_balance: 0,
+          total_points_earned: 0,
+          current_streak: 0,
+          longest_streak: 0,
+          last_check_in: null,
+          first_name: userData.name?.split(' ')[0] || 'User',
+          last_name: userData.name?.split(' ')[1] || '',
+          phone: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      }
       throw error
     }
   }
