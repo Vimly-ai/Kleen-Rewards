@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
-import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, UserButton } from '@clerk/clerk-react'
+import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
+import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, UserButton, useUser } from '@clerk/clerk-react'
 import './index.css'
 
 // Icons (using SVG for simplicity)
@@ -47,23 +47,88 @@ const XIcon = () => (
   </svg>
 )
 
+const UsersIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+  </svg>
+)
+
+const ClipboardListIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+  </svg>
+)
+
+const ChartBarIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+  </svg>
+)
+
+const CogIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+  </svg>
+)
+
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_Z29sZGVuLWdyYWNrbGUtODguY2xlcmsuYWNjb3VudHMuZGV2JA'
 
 if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Clerk Publishable Key")
 }
 
+// User role management
+type UserRole = 'employee' | 'admin'
+
+const getUserRole = (user: any): UserRole => {
+  // Check user metadata for role, default to employee
+  return user?.publicMetadata?.role === 'admin' ? 'admin' : 'employee'
+}
+
+// Role-based route protection
+function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole?: UserRole }) {
+  const { user, isLoaded } = useUser()
+  
+  if (!isLoaded) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
+  }
+  
+  if (!user) {
+    return <RedirectToSignIn />
+  }
+  
+  const userRole = getUserRole(user)
+  
+  if (requiredRole && userRole !== requiredRole) {
+    return <Navigate to={userRole === 'admin' ? '/admin' : '/'} replace />
+  }
+  
+  return <>{children}</>
+}
+
 // Navigation component
 function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { user } = useUser()
+  const userRole = user ? getUserRole(user) : 'employee'
 
-  const navItems = [
+  const employeeNavItems = [
     { path: '/', icon: HomeIcon, label: 'Dashboard' },
     { path: '/check-in', icon: QrIcon, label: 'Check In' },
     { path: '/leaderboard', icon: TrophyIcon, label: 'Leaderboard' },
     { path: '/rewards', icon: GiftIcon, label: 'Rewards' },
     { path: '/profile', icon: UserIcon, label: 'Profile' }
   ]
+
+  const adminNavItems = [
+    { path: '/admin', icon: HomeIcon, label: 'Dashboard' },
+    { path: '/admin/employees', icon: UsersIcon, label: 'Employees' },
+    { path: '/admin/redemptions', icon: ClipboardListIcon, label: 'Redemptions' },
+    { path: '/admin/analytics', icon: ChartBarIcon, label: 'Analytics' },
+    { path: '/admin/settings', icon: CogIcon, label: 'Settings' }
+  ]
+
+  const navItems = userRole === 'admin' ? adminNavItems : employeeNavItems
 
   return (
     <>
@@ -77,7 +142,7 @@ function Navigation() {
                   <span className="text-white font-bold text-lg">SK</span>
                 </div>
                 <span className="ml-2 text-xl font-semibold text-gray-900">
-                  Employee Rewards
+                  {userRole === 'admin' ? 'Admin Portal' : 'Employee Rewards'}
                 </span>
               </div>
             </div>
@@ -102,6 +167,11 @@ function Navigation() {
             </div>
             
             <div className="flex items-center space-x-4">
+              {userRole === 'admin' && (
+                <span className="hidden md:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  Admin
+                </span>
+              )}
               <UserButton />
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -509,20 +579,387 @@ function Profile() {
   )
 }
 
+// Admin Dashboard
+function AdminDashboard() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-xl text-white p-6 mb-6">
+        <h2 className="text-2xl font-bold">Admin Dashboard</h2>
+        <p className="mt-2">System Kleen Employee Management</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="bg-white rounded-lg p-6 shadow">
+          <h3 className="text-lg font-semibold mb-2">Total Employees</h3>
+          <p className="text-3xl font-bold text-blue-600">47</p>
+        </div>
+        
+        <div className="bg-white rounded-lg p-6 shadow">
+          <h3 className="text-lg font-semibold mb-2">Today's Check-ins</h3>
+          <p className="text-3xl font-bold text-green-600">32</p>
+        </div>
+        
+        <div className="bg-white rounded-lg p-6 shadow">
+          <h3 className="text-lg font-semibold mb-2">Pending Redemptions</h3>
+          <p className="text-3xl font-bold text-orange-600">8</p>
+        </div>
+        
+        <div className="bg-white rounded-lg p-6 shadow">
+          <h3 className="text-lg font-semibold mb-2">Points Awarded Today</h3>
+          <p className="text-3xl font-bold text-purple-600">47</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center">
+                <div className="h-2 w-2 bg-green-400 rounded-full mr-3"></div>
+                <span className="text-gray-600">Sarah Johnson checked in</span>
+              </div>
+              <span className="text-sm text-gray-500">2 min ago</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center">
+                <div className="h-2 w-2 bg-orange-400 rounded-full mr-3"></div>
+                <span className="text-gray-600">Reward redemption pending</span>
+              </div>
+              <span className="text-sm text-gray-500">5 min ago</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center">
+                <div className="h-2 w-2 bg-blue-400 rounded-full mr-3"></div>
+                <span className="text-gray-600">Mike Chen earned badge</span>
+              </div>
+              <span className="text-sm text-gray-500">12 min ago</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+          <div className="space-y-3">
+            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-left">
+              View All Employees
+            </button>
+            <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-left">
+              Approve Redemptions
+            </button>
+            <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg text-left">
+              Generate Reports
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Admin Employee Management
+function AdminEmployees() {
+  const employees = [
+    { id: 1, name: 'Sarah Johnson', email: 'sarah.j@systemkleen.com', points: 387, streak: 12, lastCheckIn: '2025-01-11 07:15' },
+    { id: 2, name: 'Mike Chen', email: 'mike.c@systemkleen.com', points: 298, streak: 8, lastCheckIn: '2025-01-11 06:45' },
+    { id: 3, name: 'Emily Davis', email: 'emily.d@systemkleen.com', points: 221, streak: 5, lastCheckIn: '2025-01-11 08:30' },
+    { id: 4, name: 'Alex Rodriguez', email: 'alex.r@systemkleen.com', points: 198, streak: 4, lastCheckIn: '2025-01-10 07:22' },
+    { id: 5, name: 'Jessica Wilson', email: 'jessica.w@systemkleen.com', points: 156, streak: 2, lastCheckIn: '2025-01-11 09:15' },
+  ]
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="bg-white rounded-xl shadow-lg">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900">Employee Management</h2>
+          <p className="text-gray-600">View and manage all employees</p>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Streak</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Check-in</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {employees.map((employee) => (
+                <tr key={employee.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{employee.name}</div>
+                      <div className="text-sm text-gray-500">{employee.email}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-blue-600">{employee.points}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">{employee.streak} days</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">{employee.lastCheckIn}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button className="text-blue-600 hover:text-blue-900 mr-3">View</button>
+                    <button className="text-red-600 hover:text-red-900">Reset</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Admin Redemptions
+function AdminRedemptions() {
+  const redemptions = [
+    { id: 1, employee: 'Sarah Johnson', reward: 'Coffee Gift Card', cost: 50, status: 'pending', date: '2025-01-11 09:30' },
+    { id: 2, employee: 'Mike Chen', reward: 'Extra PTO Day', cost: 100, status: 'pending', date: '2025-01-11 08:15' },
+    { id: 3, employee: 'Emily Davis', reward: 'Premium Parking Spot', cost: 75, status: 'approved', date: '2025-01-10 14:22' },
+    { id: 4, employee: 'Alex Rodriguez', reward: 'Team Lunch', cost: 150, status: 'rejected', date: '2025-01-10 11:45' },
+  ]
+
+  const handleApprove = (id: number) => {
+    console.log('Approving redemption:', id)
+  }
+
+  const handleReject = (id: number) => {
+    console.log('Rejecting redemption:', id)
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="bg-white rounded-xl shadow-lg">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900">Reward Redemptions</h2>
+          <p className="text-gray-600">Approve or reject employee reward requests</p>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reward</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {redemptions.map((redemption) => (
+                <tr key={redemption.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-gray-900">{redemption.employee}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">{redemption.reward}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-blue-600">{redemption.cost} pts</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      redemption.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      redemption.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {redemption.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">{redemption.date}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {redemption.status === 'pending' && (
+                      <>
+                        <button 
+                          onClick={() => handleApprove(redemption.id)}
+                          className="text-green-600 hover:text-green-900 mr-3"
+                        >
+                          Approve
+                        </button>
+                        <button 
+                          onClick={() => handleReject(redemption.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Admin Analytics
+function AdminAnalytics() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Analytics & Reports</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-blue-50 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-2">Weekly Check-ins</h3>
+            <p className="text-3xl font-bold text-blue-600">234</p>
+            <p className="text-sm text-blue-600">+12% from last week</p>
+          </div>
+          
+          <div className="bg-green-50 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-2">Points Awarded</h3>
+            <p className="text-3xl font-bold text-green-600">1,847</p>
+            <p className="text-sm text-green-600">+8% from last week</p>
+          </div>
+          
+          <div className="bg-purple-50 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-2">Rewards Redeemed</h3>
+            <p className="text-3xl font-bold text-purple-600">23</p>
+            <p className="text-sm text-purple-600">+15% from last week</p>
+          </div>
+        </div>
+        
+        <div className="bg-gray-50 rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">Engagement Trends</h3>
+          <p className="text-gray-600">Detailed analytics charts would be implemented here with a charting library like Chart.js or Recharts.</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Admin Settings
+function AdminSettings() {
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Settings</h2>
+        
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Point System</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="border rounded-lg p-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Early Check-in (6-7 AM)</label>
+                <input type="number" defaultValue={2} className="w-full border rounded px-3 py-2" />
+              </div>
+              <div className="border rounded-lg p-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">On-time Check-in (7-9 AM)</label>
+                <input type="number" defaultValue={1} className="w-full border rounded px-3 py-2" />
+              </div>
+              <div className="border rounded-lg p-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Late Check-in (After 9 AM)</label>
+                <input type="number" defaultValue={0} className="w-full border rounded px-3 py-2" />
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Company Settings</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                <input type="text" defaultValue="System Kleen" className="w-full border rounded px-3 py-2" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Check-in Window Start</label>
+                <input type="time" defaultValue="06:00" className="border rounded px-3 py-2" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Check-in Window End</label>
+                <input type="time" defaultValue="09:00" className="border rounded px-3 py-2" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="pt-4">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+              Save Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   return (
     <BrowserRouter>
       <SignedIn>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/check-in" element={<CheckIn />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/rewards" element={<Rewards />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<Dashboard />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          {/* Employee Routes */}
+          <Route path="/" element={
+            <ProtectedRoute requiredRole="employee">
+              <Layout><Dashboard /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/check-in" element={
+            <ProtectedRoute requiredRole="employee">
+              <Layout><CheckIn /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/leaderboard" element={
+            <ProtectedRoute requiredRole="employee">
+              <Layout><Leaderboard /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/rewards" element={
+            <ProtectedRoute requiredRole="employee">
+              <Layout><Rewards /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute requiredRole="employee">
+              <Layout><Profile /></Layout>
+            </ProtectedRoute>
+          } />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="admin">
+              <Layout><AdminDashboard /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/employees" element={
+            <ProtectedRoute requiredRole="admin">
+              <Layout><AdminEmployees /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/redemptions" element={
+            <ProtectedRoute requiredRole="admin">
+              <Layout><AdminRedemptions /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/analytics" element={
+            <ProtectedRoute requiredRole="admin">
+              <Layout><AdminAnalytics /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/settings" element={
+            <ProtectedRoute requiredRole="admin">
+              <Layout><AdminSettings /></Layout>
+            </ProtectedRoute>
+          } />
+          
+          {/* Catch all - redirect based on role */}
+          <Route path="*" element={<ProtectedRoute><Navigate to="/" replace /></ProtectedRoute>} />
+        </Routes>
       </SignedIn>
       <SignedOut>
         <RedirectToSignIn />
