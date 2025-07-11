@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useUser } from '@clerk/clerk-react'
-import SupabaseService, { User as SBUser } from '../services/supabase'
+import SupabaseService from '../services/supabase'
+import type { User as SBUser } from '../services/supabase'
 
 interface DataContextType {
   user: SBUser | null

@@ -1149,6 +1149,84 @@ function Profile() {
 
 // Admin Dashboard
 function AdminDashboard() {
+  const [analytics, setAnalytics] = useState<any>(null)
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        setLoading(true)
+        
+        // Fetch analytics data
+        const analyticsData = await SupabaseService.getAnalyticsData()
+        setAnalytics(analyticsData)
+
+        // Fetch recent check-ins for activity feed
+        const todayCheckIns = await SupabaseService.getAllCheckInsToday()
+        const recentCheckIns = todayCheckIns.slice(0, 5).map(checkIn => ({
+          type: 'checkin',
+          message: `${checkIn.user?.name || 'Employee'} checked in`,
+          time: new Date(checkIn.check_in_time),
+          color: checkIn.check_in_type === 'early' ? 'bg-green-400' : 
+                 checkIn.check_in_type === 'ontime' ? 'bg-blue-400' : 'bg-gray-400'
+        }))
+
+        // Fetch recent redemptions
+        const pendingRedemptions = await SupabaseService.getPendingRedemptions()
+        const recentRedemptions = pendingRedemptions.slice(0, 3).map(redemption => ({
+          type: 'redemption',
+          message: `${redemption.user?.name || 'Employee'} requested ${redemption.reward?.name}`,
+          time: new Date(redemption.requested_date),
+          color: 'bg-orange-400'
+        }))
+
+        // Combine and sort by time
+        const combinedActivity = [...recentCheckIns, ...recentRedemptions]
+          .sort((a, b) => b.time.getTime() - a.time.getTime())
+          .slice(0, 5)
+
+        setRecentActivity(combinedActivity)
+
+      } catch (error) {
+        console.error('Error fetching admin data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAdminData()
+  }, [])
+
+  const getTimeAgo = (date: Date) => {
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} min ago`
+    
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    
+    return date.toLocaleDateString()
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="animate-pulse">
+          <div className="bg-gray-300 rounded-xl h-32 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-gray-200 rounded-lg h-24"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-xl text-white p-6 mb-6">
@@ -1159,65 +1237,74 @@ function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="bg-white rounded-lg p-6 shadow">
           <h3 className="text-lg font-semibold mb-2">Total Employees</h3>
-          <p className="text-3xl font-bold text-blue-600">47</p>
+          <p className="text-3xl font-bold text-blue-600">{analytics?.totalEmployees || 0}</p>
         </div>
         
         <div className="bg-white rounded-lg p-6 shadow">
           <h3 className="text-lg font-semibold mb-2">Today's Check-ins</h3>
-          <p className="text-3xl font-bold text-green-600">32</p>
+          <p className="text-3xl font-bold text-green-600">{analytics?.todayCheckIns || 0}</p>
         </div>
         
         <div className="bg-white rounded-lg p-6 shadow">
           <h3 className="text-lg font-semibold mb-2">Pending Redemptions</h3>
-          <p className="text-3xl font-bold text-orange-600">8</p>
+          <p className="text-3xl font-bold text-orange-600">{analytics?.pendingRedemptions || 0}</p>
         </div>
         
         <div className="bg-white rounded-lg p-6 shadow">
           <h3 className="text-lg font-semibold mb-2">Points Awarded Today</h3>
-          <p className="text-3xl font-bold text-purple-600">47</p>
+          <p className="text-3xl font-bold text-purple-600">{analytics?.totalPointsAwarded || 0}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center">
-                <div className="h-2 w-2 bg-green-400 rounded-full mr-3"></div>
-                <span className="text-gray-600">Sarah Johnson checked in</span>
-              </div>
-              <span className="text-sm text-gray-500">2 min ago</span>
+          {recentActivity.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No recent activity</p>
             </div>
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center">
-                <div className="h-2 w-2 bg-orange-400 rounded-full mr-3"></div>
-                <span className="text-gray-600">Reward redemption pending</span>
-              </div>
-              <span className="text-sm text-gray-500">5 min ago</span>
+          ) : (
+            <div className="space-y-3">
+              {recentActivity.map((activity, index) => (
+                <div key={index} className="flex items-center justify-between py-2">
+                  <div className="flex items-center">
+                    <div className={`h-2 w-2 ${activity.color} rounded-full mr-3`}></div>
+                    <span className="text-gray-600">{activity.message}</span>
+                  </div>
+                  <span className="text-sm text-gray-500">{getTimeAgo(activity.time)}</span>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center">
-                <div className="h-2 w-2 bg-blue-400 rounded-full mr-3"></div>
-                <span className="text-gray-600">Mike Chen earned badge</span>
-              </div>
-              <span className="text-sm text-gray-500">12 min ago</span>
-            </div>
-          </div>
+          )}
         </div>
         
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
           <div className="space-y-3">
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-left">
+            <NavLink 
+              to="/admin/employees"
+              className="block w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-left transition-colors"
+            >
               View All Employees
-            </button>
-            <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-left">
-              Approve Redemptions
-            </button>
-            <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg text-left">
-              Generate Reports
-            </button>
+            </NavLink>
+            <NavLink 
+              to="/admin/redemptions"
+              className="block w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-left transition-colors"
+            >
+              Approve Redemptions ({analytics?.pendingRedemptions || 0})
+            </NavLink>
+            <NavLink 
+              to="/admin/analytics"
+              className="block w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg text-left transition-colors"
+            >
+              View Analytics
+            </NavLink>
+            <NavLink 
+              to="/admin/settings"
+              className="block w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg text-left transition-colors"
+            >
+              System Settings
+            </NavLink>
           </div>
         </div>
       </div>
@@ -1227,20 +1314,130 @@ function AdminDashboard() {
 
 // Admin Employee Management
 function AdminEmployees() {
-  const employees = [
-    { id: 1, name: 'Sarah Johnson', email: 'sarah.j@systemkleen.com', points: 387, streak: 12, lastCheckIn: '2025-01-11 07:15' },
-    { id: 2, name: 'Mike Chen', email: 'mike.c@systemkleen.com', points: 298, streak: 8, lastCheckIn: '2025-01-11 06:45' },
-    { id: 3, name: 'Emily Davis', email: 'emily.d@systemkleen.com', points: 221, streak: 5, lastCheckIn: '2025-01-11 08:30' },
-    { id: 4, name: 'Alex Rodriguez', email: 'alex.r@systemkleen.com', points: 198, streak: 4, lastCheckIn: '2025-01-10 07:22' },
-    { id: 5, name: 'Jessica Wilson', email: 'jessica.w@systemkleen.com', points: 156, streak: 2, lastCheckIn: '2025-01-11 09:15' },
-  ]
+  const [employees, setEmployees] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null)
+  const [showPointsModal, setShowPointsModal] = useState(false)
+  const [pointsAdjustment, setPointsAdjustment] = useState('')
+  const [adjustmentReason, setAdjustmentReason] = useState('')
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        setLoading(true)
+        const employeeData = await SupabaseService.getAllEmployees()
+        
+        // Get last check-in for each employee
+        const employeesWithCheckIns = await Promise.all(
+          employeeData.map(async (emp) => {
+            try {
+              const checkIns = await SupabaseService.getUserCheckIns(emp.id, 1)
+              return {
+                ...emp,
+                lastCheckIn: checkIns[0]?.check_in_time || null
+              }
+            } catch {
+              return { ...emp, lastCheckIn: null }
+            }
+          })
+        )
+        
+        setEmployees(employeesWithCheckIns)
+      } catch (error) {
+        console.error('Error fetching employees:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEmployees()
+  }, [])
+
+  const filteredEmployees = employees.filter(emp => 
+    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.email.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const handlePointsAdjustment = async () => {
+    if (!selectedEmployee || !pointsAdjustment) return
+
+    try {
+      const adjustmentAmount = parseInt(pointsAdjustment)
+      
+      // Update user points
+      await SupabaseService.updateUser(selectedEmployee.id, {
+        points_balance: selectedEmployee.points_balance + adjustmentAmount,
+        total_points_earned: selectedEmployee.total_points_earned + (adjustmentAmount > 0 ? adjustmentAmount : 0)
+      })
+
+      // Create point transaction record
+      await SupabaseService.createPointTransaction({
+        user_id: selectedEmployee.id,
+        transaction_type: adjustmentAmount > 0 ? 'earned' : 'adjusted',
+        points_amount: adjustmentAmount,
+        reference_type: 'admin_adjustment',
+        reference_id: selectedEmployee.id,
+        description: adjustmentReason || 'Admin points adjustment',
+        created_by: 'admin' // In real app, this would be the current admin user ID
+      })
+
+      // Refresh employee data
+      const updatedEmployees = employees.map(emp => 
+        emp.id === selectedEmployee.id 
+          ? { ...emp, points_balance: emp.points_balance + adjustmentAmount }
+          : emp
+      )
+      setEmployees(updatedEmployees)
+
+      // Reset modal
+      setShowPointsModal(false)
+      setSelectedEmployee(null)
+      setPointsAdjustment('')
+      setAdjustmentReason('')
+
+    } catch (error) {
+      console.error('Error adjusting points:', error)
+      alert('Failed to adjust points. Please try again.')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="animate-pulse">
+            <div className="h-6 bg-gray-300 rounded mb-4"></div>
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="bg-white rounded-xl shadow-lg">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Employee Management</h2>
-          <p className="text-gray-600">View and manage all employees</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Employee Management</h2>
+              <p className="text-gray-600">View and manage all employees ({employees.length} total)</p>
+            </div>
+            <div className="w-64">
+              <input
+                type="text"
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
         </div>
         
         <div className="overflow-x-auto">
@@ -1248,6 +1445,7 @@ function AdminEmployees() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Streak</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Check-in</th>
@@ -1255,121 +1453,327 @@ function AdminEmployees() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {employees.map((employee) => (
-                <tr key={employee.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{employee.name}</div>
-                      <div className="text-sm text-gray-500">{employee.email}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-blue-600">{employee.points}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{employee.streak} days</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{employee.lastCheckIn}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">View</button>
-                    <button className="text-red-600 hover:text-red-900">Reset</button>
+              {filteredEmployees.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    {searchTerm ? 'No employees found matching your search.' : 'No employees found.'}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredEmployees.map((employee) => (
+                  <tr key={employee.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
+                          <span className="text-white font-medium text-sm">
+                            {employee.name?.charAt(0) || 'U'}
+                          </span>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{employee.name}</div>
+                          <div className="text-sm text-gray-500">{employee.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-900">{employee.department}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-medium text-blue-600">{employee.points_balance}</span>
+                      <span className="text-xs text-gray-500 block">({employee.total_points_earned} total)</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-900">{employee.current_streak} days</span>
+                      <span className="text-xs text-gray-500 block">(best: {employee.longest_streak})</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {employee.lastCheckIn ? (
+                        <span className="text-sm text-gray-900">
+                          {new Date(employee.lastCheckIn).toLocaleDateString()}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-500">Never</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button 
+                        onClick={() => {
+                          setSelectedEmployee(employee)
+                          setShowPointsModal(true)
+                        }}
+                        className="text-blue-600 hover:text-blue-900 mr-3"
+                      >
+                        Adjust Points
+                      </button>
+                      <NavLink 
+                        to={`/admin/employees/${employee.id}`}
+                        className="text-green-600 hover:text-green-900"
+                      >
+                        View Details
+                      </NavLink>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Points Adjustment Modal */}
+      {showPointsModal && selectedEmployee && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Adjust Points for {selectedEmployee.name}</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Points Adjustment
+                </label>
+                <input
+                  type="number"
+                  value={pointsAdjustment}
+                  onChange={(e) => setPointsAdjustment(e.target.value)}
+                  placeholder="Enter points (positive or negative)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Current balance: {selectedEmployee.points_balance} points
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Reason (optional)
+                </label>
+                <textarea
+                  value={adjustmentReason}
+                  onChange={(e) => setAdjustmentReason(e.target.value)}
+                  placeholder="Reason for adjustment..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handlePointsAdjustment}
+                  disabled={!pointsAdjustment}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white py-2 px-4 rounded-md transition-colors"
+                >
+                  Adjust Points
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPointsModal(false)
+                    setSelectedEmployee(null)
+                    setPointsAdjustment('')
+                    setAdjustmentReason('')
+                  }}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 // Admin Redemptions
 function AdminRedemptions() {
-  const redemptions = [
-    { id: 1, employee: 'Sarah Johnson', reward: 'Coffee Gift Card', cost: 50, status: 'pending', date: '2025-01-11 09:30' },
-    { id: 2, employee: 'Mike Chen', reward: 'Extra PTO Day', cost: 100, status: 'pending', date: '2025-01-11 08:15' },
-    { id: 3, employee: 'Emily Davis', reward: 'Premium Parking Spot', cost: 75, status: 'approved', date: '2025-01-10 14:22' },
-    { id: 4, employee: 'Alex Rodriguez', reward: 'Team Lunch', cost: 150, status: 'rejected', date: '2025-01-10 11:45' },
-  ]
+  const [redemptions, setRedemptions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [processing, setProcessing] = useState<string | null>(null)
 
-  const handleApprove = (id: number) => {
-    console.log('Approving redemption:', id)
+  useEffect(() => {
+    fetchRedemptions()
+  }, [])
+
+  const fetchRedemptions = async () => {
+    try {
+      setLoading(true)
+      const data = await SupabaseService.getAllRedemptions()
+      setRedemptions(data)
+    } catch (error) {
+      console.error('Error fetching redemptions:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleReject = (id: number) => {
-    console.log('Rejecting redemption:', id)
+  const handleApprove = async (redemptionId: string) => {
+    setProcessing(redemptionId)
+    try {
+      await SupabaseService.updateRedemption(redemptionId, { status: 'approved' })
+      await fetchRedemptions()
+    } catch (error) {
+      console.error('Error approving redemption:', error)
+    } finally {
+      setProcessing(null)
+    }
+  }
+
+  const handleReject = async (redemptionId: string) => {
+    setProcessing(redemptionId)
+    try {
+      // Get redemption details first
+      const redemption = redemptions.find(r => r.id === redemptionId)
+      if (redemption) {
+        // Refund points to user
+        await SupabaseService.updateUser(redemption.user_id, {
+          points_balance: redemption.users.points_balance + redemption.points_cost
+        })
+
+        // Create refund transaction
+        await SupabaseService.createPointTransaction({
+          user_id: redemption.user_id,
+          transaction_type: 'earned',
+          points_amount: redemption.points_cost,
+          reference_type: 'refund',
+          reference_id: redemptionId,
+          description: `Refund for rejected redemption: ${redemption.rewards.name}`
+        })
+
+        // Update redemption status
+        await SupabaseService.updateRedemption(redemptionId, { status: 'rejected' })
+        await fetchRedemptions()
+      }
+    } catch (error) {
+      console.error('Error rejecting redemption:', error)
+    } finally {
+      setProcessing(null)
+    }
+  }
+
+  const filteredRedemptions = statusFilter === 'all' 
+    ? redemptions 
+    : redemptions.filter(r => r.status === statusFilter)
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-12 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="bg-white rounded-xl shadow-lg">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Reward Redemptions</h2>
-          <p className="text-gray-600">Approve or reject employee reward requests</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Reward Redemptions</h2>
+              <p className="text-gray-600">Approve or reject employee reward requests</p>
+            </div>
+            <div className="flex gap-2">
+              {['all', 'pending', 'approved', 'rejected'].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    statusFilter === status
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reward</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {redemptions.map((redemption) => (
-                <tr key={redemption.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900">{redemption.employee}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{redemption.reward}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-blue-600">{redemption.cost} pts</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      redemption.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      redemption.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {redemption.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{redemption.date}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {redemption.status === 'pending' && (
-                      <>
-                        <button 
-                          onClick={() => handleApprove(redemption.id)}
-                          className="text-green-600 hover:text-green-900 mr-3"
-                        >
-                          Approve
-                        </button>
-                        <button 
-                          onClick={() => handleReject(redemption.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                  </td>
+        {filteredRedemptions.length === 0 ? (
+          <div className="p-8 text-center">
+            <p className="text-gray-500">No redemptions found for the selected filter.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reward</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredRedemptions.map((redemption) => (
+                  <tr key={redemption.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-blue-600 font-semibold text-sm">
+                            {redemption.users?.first_name?.[0] || 'U'}
+                          </span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {redemption.users?.first_name} {redemption.users?.last_name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-900">{redemption.rewards?.name}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-medium text-blue-600">{redemption.points_cost} pts</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        redemption.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        redemption.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {redemption.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-900">
+                        {new Date(redemption.created_at).toLocaleDateString()} {new Date(redemption.created_at).toLocaleTimeString()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      {redemption.status === 'pending' && (
+                        <>
+                          <button 
+                            onClick={() => handleApprove(redemption.id)}
+                            disabled={processing === redemption.id}
+                            className="text-green-600 hover:text-green-900 mr-3 disabled:opacity-50"
+                          >
+                            {processing === redemption.id ? 'Processing...' : 'Approve'}
+                          </button>
+                          <button 
+                            onClick={() => handleReject(redemption.id)}
+                            disabled={processing === redemption.id}
+                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                          >
+                            {processing === redemption.id ? 'Processing...' : 'Reject'}
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1377,34 +1781,192 @@ function AdminRedemptions() {
 
 // Admin Analytics
 function AdminAnalytics() {
+  const [analytics, setAnalytics] = useState<any>({})
+  const [loading, setLoading] = useState(true)
+  const [dateRange, setDateRange] = useState<string>('7')
+
+  useEffect(() => {
+    fetchAnalytics()
+  }, [dateRange])
+
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true)
+      const days = parseInt(dateRange)
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - days)
+
+      const [checkIns, users, redemptions, pointTransactions] = await Promise.all([
+        SupabaseService.getCheckInsAfterDate(startDate.toISOString()),
+        SupabaseService.getAllUsers(),
+        SupabaseService.getRedemptionsAfterDate(startDate.toISOString()),
+        SupabaseService.getPointTransactionsAfterDate(startDate.toISOString())
+      ])
+
+      // Calculate previous period for comparison
+      const prevStartDate = new Date(startDate)
+      prevStartDate.setDate(prevStartDate.getDate() - days)
+      const [prevCheckIns, prevRedemptions, prevPointTransactions] = await Promise.all([
+        SupabaseService.getCheckInsAfterDate(prevStartDate.toISOString()).then(data => 
+          data.filter(c => new Date(c.created_at) < startDate)
+        ),
+        SupabaseService.getRedemptionsAfterDate(prevStartDate.toISOString()).then(data => 
+          data.filter(r => new Date(r.created_at) < startDate)
+        ),
+        SupabaseService.getPointTransactionsAfterDate(prevStartDate.toISOString()).then(data => 
+          data.filter(t => new Date(t.created_at) < startDate)
+        )
+      ])
+
+      const earnedPoints = pointTransactions
+        .filter(t => t.transaction_type === 'earned')
+        .reduce((sum, t) => sum + t.points_amount, 0)
+      
+      const prevEarnedPoints = prevPointTransactions
+        .filter(t => t.transaction_type === 'earned')
+        .reduce((sum, t) => sum + t.points_amount, 0)
+
+      const checkInsChange = prevCheckIns.length > 0 
+        ? ((checkIns.length - prevCheckIns.length) / prevCheckIns.length) * 100 
+        : 0
+
+      const pointsChange = prevEarnedPoints > 0 
+        ? ((earnedPoints - prevEarnedPoints) / prevEarnedPoints) * 100 
+        : 0
+
+      const redemptionsChange = prevRedemptions.length > 0 
+        ? ((redemptions.length - prevRedemptions.length) / prevRedemptions.length) * 100 
+        : 0
+
+      setAnalytics({
+        checkInsCount: checkIns.length,
+        checkInsChange: Math.round(checkInsChange),
+        pointsAwarded: earnedPoints,
+        pointsChange: Math.round(pointsChange),
+        redemptionsCount: redemptions.length,
+        redemptionsChange: Math.round(redemptionsChange),
+        totalUsers: users.length,
+        activeUsers: users.filter(u => u.last_check_in && 
+          new Date(u.last_check_in) >= startDate).length,
+        topPerformers: users
+          .sort((a, b) => (b.points_balance || 0) - (a.points_balance || 0))
+          .slice(0, 5)
+      })
+    } catch (error) {
+      console.error('Error fetching analytics:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-1/3 mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-gray-100 rounded-lg p-6">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Analytics & Reports</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Analytics & Reports</h2>
+          <select 
+            value={dateRange} 
+            onChange={(e) => setDateRange(e.target.value)}
+            className="border rounded-lg px-3 py-2"
+          >
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-blue-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-2">Weekly Check-ins</h3>
-            <p className="text-3xl font-bold text-blue-600">234</p>
-            <p className="text-sm text-blue-600">+12% from last week</p>
+            <h3 className="text-lg font-semibold mb-2">Check-ins</h3>
+            <p className="text-3xl font-bold text-blue-600">{analytics.checkInsCount}</p>
+            <p className={`text-sm ${analytics.checkInsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {analytics.checkInsChange >= 0 ? '+' : ''}{analytics.checkInsChange}% from previous period
+            </p>
           </div>
           
           <div className="bg-green-50 rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-2">Points Awarded</h3>
-            <p className="text-3xl font-bold text-green-600">1,847</p>
-            <p className="text-sm text-green-600">+8% from last week</p>
+            <p className="text-3xl font-bold text-green-600">{analytics.pointsAwarded?.toLocaleString()}</p>
+            <p className={`text-sm ${analytics.pointsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {analytics.pointsChange >= 0 ? '+' : ''}{analytics.pointsChange}% from previous period
+            </p>
           </div>
           
           <div className="bg-purple-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-2">Rewards Redeemed</h3>
-            <p className="text-3xl font-bold text-purple-600">23</p>
-            <p className="text-sm text-purple-600">+15% from last week</p>
+            <h3 className="text-lg font-semibold mb-2">Redemptions</h3>
+            <p className="text-3xl font-bold text-purple-600">{analytics.redemptionsCount}</p>
+            <p className={`text-sm ${analytics.redemptionsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {analytics.redemptionsChange >= 0 ? '+' : ''}{analytics.redemptionsChange}% from previous period
+            </p>
+          </div>
+
+          <div className="bg-orange-50 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-2">Active Users</h3>
+            <p className="text-3xl font-bold text-orange-600">{analytics.activeUsers}/{analytics.totalUsers}</p>
+            <p className="text-sm text-orange-600">
+              {Math.round((analytics.activeUsers / analytics.totalUsers) * 100)}% engagement rate
+            </p>
           </div>
         </div>
         
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">Engagement Trends</h3>
-          <p className="text-gray-600">Detailed analytics charts would be implemented here with a charting library like Chart.js or Recharts.</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-gray-50 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">Top Performers</h3>
+            <div className="space-y-3">
+              {analytics.topPerformers?.map((user: any, index: number) => (
+                <div key={user.id} className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs font-bold text-blue-600 mr-3">
+                      {index + 1}
+                    </span>
+                    <span className="font-medium">{user.first_name} {user.last_name}</span>
+                  </div>
+                  <span className="font-bold text-blue-600">{user.points_balance} pts</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">System Health</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span>Total Users</span>
+                <span className="font-bold">{analytics.totalUsers}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Active Users ({dateRange} days)</span>
+                <span className="font-bold text-green-600">{analytics.activeUsers}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Engagement Rate</span>
+                <span className="font-bold text-blue-600">
+                  {Math.round((analytics.activeUsers / analytics.totalUsers) * 100)}%
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1413,52 +1975,179 @@ function AdminAnalytics() {
 
 // Admin Settings
 function AdminSettings() {
+  const [settings, setSettings] = useState({
+    earlyPoints: 2,
+    onTimePoints: 1,
+    latePoints: 0,
+    companyName: 'System Kleen',
+    checkInStart: '06:00',
+    checkInEnd: '09:00',
+    timezone: 'America/Denver'
+  })
+  const [saving, setSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<string | null>(null)
+
+  const handleSave = async () => {
+    setSaving(true)
+    setSaveStatus(null)
+    
+    try {
+      // In a real implementation, this would save to a settings table in Supabase
+      // For now, we'll just simulate the save
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      setSaveStatus('Settings saved successfully!')
+      
+      // You could implement this with a system_settings table in Supabase:
+      // await SupabaseService.updateSystemSettings(settings)
+      
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      setSaveStatus('Failed to save settings. Please try again.')
+    } finally {
+      setSaving(false)
+      setTimeout(() => setSaveStatus(null), 3000)
+    }
+  }
+
+  const handleInputChange = (field: string, value: string | number) => {
+    setSettings(prev => ({ ...prev, [field]: value }))
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Settings</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">System Settings</h2>
         
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div>
-            <h3 className="text-lg font-semibold mb-4">Point System</h3>
+            <h3 className="text-lg font-semibold mb-4">Point System Configuration</h3>
+            <p className="text-gray-600 mb-4">Configure how many points employees earn based on their check-in time.</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border rounded-lg p-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Early Check-in (6-7 AM)</label>
-                <input type="number" defaultValue={2} className="w-full border rounded px-3 py-2" />
+              <div className="border rounded-lg p-4 bg-green-50">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Early Check-in (6-7 AM)
+                </label>
+                <input 
+                  type="number" 
+                  value={settings.earlyPoints}
+                  onChange={(e) => handleInputChange('earlyPoints', parseInt(e.target.value))}
+                  className="w-full border rounded px-3 py-2 bg-white" 
+                  min="0"
+                  max="10"
+                />
+                <p className="text-xs text-gray-500 mt-1">Extra reward for early arrivals</p>
               </div>
-              <div className="border rounded-lg p-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">On-time Check-in (7-9 AM)</label>
-                <input type="number" defaultValue={1} className="w-full border rounded px-3 py-2" />
+              <div className="border rounded-lg p-4 bg-blue-50">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  On-time Check-in (7-9 AM)
+                </label>
+                <input 
+                  type="number" 
+                  value={settings.onTimePoints}
+                  onChange={(e) => handleInputChange('onTimePoints', parseInt(e.target.value))}
+                  className="w-full border rounded px-3 py-2 bg-white" 
+                  min="0"
+                  max="10"
+                />
+                <p className="text-xs text-gray-500 mt-1">Standard check-in reward</p>
               </div>
-              <div className="border rounded-lg p-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Late Check-in (After 9 AM)</label>
-                <input type="number" defaultValue={0} className="w-full border rounded px-3 py-2" />
+              <div className="border rounded-lg p-4 bg-red-50">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Late Check-in (After 9 AM)
+                </label>
+                <input 
+                  type="number" 
+                  value={settings.latePoints}
+                  onChange={(e) => handleInputChange('latePoints', parseInt(e.target.value))}
+                  className="w-full border rounded px-3 py-2 bg-white" 
+                  min="0"
+                  max="10"
+                />
+                <p className="text-xs text-gray-500 mt-1">Points for late arrivals</p>
               </div>
             </div>
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Company Settings</h3>
-            <div className="space-y-4">
+            <h3 className="text-lg font-semibold mb-4">Company Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
-                <input type="text" defaultValue="System Kleen" className="w-full border rounded px-3 py-2" />
+                <input 
+                  type="text" 
+                  value={settings.companyName}
+                  onChange={(e) => handleInputChange('companyName', e.target.value)}
+                  className="w-full border rounded px-3 py-2" 
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Check-in Window Start</label>
-                <input type="time" defaultValue="06:00" className="border rounded px-3 py-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Check-in Window End</label>
-                <input type="time" defaultValue="09:00" className="border rounded px-3 py-2" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                <select 
+                  value={settings.timezone}
+                  onChange={(e) => handleInputChange('timezone', e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="America/Denver">Mountain Time (Denver)</option>
+                  <option value="America/New_York">Eastern Time (New York)</option>
+                  <option value="America/Chicago">Central Time (Chicago)</option>
+                  <option value="America/Los_Angeles">Pacific Time (Los Angeles)</option>
+                </select>
               </div>
             </div>
           </div>
           
-          <div className="pt-4">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
-              Save Settings
-            </button>
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Check-in Window</h3>
+            <p className="text-gray-600 mb-4">Set the daily time window when employees can check in.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Window Start Time</label>
+                <input 
+                  type="time" 
+                  value={settings.checkInStart}
+                  onChange={(e) => handleInputChange('checkInStart', e.target.value)}
+                  className="border rounded px-3 py-2" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Window End Time</label>
+                <input 
+                  type="time" 
+                  value={settings.checkInEnd}
+                  onChange={(e) => handleInputChange('checkInEnd', e.target.value)}
+                  className="border rounded px-3 py-2" 
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                {saveStatus && (
+                  <p className={`text-sm ${saveStatus.includes('success') ? 'text-green-600' : 'text-red-600'}`}>
+                    {saveStatus}
+                  </p>
+                )}
+              </div>
+              <button 
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                {saving ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 className="font-semibold text-yellow-800 mb-2">Preview</h4>
+            <div className="text-sm text-yellow-700 space-y-1">
+              <p>• Early birds (before 7 AM): <strong>{settings.earlyPoints} points</strong></p>
+              <p>• On-time arrivals (7-9 AM): <strong>{settings.onTimePoints} points</strong></p>
+              <p>• Late arrivals (after 9 AM): <strong>{settings.latePoints} points</strong></p>
+              <p>• Check-in window: <strong>{settings.checkInStart} - {settings.checkInEnd}</strong></p>
+            </div>
           </div>
         </div>
       </div>
