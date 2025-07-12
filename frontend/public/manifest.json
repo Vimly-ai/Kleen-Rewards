@@ -15,94 +15,16 @@
   "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
   "icons": [
     {
-      "src": "/icon-72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-512.png", 
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-maskable-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshot-desktop-1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Employee Dashboard - Desktop View"
-    },
-    {
-      "src": "/screenshot-desktop-2.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Rewards Catalog - Desktop View"
-    },
-    {
-      "src": "/screenshot-mobile-1.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Employee Dashboard - Mobile View"
-    },
-    {
-      "src": "/screenshot-mobile-2.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Quick Check-in - Mobile View"
     }
   ],
   "shortcuts": [
@@ -110,56 +32,19 @@
       "name": "Quick Check In",
       "short_name": "Check In",
       "description": "Instantly check in and earn points",
-      "url": "/employee/dashboard?action=checkin",
-      "icons": [{ 
-        "src": "/icon-checkin.png", 
-        "sizes": "96x96",
-        "type": "image/png"
-      }]
+      "url": "/dashboard"
     },
     {
       "name": "View Rewards",
       "short_name": "Rewards", 
       "description": "Browse and claim available rewards",
-      "url": "/employee/rewards",
-      "icons": [{ 
-        "src": "/icon-rewards.png", 
-        "sizes": "96x96",
-        "type": "image/png"
-      }]
-    },
-    {
-      "name": "Achievements",
-      "short_name": "Achievements",
-      "description": "View your achievements and progress",
-      "url": "/employee/achievements",
-      "icons": [{ 
-        "src": "/icon-achievements.png", 
-        "sizes": "96x96",
-        "type": "image/png"
-      }]
+      "url": "/rewards"
     },
     {
       "name": "Leaderboard",
       "short_name": "Leaderboard",
       "description": "See top performers and rankings",
-      "url": "/leaderboard",
-      "icons": [{ 
-        "src": "/icon-leaderboard.png", 
-        "sizes": "96x96",
-        "type": "image/png"
-      }]
-    },
-    {
-      "name": "Admin Panel",
-      "short_name": "Admin",
-      "description": "Access administrative features",
-      "url": "/admin/dashboard", 
-      "icons": [{ 
-        "src": "/icon-admin.png", 
-        "sizes": "96x96",
-        "type": "image/png"
-      }]
+      "url": "/leaderboard"
     }
   ],
   "categories": ["business", "productivity", "utilities", "lifestyle"],
