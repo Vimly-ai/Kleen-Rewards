@@ -6,9 +6,9 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
-    sourcemap: false,
+    sourcemap: true, // Enable sourcemaps for debugging
     minify: 'esbuild',
-    target: 'es2015',
+    target: 'es2020', // Use more modern target
     // Clear output directory before build
     emptyOutDir: true,
     // Optimize bundle size
@@ -29,14 +29,9 @@ export default defineConfig({
     },
     // Bundle size warning limit
     chunkSizeWarningLimit: 1000,
-    // Minification options
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug']
-      }
-    }
+    // Minification options - disable aggressive optimizations
+    minifyIdentifiers: false,
+    keepNames: true
   },
   // Ensure proper asset handling
   base: '/',
