@@ -1,5 +1,6 @@
 import React from 'react'
-import { ErrorFallback, handleError } from '../utils/errorHandler'
+import { handleError, type ErrorFallbackProps } from '../utils/errorHandler'
+import { ErrorFallback } from './shared/ErrorFallback'
 
 interface ErrorBoundaryState {
   hasError: boolean
@@ -8,7 +9,7 @@ interface ErrorBoundaryState {
 
 interface ErrorBoundaryProps {
   children: React.ReactNode
-  fallback?: React.ComponentType<{ error: Error; resetError: () => void }>
+  fallback?: React.ComponentType<ErrorFallbackProps>
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void
 }
 
@@ -63,7 +64,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 // Higher-order component for wrapping components with error boundary
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  fallback?: React.ComponentType<{ error: Error; resetError: () => void }>
+  fallback?: React.ComponentType<ErrorFallbackProps>
 ) {
   return function WrappedComponent(props: P) {
     return (
