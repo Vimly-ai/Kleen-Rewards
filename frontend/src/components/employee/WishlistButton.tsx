@@ -66,8 +66,8 @@ export function WishlistButton({
         
         {/* Animation overlay */}
         {showAnimation && (
-          <div className=\"absolute inset-0 flex items-center justify-center\">
-            <div className=\"w-8 h-8 bg-red-500 rounded-full animate-ping opacity-75\" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-8 h-8 bg-red-500 rounded-full animate-ping opacity-75" />
           </div>
         )}
       </button>
@@ -88,15 +88,15 @@ export function WishlistButton({
         className
       )}
     >
-      <div className=\"flex items-center gap-2\">
+      <div className="flex items-center gap-2">
         {isWishlisted ? (
           <>
-            <Check className=\"w-4 h-4\" />
+            <Check className="w-4 h-4" />
             <span>Wishlisted</span>
           </>
         ) : (
           <>
-            <Plus className=\"w-4 h-4\" />
+            <Plus className="w-4 h-4" />
             <span>Add to Wishlist</span>
           </>
         )}
@@ -104,8 +104,8 @@ export function WishlistButton({
       
       {/* Success animation */}
       {showAnimation && (
-        <div className=\"absolute inset-0 bg-green-500 flex items-center justify-center animate-pulse\">
-          <Check className=\"w-4 h-4 text-white\" />
+        <div className="absolute inset-0 bg-green-500 flex items-center justify-center animate-pulse">
+          <Check className="w-4 h-4 text-white" />
         </div>
       )}
     </Button>
