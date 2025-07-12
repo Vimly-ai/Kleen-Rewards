@@ -137,7 +137,9 @@ export const SimpleQRScanner: React.FC<SimpleQRScannerProps> = ({ onScanSuccess,
   }
 
   const handleManualInput = () => {
-    const qrData = prompt('Enter QR code data manually (for testing):\n\nExample: systemkleen-checkin-office-main')
+    const qrData = prompt('Enter QR code data manually (for testing):
+
+Example: systemkleen-checkin-office-main')
     if (qrData && qrData.trim()) {
       onScanSuccess(qrData.trim())
       onClose()

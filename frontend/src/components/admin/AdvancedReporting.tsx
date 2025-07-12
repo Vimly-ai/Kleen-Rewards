@@ -146,7 +146,8 @@ export function AdvancedReporting() {
   const handleExportReport = (type: string) => {
     // Simulate report generation and download
     const blob = new Blob(
-      [`Report data for ${type} (${selectedRange})\nGenerated on: ${new Date().toISOString()}`],
+      [`Report data for ${type} (${selectedRange})
+Generated on: ${new Date().toISOString()}`],
       { type: 'text/csv' }
     )
     const url = URL.createObjectURL(blob)

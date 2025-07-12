@@ -1,1 +1,362 @@
-import { useState } from 'react'\nimport { Card } from '../ui/Card'\nimport { Badge } from '../ui/Badge'\nimport { Button } from '../ui/Button'\nimport { ProgressRing } from '../ui/ProgressRing'\nimport { Tooltip } from '../ui/Tooltip'\nimport { \n  Trophy, \n  Star, \n  Share2, \n  Lock, \n  CheckCircle, \n  Eye,\n  Sparkles,\n  Calendar,\n  Target\n} from 'lucide-react'\nimport { clsx } from 'clsx'\n\ninterface Achievement {\n  id: string\n  name: string\n  description: string\n  icon: string\n  category: 'attendance' | 'points' | 'streak' | 'social' | 'special'\n  criteria: {\n    type: 'check_ins' | 'points' | 'streak' | 'referrals' | 'custom'\n    target: number\n    period?: 'daily' | 'weekly' | 'monthly' | 'all_time'\n  }\n  rarity: 'common' | 'rare' | 'epic' | 'legendary'\n  points: number\n  unlocked: boolean\n  unlockedAt?: string\n  isSecret?: boolean\n  progress?: {\n    current: number\n    target: number\n    percentage: number\n  }\n}\n\ninterface AchievementCardProps {\n  achievement: Achievement\n  onShare?: (achievement: Achievement) => void\n  onViewDetails?: (achievement: Achievement) => void\n  className?: string\n  size?: 'small' | 'medium' | 'large'\n  showProgress?: boolean\n  interactive?: boolean\n}\n\nconst RARITY_CONFIG = {\n  common: {\n    color: 'text-gray-600',\n    bg: 'bg-gray-100',\n    border: 'border-gray-200',\n    gradient: 'from-gray-50 to-gray-100',\n    label: 'Common',\n    glow: 'shadow-gray-200'\n  },\n  rare: {\n    color: 'text-blue-600',\n    bg: 'bg-blue-100',\n    border: 'border-blue-200',\n    gradient: 'from-blue-50 to-blue-100',\n    label: 'Rare',\n    glow: 'shadow-blue-200'\n  },\n  epic: {\n    color: 'text-purple-600',\n    bg: 'bg-purple-100',\n    border: 'border-purple-200',\n    gradient: 'from-purple-50 to-purple-100',\n    label: 'Epic',\n    glow: 'shadow-purple-200'\n  },\n  legendary: {\n    color: 'text-yellow-600',\n    bg: 'bg-yellow-100',\n    border: 'border-yellow-200',\n    gradient: 'from-yellow-50 to-yellow-100',\n    label: 'Legendary',\n    glow: 'shadow-yellow-200'\n  }\n}\n\nconst CATEGORY_CONFIG = {\n  attendance: { icon: Calendar, color: 'text-green-600' },\n  points: { icon: Star, color: 'text-blue-600' },\n  streak: { icon: Trophy, color: 'text-orange-600' },\n  social: { icon: Share2, color: 'text-purple-600' },\n  special: { icon: Sparkles, color: 'text-pink-600' }\n}\n\nexport function AchievementCard({\n  achievement,\n  onShare,\n  onViewDetails,\n  className,\n  size = 'medium',\n  showProgress = true,\n  interactive = true\n}: AchievementCardProps) {\n  const [isHovered, setIsHovered] = useState(false)\n  const [showUnlockAnimation, setShowUnlockAnimation] = useState(false)\n  \n  const rarityConfig = RARITY_CONFIG[achievement.rarity]\n  const CategoryIcon = CATEGORY_CONFIG[achievement.category].icon\n  \n  const formatTimeAgo = (dateString: string) => {\n    const date = new Date(dateString)\n    const now = new Date()\n    const diff = now.getTime() - date.getTime()\n    const days = Math.floor(diff / (1000 * 60 * 60 * 24))\n    \n    if (days === 0) return 'Today'\n    if (days === 1) return 'Yesterday'\n    if (days < 7) return `${days} days ago`\n    if (days < 30) return `${Math.floor(days / 7)} weeks ago`\n    return date.toLocaleDateString()\n  }\n  \n  const handleShare = () => {\n    if (onShare) {\n      onShare(achievement)\n    } else {\n      // Default share behavior\n      if (navigator.share) {\n        navigator.share({\n          title: `I unlocked ${achievement.name}!`,\n          text: achievement.description,\n          url: window.location.href\n        })\n      } else {\n        // Fallback to clipboard\n        navigator.clipboard.writeText(\n          `I just unlocked the \"${achievement.name}\" achievement! ${achievement.description}`\n        )\n      }\n    }\n  }\n  \n  const cardSizeClasses = {\n    small: 'p-4',\n    medium: 'p-6',\n    large: 'p-8'\n  }\n  \n  const iconSizeClasses = {\n    small: 'text-3xl',\n    medium: 'text-4xl',\n    large: 'text-6xl'\n  }\n\n  return (\n    <Card\n      className={clsx(\n        'relative overflow-hidden transition-all duration-300',\n        interactive && 'cursor-pointer hover:shadow-lg transform hover:-translate-y-1',\n        achievement.unlocked\n          ? clsx(\n              'bg-gradient-to-br',\n              rarityConfig.gradient,\n              rarityConfig.border,\n              isHovered && rarityConfig.glow + ' shadow-lg'\n            )\n          : 'bg-gray-50 border-gray-200 opacity-75',\n        achievement.isSecret && !achievement.unlocked && 'bg-gray-900 text-white',\n        className\n      )}\n      onMouseEnter={() => setIsHovered(true)}\n      onMouseLeave={() => setIsHovered(false)}\n      onClick={() => interactive && onViewDetails?.(achievement)}\n    >\n      {/* Glow effect for legendary achievements */}\n      {achievement.rarity === 'legendary' && achievement.unlocked && (\n        <div className=\"absolute inset-0 bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-200 opacity-20 animate-pulse\" />\n      )}\n      \n      <div className={cardSizeClasses[size]}>\n        {/* Header */}\n        <div className=\"flex items-start justify-between mb-4\">\n          {/* Category and Rarity */}\n          <div className=\"flex items-center gap-2\">\n            <div className={clsx(\n              'p-2 rounded-lg',\n              achievement.unlocked ? rarityConfig.bg : 'bg-gray-200'\n            )}>\n              <CategoryIcon className={clsx(\n                'w-4 h-4',\n                achievement.unlocked \n                  ? CATEGORY_CONFIG[achievement.category].color \n                  : 'text-gray-500'\n              )} />\n            </div>\n            \n            <Badge \n              className={clsx(\n                'text-xs',\n                achievement.unlocked \n                  ? clsx(rarityConfig.bg, rarityConfig.color)\n                  : 'bg-gray-200 text-gray-500'\n              )}\n            >\n              {rarityConfig.label}\n            </Badge>\n          </div>\n          \n          {/* Actions */}\n          {achievement.unlocked && (\n            <div className=\"flex items-center gap-1\">\n              {onShare && (\n                <Tooltip content=\"Share achievement\">\n                  <Button\n                    variant=\"ghost\"\n                    size=\"small\"\n                    onClick={(e) => {\n                      e.stopPropagation()\n                      handleShare()\n                    }}\n                    className=\"p-1 h-auto\"\n                  >\n                    <Share2 className=\"w-4 h-4\" />\n                  </Button>\n                </Tooltip>\n              )}\n              \n              <div className={clsx(\n                'p-1 rounded-full',\n                'bg-green-100 text-green-600'\n              )}>\n                <CheckCircle className=\"w-4 h-4\" />\n              </div>\n            </div>\n          )}\n          \n          {!achievement.unlocked && achievement.isSecret && (\n            <div className=\"p-1 rounded-full bg-gray-700 text-gray-300\">\n              <Lock className=\"w-4 h-4\" />\n            </div>\n          )}\n        </div>\n        \n        {/* Icon */}\n        <div className=\"text-center mb-4\">\n          <div className={clsx(\n            iconSizeClasses[size],\n            !achievement.unlocked && 'opacity-50 grayscale',\n            achievement.isSecret && !achievement.unlocked && 'blur-sm'\n          )}>\n            {achievement.isSecret && !achievement.unlocked ? '❓' : achievement.icon}\n          </div>\n        </div>\n        \n        {/* Content */}\n        <div className=\"text-center space-y-2\">\n          <h3 className={clsx(\n            'font-bold',\n            size === 'small' ? 'text-sm' : size === 'medium' ? 'text-base' : 'text-lg',\n            achievement.unlocked ? 'text-gray-900' : 'text-gray-600',\n            achievement.isSecret && !achievement.unlocked && 'text-gray-300'\n          )}>\n            {achievement.isSecret && !achievement.unlocked ? 'Secret Achievement' : achievement.name}\n          </h3>\n          \n          <p className={clsx(\n            'text-sm',\n            achievement.unlocked ? 'text-gray-600' : 'text-gray-500',\n            achievement.isSecret && !achievement.unlocked && 'text-gray-400'\n          )}>\n            {achievement.isSecret && !achievement.unlocked \n              ? 'Complete special challenges to unlock this achievement' \n              : achievement.description}\n          </p>\n          \n          {/* Points */}\n          <div className=\"flex items-center justify-center gap-2 text-sm\">\n            <Star className={clsx(\n              'w-4 h-4',\n              achievement.unlocked ? 'text-yellow-500' : 'text-gray-400'\n            )} />\n            <span className={clsx(\n              'font-medium',\n              achievement.unlocked ? 'text-gray-900' : 'text-gray-500'\n            )}>\n              {achievement.points} points\n            </span>\n          </div>\n        </div>\n        \n        {/* Progress */}\n        {showProgress && achievement.progress && !achievement.unlocked && (\n          <div className=\"mt-4 space-y-2\">\n            <div className=\"flex justify-between text-xs text-gray-600\">\n              <span>Progress</span>\n              <span>\n                {achievement.progress.current.toLocaleString()} / {achievement.progress.target.toLocaleString()}\n              </span>\n            </div>\n            \n            <div className=\"relative\">\n              <div className=\"w-full bg-gray-200 rounded-full h-2\">\n                <div\n                  className=\"bg-primary-600 h-2 rounded-full transition-all duration-500\"\n                  style={{ width: `${Math.min(achievement.progress.percentage, 100)}%` }}\n                />\n              </div>\n              \n              {achievement.progress.percentage >= 90 && (\n                <div className=\"absolute -top-1 -right-1\">\n                  <div className=\"w-4 h-4 bg-yellow-400 rounded-full animate-pulse flex items-center justify-center\">\n                    <Sparkles className=\"w-2 h-2 text-yellow-700\" />\n                  </div>\n                </div>\n              )}\n            </div>\n            \n            <div className=\"text-center text-xs text-gray-500\">\n              {Math.round(achievement.progress.percentage)}% complete\n            </div>\n          </div>\n        )}\n        \n        {/* Unlock Date */}\n        {achievement.unlocked && achievement.unlockedAt && (\n          <div className=\"mt-4 text-center text-xs text-gray-500\">\n            Unlocked {formatTimeAgo(achievement.unlockedAt)}\n          </div>\n        )}\n        \n        {/* View Details Button */}\n        {interactive && onViewDetails && (\n          <div className=\"mt-4\">\n            <Button\n              variant=\"outline\"\n              size=\"small\"\n              onClick={(e) => {\n                e.stopPropagation()\n                onViewDetails(achievement)\n              }}\n              className=\"w-full\"\n            >\n              <Eye className=\"w-4 h-4 mr-2\" />\n              View Details\n            </Button>\n          </div>\n        )}\n      </div>\n      \n      {/* Unlock Animation Overlay */}\n      {showUnlockAnimation && (\n        <div className=\"absolute inset-0 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 animate-pulse opacity-80 flex items-center justify-center\">\n          <div className=\"text-white text-center\">\n            <Trophy className=\"w-12 h-12 mx-auto mb-2\" />\n            <div className=\"font-bold text-lg\">UNLOCKED!</div>\n          </div>\n        </div>\n      )}\n    </Card>\n  )\n}
+import { useState } from 'react'
+import { Card } from '../ui/Card'
+import { Badge } from '../ui/Badge'
+import { Button } from '../ui/Button'
+import { ProgressRing } from '../ui/ProgressRing'
+import { Tooltip } from '../ui/Tooltip'
+import { 
+  Trophy, 
+  Star, 
+  Share2, 
+  Lock, 
+  CheckCircle, 
+  Eye,
+  Sparkles,
+  Calendar,
+  Target
+} from 'lucide-react'
+import { clsx } from 'clsx'
+
+interface Achievement {
+  id: string
+  name: string
+  description: string
+  icon: string
+  category: 'attendance' | 'points' | 'streak' | 'social' | 'special'
+  criteria: {
+    type: 'check_ins' | 'points' | 'streak' | 'referrals' | 'custom'
+    target: number
+    period?: 'daily' | 'weekly' | 'monthly' | 'all_time'
+  }
+  rarity: 'common' | 'rare' | 'epic' | 'legendary'
+  points: number
+  unlocked: boolean
+  unlockedAt?: string
+  isSecret?: boolean
+  progress?: {
+    current: number
+    target: number
+    percentage: number
+  }
+}
+
+interface AchievementCardProps {
+  achievement: Achievement
+  onShare?: (achievement: Achievement) => void
+  onViewDetails?: (achievement: Achievement) => void
+  className?: string
+  size?: 'small' | 'medium' | 'large'
+  showProgress?: boolean
+  interactive?: boolean
+}
+
+const RARITY_CONFIG = {
+  common: {
+    color: 'text-gray-600',
+    bg: 'bg-gray-100',
+    border: 'border-gray-200',
+    gradient: 'from-gray-50 to-gray-100',
+    label: 'Common',
+    glow: 'shadow-gray-200'
+  },
+  rare: {
+    color: 'text-blue-600',
+    bg: 'bg-blue-100',
+    border: 'border-blue-200',
+    gradient: 'from-blue-50 to-blue-100',
+    label: 'Rare',
+    glow: 'shadow-blue-200'
+  },
+  epic: {
+    color: 'text-purple-600',
+    bg: 'bg-purple-100',
+    border: 'border-purple-200',
+    gradient: 'from-purple-50 to-purple-100',
+    label: 'Epic',
+    glow: 'shadow-purple-200'
+  },
+  legendary: {
+    color: 'text-yellow-600',
+    bg: 'bg-yellow-100',
+    border: 'border-yellow-200',
+    gradient: 'from-yellow-50 to-yellow-100',
+    label: 'Legendary',
+    glow: 'shadow-yellow-200'
+  }
+}
+
+const CATEGORY_CONFIG = {
+  attendance: { icon: Calendar, color: 'text-green-600' },
+  points: { icon: Star, color: 'text-blue-600' },
+  streak: { icon: Trophy, color: 'text-orange-600' },
+  social: { icon: Share2, color: 'text-purple-600' },
+  special: { icon: Sparkles, color: 'text-pink-600' }
+}
+
+export function AchievementCard({
+  achievement,
+  onShare,
+  onViewDetails,
+  className,
+  size = 'medium',
+  showProgress = true,
+  interactive = true
+}: AchievementCardProps) {
+  const [isHovered, setIsHovered] = useState(false)
+  const [showUnlockAnimation, setShowUnlockAnimation] = useState(false)
+  
+  const rarityConfig = RARITY_CONFIG[achievement.rarity]
+  const CategoryIcon = CATEGORY_CONFIG[achievement.category].icon
+  
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    
+    if (days === 0) return 'Today'
+    if (days === 1) return 'Yesterday'
+    if (days < 7) return `${days} days ago`
+    if (days < 30) return `${Math.floor(days / 7)} weeks ago`
+    return date.toLocaleDateString()
+  }
+  
+  const handleShare = () => {
+    if (onShare) {
+      onShare(achievement)
+    } else {
+      // Default share behavior
+      if (navigator.share) {
+        navigator.share({
+          title: `I unlocked ${achievement.name}!`,
+          text: achievement.description,
+          url: window.location.href
+        })
+      } else {
+        // Fallback to clipboard
+        navigator.clipboard.writeText(
+          `I just unlocked the \"${achievement.name}\" achievement! ${achievement.description}`
+        )
+      }
+    }
+  }
+  
+  const cardSizeClasses = {
+    small: 'p-4',
+    medium: 'p-6',
+    large: 'p-8'
+  }
+  
+  const iconSizeClasses = {
+    small: 'text-3xl',
+    medium: 'text-4xl',
+    large: 'text-6xl'
+  }
+
+  return (
+    <Card
+      className={clsx(
+        'relative overflow-hidden transition-all duration-300',
+        interactive && 'cursor-pointer hover:shadow-lg transform hover:-translate-y-1',
+        achievement.unlocked
+          ? clsx(
+              'bg-gradient-to-br',
+              rarityConfig.gradient,
+              rarityConfig.border,
+              isHovered && rarityConfig.glow + ' shadow-lg'
+            )
+          : 'bg-gray-50 border-gray-200 opacity-75',
+        achievement.isSecret && !achievement.unlocked && 'bg-gray-900 text-white',
+        className
+      )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => interactive && onViewDetails?.(achievement)}
+    >
+      {/* Glow effect for legendary achievements */}
+      {achievement.rarity === 'legendary' && achievement.unlocked && (
+        <div className=\"absolute inset-0 bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-200 opacity-20 animate-pulse\" />
+      )}
+      
+      <div className={cardSizeClasses[size]}>
+        {/* Header */}
+        <div className=\"flex items-start justify-between mb-4\">
+          {/* Category and Rarity */}
+          <div className=\"flex items-center gap-2\">
+            <div className={clsx(
+              'p-2 rounded-lg',
+              achievement.unlocked ? rarityConfig.bg : 'bg-gray-200'
+            )}>
+              <CategoryIcon className={clsx(
+                'w-4 h-4',
+                achievement.unlocked 
+                  ? CATEGORY_CONFIG[achievement.category].color 
+                  : 'text-gray-500'
+              )} />
+            </div>
+            
+            <Badge 
+              className={clsx(
+                'text-xs',
+                achievement.unlocked 
+                  ? clsx(rarityConfig.bg, rarityConfig.color)
+                  : 'bg-gray-200 text-gray-500'
+              )}
+            >
+              {rarityConfig.label}
+            </Badge>
+          </div>
+          
+          {/* Actions */}
+          {achievement.unlocked && (
+            <div className=\"flex items-center gap-1\">
+              {onShare && (
+                <Tooltip content=\"Share achievement\">
+                  <Button
+                    variant=\"ghost\"
+                    size=\"small\"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleShare()
+                    }}
+                    className=\"p-1 h-auto\"
+                  >
+                    <Share2 className=\"w-4 h-4\" />
+                  </Button>
+                </Tooltip>
+              )}
+              
+              <div className={clsx(
+                'p-1 rounded-full',
+                'bg-green-100 text-green-600'
+              )}>
+                <CheckCircle className=\"w-4 h-4\" />
+              </div>
+            </div>
+          )}
+          
+          {!achievement.unlocked && achievement.isSecret && (
+            <div className=\"p-1 rounded-full bg-gray-700 text-gray-300\">
+              <Lock className=\"w-4 h-4\" />
+            </div>
+          )}
+        </div>
+        
+        {/* Icon */}
+        <div className=\"text-center mb-4\">
+          <div className={clsx(
+            iconSizeClasses[size],
+            !achievement.unlocked && 'opacity-50 grayscale',
+            achievement.isSecret && !achievement.unlocked && 'blur-sm'
+          )}>
+            {achievement.isSecret && !achievement.unlocked ? '❓' : achievement.icon}
+          </div>
+        </div>
+        
+        {/* Content */}
+        <div className=\"text-center space-y-2\">
+          <h3 className={clsx(
+            'font-bold',
+            size === 'small' ? 'text-sm' : size === 'medium' ? 'text-base' : 'text-lg',
+            achievement.unlocked ? 'text-gray-900' : 'text-gray-600',
+            achievement.isSecret && !achievement.unlocked && 'text-gray-300'
+          )}>
+            {achievement.isSecret && !achievement.unlocked ? 'Secret Achievement' : achievement.name}
+          </h3>
+          
+          <p className={clsx(
+            'text-sm',
+            achievement.unlocked ? 'text-gray-600' : 'text-gray-500',
+            achievement.isSecret && !achievement.unlocked && 'text-gray-400'
+          )}>
+            {achievement.isSecret && !achievement.unlocked 
+              ? 'Complete special challenges to unlock this achievement' 
+              : achievement.description}
+          </p>
+          
+          {/* Points */}
+          <div className=\"flex items-center justify-center gap-2 text-sm\">
+            <Star className={clsx(
+              'w-4 h-4',
+              achievement.unlocked ? 'text-yellow-500' : 'text-gray-400'
+            )} />
+            <span className={clsx(
+              'font-medium',
+              achievement.unlocked ? 'text-gray-900' : 'text-gray-500'
+            )}>
+              {achievement.points} points
+            </span>
+          </div>
+        </div>
+        
+        {/* Progress */}
+        {showProgress && achievement.progress && !achievement.unlocked && (
+          <div className=\"mt-4 space-y-2\">
+            <div className=\"flex justify-between text-xs text-gray-600\">
+              <span>Progress</span>
+              <span>
+                {achievement.progress.current.toLocaleString()} / {achievement.progress.target.toLocaleString()}
+              </span>
+            </div>
+            
+            <div className=\"relative\">
+              <div className=\"w-full bg-gray-200 rounded-full h-2\">
+                <div
+                  className=\"bg-primary-600 h-2 rounded-full transition-all duration-500\"
+                  style={{ width: `${Math.min(achievement.progress.percentage, 100)}%` }}
+                />
+              </div>
+              
+              {achievement.progress.percentage >= 90 && (
+                <div className=\"absolute -top-1 -right-1\">
+                  <div className=\"w-4 h-4 bg-yellow-400 rounded-full animate-pulse flex items-center justify-center\">
+                    <Sparkles className=\"w-2 h-2 text-yellow-700\" />
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className=\"text-center text-xs text-gray-500\">
+              {Math.round(achievement.progress.percentage)}% complete
+            </div>
+          </div>
+        )}
+        
+        {/* Unlock Date */}
+        {achievement.unlocked && achievement.unlockedAt && (
+          <div className=\"mt-4 text-center text-xs text-gray-500\">
+            Unlocked {formatTimeAgo(achievement.unlockedAt)}
+          </div>
+        )}
+        
+        {/* View Details Button */}
+        {interactive && onViewDetails && (
+          <div className=\"mt-4\">
+            <Button
+              variant=\"outline\"
+              size=\"small\"
+              onClick={(e) => {
+                e.stopPropagation()
+                onViewDetails(achievement)
+              }}
+              className=\"w-full\"
+            >
+              <Eye className=\"w-4 h-4 mr-2\" />
+              View Details
+            </Button>
+          </div>
+        )}
+      </div>
+      
+      {/* Unlock Animation Overlay */}
+      {showUnlockAnimation && (
+        <div className=\"absolute inset-0 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 animate-pulse opacity-80 flex items-center justify-center\">
+          <div className=\"text-white text-center\">
+            <Trophy className=\"w-12 h-12 mx-auto mb-2\" />
+            <div className=\"font-bold text-lg\">UNLOCKED!</div>
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}

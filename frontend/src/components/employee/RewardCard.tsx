@@ -1,1 +1,297 @@
-import { useState } from 'react'\nimport { Card } from '../ui/Card'\nimport { Button } from '../ui/Button'\nimport { Badge } from '../ui/Badge'\nimport { Tooltip } from '../ui/Tooltip'\nimport { \n  Heart, \n  Star, \n  Clock, \n  Gift, \n  ExternalLink, \n  Info,\n  CheckCircle,\n  AlertCircle\n} from 'lucide-react'\nimport { clsx } from 'clsx'\n\ninterface Reward {\n  id: string\n  name: string\n  description: string\n  pointsCost: number\n  category: string\n  image?: string\n  availability: 'available' | 'limited' | 'sold_out'\n  popularity?: number\n  expiresAt?: Date\n  vendor?: string\n  tags?: string[]\n  discount?: number\n  originalPrice?: number\n  isWishlisted?: boolean\n}\n\ninterface RewardCardProps {\n  reward: Reward\n  userPoints: number\n  onRedeem: (reward: Reward) => void\n  onWishlist: (reward: Reward) => void\n  onViewDetails: (reward: Reward) => void\n  className?: string\n  compact?: boolean\n}\n\nconst AVAILABILITY_CONFIG = {\n  available: {\n    badge: { variant: 'success' as const, label: 'Available' },\n    canRedeem: true\n  },\n  limited: {\n    badge: { variant: 'warning' as const, label: 'Limited Time' },\n    canRedeem: true\n  },\n  sold_out: {\n    badge: { variant: 'error' as const, label: 'Sold Out' },\n    canRedeem: false\n  }\n}\n\nexport function RewardCard({\n  reward,\n  userPoints,\n  onRedeem,\n  onWishlist,\n  onViewDetails,\n  className,\n  compact = false\n}: RewardCardProps) {\n  const [imageLoaded, setImageLoaded] = useState(false)\n  const [imageError, setImageError] = useState(false)\n  \n  const canAfford = userPoints >= reward.pointsCost\n  const availabilityConfig = AVAILABILITY_CONFIG[reward.availability]\n  const canRedeem = availabilityConfig.canRedeem && canAfford\n  \n  const getPopularityStars = (popularity: number = 0) => {\n    const stars = Math.round(popularity * 5)\n    return Array.from({ length: 5 }, (_, i) => (\n      <Star\n        key={i}\n        className={clsx(\n          'w-3 h-3',\n          i < stars ? 'text-yellow-400 fill-current' : 'text-gray-300'\n        )}\n      />\n    ))\n  }\n  \n  const formatTimeLeft = (expiresAt: Date) => {\n    const now = new Date()\n    const diff = expiresAt.getTime() - now.getTime()\n    const days = Math.floor(diff / (1000 * 60 * 60 * 24))\n    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))\n    \n    if (days > 0) return `${days}d left`\n    if (hours > 0) return `${hours}h left`\n    return 'Expires soon'\n  }\n\n  return (\n    <Card \n      className={clsx(\n        'group relative overflow-hidden transition-all duration-300 hover:shadow-lg',\n        reward.availability === 'sold_out' && 'opacity-75',\n        className\n      )}\n    >\n      {/* Image */}\n      <div className={clsx(\n        'relative overflow-hidden bg-gray-100',\n        compact ? 'h-32' : 'h-48'\n      )}>\n        {reward.image && !imageError ? (\n          <img\n            src={reward.image}\n            alt={reward.name}\n            className={clsx(\n              'w-full h-full object-cover transition-transform duration-300 group-hover:scale-105',\n              !imageLoaded && 'opacity-0'\n            )}\n            onLoad={() => setImageLoaded(true)}\n            onError={() => setImageError(true)}\n          />\n        ) : (\n          <div className=\"w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200\">\n            <Gift className=\"w-12 h-12 text-gray-400\" />\n          </div>\n        )}\n        \n        {/* Overlay Badges */}\n        <div className=\"absolute top-2 left-2 flex flex-col gap-1\">\n          <Badge \n            variant={availabilityConfig.badge.variant}\n            className=\"text-xs\"\n          >\n            {availabilityConfig.badge.label}\n          </Badge>\n          \n          {reward.discount && (\n            <Badge variant=\"error\" className=\"text-xs\">\n              {reward.discount}% OFF\n            </Badge>\n          )}\n        </div>\n        \n        {/* Wishlist Button */}\n        <button\n          onClick={(e) => {\n            e.stopPropagation()\n            onWishlist(reward)\n          }}\n          className={clsx(\n            'absolute top-2 right-2 p-2 rounded-full transition-all',\n            'bg-white/80 hover:bg-white shadow-sm',\n            reward.isWishlisted && 'text-red-500'\n          )}\n        >\n          <Heart \n            className={clsx(\n              'w-4 h-4',\n              reward.isWishlisted && 'fill-current'\n            )} \n          />\n        </button>\n        \n        {/* Time Remaining */}\n        {reward.expiresAt && reward.availability === 'limited' && (\n          <div className=\"absolute bottom-2 left-2\">\n            <Badge variant=\"warning\" className=\"text-xs flex items-center gap-1\">\n              <Clock className=\"w-3 h-3\" />\n              {formatTimeLeft(reward.expiresAt)}\n            </Badge>\n          </div>\n        )}\n      </div>\n      \n      {/* Content */}\n      <div className=\"p-4 space-y-3\">\n        {/* Header */}\n        <div className=\"space-y-1\">\n          <div className=\"flex items-start justify-between gap-2\">\n            <h3 className={clsx(\n              'font-semibold text-gray-900 line-clamp-2',\n              compact ? 'text-sm' : 'text-base'\n            )}>\n              {reward.name}\n            </h3>\n            \n            {reward.popularity && (\n              <Tooltip content={`${(reward.popularity * 100).toFixed(0)}% popularity`}>\n                <div className=\"flex items-center gap-1 flex-shrink-0\">\n                  {getPopularityStars(reward.popularity)}\n                </div>\n              </Tooltip>\n            )}\n          </div>\n          \n          <p className={clsx(\n            'text-gray-600 line-clamp-2',\n            compact ? 'text-xs' : 'text-sm'\n          )}>\n            {reward.description}\n          </p>\n          \n          {reward.vendor && (\n            <p className=\"text-xs text-gray-500\">\n              by {reward.vendor}\n            </p>\n          )}\n        </div>\n        \n        {/* Tags */}\n        {reward.tags && reward.tags.length > 0 && (\n          <div className=\"flex flex-wrap gap-1\">\n            {reward.tags.slice(0, 3).map(tag => (\n              <Badge key={tag} variant=\"secondary\" className=\"text-xs\">\n                {tag}\n              </Badge>\n            ))}\n            {reward.tags.length > 3 && (\n              <Badge variant=\"secondary\" className=\"text-xs\">\n                +{reward.tags.length - 3}\n              </Badge>\n            )}\n          </div>\n        )}\n        \n        {/* Price and Actions */}\n        <div className=\"space-y-3\">\n          {/* Price */}\n          <div className=\"flex items-center justify-between\">\n            <div>\n              <div className={clsx(\n                'font-bold text-primary-600',\n                compact ? 'text-lg' : 'text-xl'\n              )}>\n                {reward.pointsCost.toLocaleString()} pts\n              </div>\n              {reward.originalPrice && reward.discount && (\n                <div className=\"text-xs text-gray-500 line-through\">\n                  ${reward.originalPrice}\n                </div>\n              )}\n            </div>\n            \n            <div className=\"flex items-center gap-1 text-xs text-gray-500\">\n              {canAfford ? (\n                <>\n                  <CheckCircle className=\"w-3 h-3 text-green-500\" />\n                  <span className=\"text-green-600\">Can afford</span>\n                </>\n              ) : (\n                <>\n                  <AlertCircle className=\"w-3 h-3 text-orange-500\" />\n                  <span className=\"text-orange-600\">\n                    Need {(reward.pointsCost - userPoints).toLocaleString()} more\n                  </span>\n                </>\n              )}\n            </div>\n          </div>\n          \n          {/* Actions */}\n          <div className={clsx(\n            'flex gap-2',\n            compact ? 'flex-col' : 'flex-row'\n          )}>\n            <Button\n              onClick={() => onRedeem(reward)}\n              disabled={!canRedeem}\n              className=\"flex-1\"\n              size={compact ? 'small' : 'medium'}\n            >\n              {reward.availability === 'sold_out' ? 'Sold Out' : 'Redeem'}\n            </Button>\n            \n            <Button\n              variant=\"outline\"\n              onClick={() => onViewDetails(reward)}\n              className={compact ? 'w-full' : 'px-3'}\n              size={compact ? 'small' : 'medium'}\n            >\n              {compact ? (\n                'View Details'\n              ) : (\n                <>\n                  <Info className=\"w-4 h-4\" />\n                  <span className=\"sr-only\">View Details</span>\n                </>\n              )}\n            </Button>\n          </div>\n        </div>\n      </div>\n    </Card>\n  )\n}
+import { useState } from 'react'
+import { Card } from '../ui/Card'
+import { Button } from '../ui/Button'
+import { Badge } from '../ui/Badge'
+import { Tooltip } from '../ui/Tooltip'
+import { 
+  Heart, 
+  Star, 
+  Clock, 
+  Gift, 
+  ExternalLink, 
+  Info,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react'
+import { clsx } from 'clsx'
+
+interface Reward {
+  id: string
+  name: string
+  description: string
+  pointsCost: number
+  category: string
+  image?: string
+  availability: 'available' | 'limited' | 'sold_out'
+  popularity?: number
+  expiresAt?: Date
+  vendor?: string
+  tags?: string[]
+  discount?: number
+  originalPrice?: number
+  isWishlisted?: boolean
+}
+
+interface RewardCardProps {
+  reward: Reward
+  userPoints: number
+  onRedeem: (reward: Reward) => void
+  onWishlist: (reward: Reward) => void
+  onViewDetails: (reward: Reward) => void
+  className?: string
+  compact?: boolean
+}
+
+const AVAILABILITY_CONFIG = {
+  available: {
+    badge: { variant: 'success' as const, label: 'Available' },
+    canRedeem: true
+  },
+  limited: {
+    badge: { variant: 'warning' as const, label: 'Limited Time' },
+    canRedeem: true
+  },
+  sold_out: {
+    badge: { variant: 'error' as const, label: 'Sold Out' },
+    canRedeem: false
+  }
+}
+
+export function RewardCard({
+  reward,
+  userPoints,
+  onRedeem,
+  onWishlist,
+  onViewDetails,
+  className,
+  compact = false
+}: RewardCardProps) {
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageError, setImageError] = useState(false)
+  
+  const canAfford = userPoints >= reward.pointsCost
+  const availabilityConfig = AVAILABILITY_CONFIG[reward.availability]
+  const canRedeem = availabilityConfig.canRedeem && canAfford
+  
+  const getPopularityStars = (popularity: number = 0) => {
+    const stars = Math.round(popularity * 5)
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={clsx(
+          'w-3 h-3',
+          i < stars ? 'text-yellow-400 fill-current' : 'text-gray-300'
+        )}
+      />
+    ))
+  }
+  
+  const formatTimeLeft = (expiresAt: Date) => {
+    const now = new Date()
+    const diff = expiresAt.getTime() - now.getTime()
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    
+    if (days > 0) return `${days}d left`
+    if (hours > 0) return `${hours}h left`
+    return 'Expires soon'
+  }
+
+  return (
+    <Card 
+      className={clsx(
+        'group relative overflow-hidden transition-all duration-300 hover:shadow-lg',
+        reward.availability === 'sold_out' && 'opacity-75',
+        className
+      )}
+    >
+      {/* Image */}
+      <div className={clsx(
+        'relative overflow-hidden bg-gray-100',
+        compact ? 'h-32' : 'h-48'
+      )}>
+        {reward.image && !imageError ? (
+          <img
+            src={reward.image}
+            alt={reward.name}
+            className={clsx(
+              'w-full h-full object-cover transition-transform duration-300 group-hover:scale-105',
+              !imageLoaded && 'opacity-0'
+            )}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className=\"w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200\">
+            <Gift className=\"w-12 h-12 text-gray-400\" />
+          </div>
+        )}
+        
+        {/* Overlay Badges */}
+        <div className=\"absolute top-2 left-2 flex flex-col gap-1\">
+          <Badge 
+            variant={availabilityConfig.badge.variant}
+            className=\"text-xs\"
+          >
+            {availabilityConfig.badge.label}
+          </Badge>
+          
+          {reward.discount && (
+            <Badge variant=\"error\" className=\"text-xs\">
+              {reward.discount}% OFF
+            </Badge>
+          )}
+        </div>
+        
+        {/* Wishlist Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onWishlist(reward)
+          }}
+          className={clsx(
+            'absolute top-2 right-2 p-2 rounded-full transition-all',
+            'bg-white/80 hover:bg-white shadow-sm',
+            reward.isWishlisted && 'text-red-500'
+          )}
+        >
+          <Heart 
+            className={clsx(
+              'w-4 h-4',
+              reward.isWishlisted && 'fill-current'
+            )} 
+          />
+        </button>
+        
+        {/* Time Remaining */}
+        {reward.expiresAt && reward.availability === 'limited' && (
+          <div className=\"absolute bottom-2 left-2\">
+            <Badge variant=\"warning\" className=\"text-xs flex items-center gap-1\">
+              <Clock className=\"w-3 h-3\" />
+              {formatTimeLeft(reward.expiresAt)}
+            </Badge>
+          </div>
+        )}
+      </div>
+      
+      {/* Content */}
+      <div className=\"p-4 space-y-3\">
+        {/* Header */}
+        <div className=\"space-y-1\">
+          <div className=\"flex items-start justify-between gap-2\">
+            <h3 className={clsx(
+              'font-semibold text-gray-900 line-clamp-2',
+              compact ? 'text-sm' : 'text-base'
+            )}>
+              {reward.name}
+            </h3>
+            
+            {reward.popularity && (
+              <Tooltip content={`${(reward.popularity * 100).toFixed(0)}% popularity`}>
+                <div className=\"flex items-center gap-1 flex-shrink-0\">
+                  {getPopularityStars(reward.popularity)}
+                </div>
+              </Tooltip>
+            )}
+          </div>
+          
+          <p className={clsx(
+            'text-gray-600 line-clamp-2',
+            compact ? 'text-xs' : 'text-sm'
+          )}>
+            {reward.description}
+          </p>
+          
+          {reward.vendor && (
+            <p className=\"text-xs text-gray-500\">
+              by {reward.vendor}
+            </p>
+          )}
+        </div>
+        
+        {/* Tags */}
+        {reward.tags && reward.tags.length > 0 && (
+          <div className=\"flex flex-wrap gap-1\">
+            {reward.tags.slice(0, 3).map(tag => (
+              <Badge key={tag} variant=\"secondary\" className=\"text-xs\">
+                {tag}
+              </Badge>
+            ))}
+            {reward.tags.length > 3 && (
+              <Badge variant=\"secondary\" className=\"text-xs\">
+                +{reward.tags.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
+        
+        {/* Price and Actions */}
+        <div className=\"space-y-3\">
+          {/* Price */}
+          <div className=\"flex items-center justify-between\">
+            <div>
+              <div className={clsx(
+                'font-bold text-primary-600',
+                compact ? 'text-lg' : 'text-xl'
+              )}>
+                {reward.pointsCost.toLocaleString()} pts
+              </div>
+              {reward.originalPrice && reward.discount && (
+                <div className=\"text-xs text-gray-500 line-through\">
+                  ${reward.originalPrice}
+                </div>
+              )}
+            </div>
+            
+            <div className=\"flex items-center gap-1 text-xs text-gray-500\">
+              {canAfford ? (
+                <>
+                  <CheckCircle className=\"w-3 h-3 text-green-500\" />
+                  <span className=\"text-green-600\">Can afford</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className=\"w-3 h-3 text-orange-500\" />
+                  <span className=\"text-orange-600\">
+                    Need {(reward.pointsCost - userPoints).toLocaleString()} more
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          
+          {/* Actions */}
+          <div className={clsx(
+            'flex gap-2',
+            compact ? 'flex-col' : 'flex-row'
+          )}>
+            <Button
+              onClick={() => onRedeem(reward)}
+              disabled={!canRedeem}
+              className=\"flex-1\"
+              size={compact ? 'small' : 'medium'}
+            >
+              {reward.availability === 'sold_out' ? 'Sold Out' : 'Redeem'}
+            </Button>
+            
+            <Button
+              variant=\"outline\"
+              onClick={() => onViewDetails(reward)}
+              className={compact ? 'w-full' : 'px-3'}
+              size={compact ? 'small' : 'medium'}
+            >
+              {compact ? (
+                'View Details'
+              ) : (
+                <>
+                  <Info className=\"w-4 h-4\" />
+                  <span className=\"sr-only\">View Details</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
