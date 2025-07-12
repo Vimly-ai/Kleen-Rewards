@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import SupabaseService from '../services/supabase'
 import type { User as SBUser } from '../services/supabase'
@@ -87,16 +87,27 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize user when auth user loads
   useEffect(() => {
-    initializeUser()
-  }, [authUser, isLoaded])
+    // Add a guard to prevent re-initialization if user already exists
+    if (!isLoaded) return
+    if (!authUser) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
+    
+    // Only initialize if we don't have a user or the auth user ID changed
+    if (!user || user.employee_id !== authUser.id) {
+      initializeUser()
+    }
+  }, [authUser?.id, isLoaded])
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     loading,
     refreshUser,
     updateUserPoints,
     error
-  }
+  }), [user, loading, error])
 
   return (
     <DataContext.Provider value={value}>

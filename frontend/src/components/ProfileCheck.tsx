@@ -7,6 +7,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '../contexts/DataContext'
+import { LoadingSpinner } from './shared/LoadingSpinner'
 
 interface ProfileCheckProps {
   children: React.ReactNode
@@ -33,12 +34,12 @@ export function ProfileCheck({ children }: ProfileCheckProps) {
 
     // Check if profile is incomplete
     if (user && (!user.first_name || !user.last_name || user.name === 'New User')) {
-      navigate('/profile-setup')
+      navigate('/profile-setup', { replace: true })
     }
-  }, [user, loading, navigate])
+  }, [user?.email, user?.name, loading]) // Remove navigate from deps to prevent loops
 
   // Don't render children until we've checked the profile
-  if (loading) return null
+  if (loading) return <LoadingSpinner size="large" text="Loading user profile..." fullScreen />
   
   // Skip blocking render for demo users
   const isDemoUser = user?.email && (
