@@ -14,6 +14,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
   const [error, setError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const readerRef = useRef<BrowserMultiFormatReader | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
   useEffect(() => {
     if (!isOpen) {
@@ -22,8 +23,19 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
     }
 
     startScanning()
-    return () => stopScanning()
+    
+    // Cleanup function
+    return () => {
+      stopScanning()
+    }
   }, [isOpen])
+  
+  // Additional cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopScanning()
+    }
+  }, [])
 
   const startScanning = async () => {
     try {
@@ -75,6 +87,15 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
       }
 
       if (videoRef.current) {
+        // Store the stream reference
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: selectedDeviceId,
+            facingMode: 'environment'
+          }
+        })
+        streamRef.current = stream
+        
         await readerRef.current.decodeFromVideoDevice(
           selectedDeviceId,
           videoRef.current,
@@ -85,9 +106,9 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
               stopScanning()
               onClose()
             }
-            if (error) {
-              // Log scanning errors (but don't stop scanning for common errors)
-              console.log('Scanning error:', error)
+            if (error && error.name !== 'NotFoundException') {
+              // Log scanning errors (but don't stop scanning for "not found" errors)
+              console.debug('Scanning error:', error)
             }
           }
         )
@@ -101,19 +122,53 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
   }
 
   const stopScanning = () => {
-    if (readerRef.current) {
-      readerRef.current.reset()
+    try {
+      // Stop the video stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
+          track.stop()
+        })
+        streamRef.current = null
+      }
+      
+      // Stop the video element
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream
+        stream.getTracks().forEach(track => {
+          track.stop()
+        })
+        videoRef.current.srcObject = null
+      }
+      
+      // Clean up the reader
+      readerRef.current = null
+      setIsScanning(false)
+      setError(null)
+    } catch (err) {
+      console.error('Error stopping scanner:', err)
     }
-    setIsScanning(false)
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          stopScanning()
+          onClose()
+        }
+      }}
+    >
       <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 relative">
         <button
-          onClick={onClose}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            stopScanning()
+            onClose()
+          }}
           className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full"
         >
           <X className="w-6 h-6" />
