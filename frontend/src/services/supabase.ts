@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import * as demoData from './demoData'
 
 // Supabase configuration - MUST be set via environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -143,70 +144,95 @@ export interface PointTransaction {
 }
 
 // Mock data for when Supabase is not available
-const MOCK_USER = (clerkUserId: string, userData: Partial<User>): User => ({
-  id: clerkUserId,
-  email: userData.email || 'demo@systemkleen.com',
-  name: userData.name || 'Demo User',
-  employee_id: userData.employee_id || clerkUserId,
-  department: userData.department || 'General',
-  hire_date: userData.hire_date || new Date().toISOString().split('T')[0],
-  role: userData.role || 'employee',
-  status: 'active',
-  points_balance: 150,
-  total_points_earned: 300,
-  current_streak: 5,
-  longest_streak: 12,
-  last_check_in: new Date().toISOString(),
-  first_name: userData.name?.split(' ')[0] || 'Demo',
-  last_name: userData.name?.split(' ')[1] || 'User',
-  phone: null,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString()
-})
-
-const MOCK_REWARDS = (): Reward[] => [
-  {
-    id: '1',
-    name: 'Coffee Gift Card',
-    description: '$10 Starbucks gift card',
-    points_cost: 50,
-    category: 'weekly',
-    availability: 'available',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    is_active: true
-  },
-  {
-    id: '2',
-    name: 'Extra PTO Day',
-    description: 'One additional paid time off day',
-    points_cost: 100,
-    category: 'monthly',
-    availability: 'available',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    is_active: true
-  },
-  {
-    id: '3',
-    name: 'Premium Parking Spot',
-    description: 'Reserved parking spot for one month',
-    points_cost: 75,
-    category: 'monthly',
-    availability: 'available',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    is_active: true
+const MOCK_USER = (clerkUserId: string, userData: Partial<User>): User => {
+  // Try to find a demo user by email or clerk ID
+  const demoUser = demoData.getDemoUserByEmail(userData.email || '') || 
+                   demoData.DEMO_USERS.find(u => u.clerkId === clerkUserId)
+  
+  if (demoUser) {
+    return {
+      id: clerkUserId,
+      email: demoUser.email,
+      name: demoUser.name,
+      employee_id: demoUser.id,
+      department: demoUser.department,
+      hire_date: demoUser.joinedAt.toISOString().split('T')[0],
+      role: demoUser.role,
+      status: 'active',
+      points_balance: demoUser.points,
+      total_points_earned: demoUser.totalPointsEarned,
+      current_streak: demoUser.currentStreak,
+      longest_streak: demoUser.longestStreak,
+      last_check_in: demoData.getTodayCheckIn(demoUser.id)?.checkInTime.toISOString() || new Date().toISOString(),
+      first_name: demoUser.name.split(' ')[0],
+      last_name: demoUser.name.split(' ')[1] || '',
+      phone: null,
+      created_at: demoUser.joinedAt.toISOString(),
+      updated_at: new Date().toISOString()
+    }
   }
-]
+  
+  // Fallback for new users
+  return {
+    id: clerkUserId,
+    email: userData.email || 'demo@systemkleen.com',
+    name: userData.name || 'Demo User',
+    employee_id: userData.employee_id || clerkUserId,
+    department: userData.department || 'General',
+    hire_date: userData.hire_date || new Date().toISOString().split('T')[0],
+    role: userData.role || 'employee',
+    status: 'active',
+    points_balance: 150,
+    total_points_earned: 300,
+    current_streak: 5,
+    longest_streak: 12,
+    last_check_in: new Date().toISOString(),
+    first_name: userData.name?.split(' ')[0] || 'Demo',
+    last_name: userData.name?.split(' ')[1] || 'User',
+    phone: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+}
 
-const MOCK_LEADERBOARD = (): User[] => [
-  { ...MOCK_USER('demo1', { name: 'Sarah Johnson' }), points_balance: 250, current_streak: 8 },
-  { ...MOCK_USER('demo2', { name: 'Mike Chen' }), points_balance: 220, current_streak: 6 },
-  { ...MOCK_USER('demo3', { name: 'Emily Davis' }), points_balance: 200, current_streak: 10 },
-  { ...MOCK_USER('demo4', { name: 'Alex Rodriguez' }), points_balance: 180, current_streak: 4 },
-  { ...MOCK_USER('demo5', { name: 'Jessica Wilson' }), points_balance: 160, current_streak: 7 }
-]
+const MOCK_REWARDS = (): Reward[] => demoData.DEMO_REWARDS.map(reward => ({
+  id: reward.id,
+  name: reward.name,
+  description: reward.description,
+  points_cost: reward.pointCost,
+  category: reward.category as any,
+  availability: reward.availability === 'in_stock' ? 'available' : reward.availability as any,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  is_active: true,
+  stock_quantity: reward.stock || 100,
+  image_url: reward.imageUrl,
+  terms_conditions: reward.terms
+}))
+
+const MOCK_LEADERBOARD = (): User[] => {
+  const leaderboard = demoData.getLeaderboard()
+  return leaderboard.map((user, index) => ({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    employee_id: user.id,
+    department: user.department,
+    hire_date: user.joinedAt.toISOString().split('T')[0],
+    role: user.role,
+    status: 'active' as const,
+    points_balance: user.points,
+    total_points_earned: user.totalPointsEarned,
+    current_streak: user.currentStreak,
+    longest_streak: user.longestStreak,
+    last_check_in: demoData.getTodayCheckIn(user.id)?.checkInTime.toISOString() || new Date().toISOString(),
+    first_name: user.name.split(' ')[0],
+    last_name: user.name.split(' ')[1] || '',
+    phone: null,
+    created_at: user.joinedAt.toISOString(),
+    updated_at: new Date().toISOString()
+  }))
+}
 
 // API Service Class
 export class SupabaseService {
@@ -395,7 +421,20 @@ export class SupabaseService {
   static async getTodaysCheckIn(userId: string): Promise<CheckIn | null> {
     if (USE_MOCK_DATA || !supabase) {
       console.log('Mock: getTodaysCheckIn called for', userId)
-      return null // No check-in today in mock mode
+      const checkIn = demoData.getTodayCheckIn(userId)
+      if (!checkIn) return null
+      
+      return {
+        id: checkIn.id,
+        user_id: checkIn.userId,
+        check_in_time: checkIn.checkInTime.toISOString(),
+        points_earned: checkIn.points + (checkIn.bonusPoints || 0),
+        check_in_type: checkIn.isEarly ? 'early' : 'ontime',
+        location: 'Office',
+        notes: checkIn.mood ? `Feeling ${checkIn.mood}` : undefined,
+        created_at: checkIn.checkInTime.toISOString(),
+        updated_at: checkIn.checkInTime.toISOString()
+      }
     }
 
     const today = new Date().toISOString().split('T')[0]
@@ -610,6 +649,32 @@ export class SupabaseService {
 
   // Badges
   static async getUserBadges(userId: string): Promise<UserBadge[]> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: getUserBadges called for', userId)
+      const userBadges = demoData.getUserBadges(userId)
+      const badges = demoData.DEMO_BADGES
+      
+      return userBadges.map(ub => {
+        const badge = badges.find(b => b.id === ub.badgeId)
+        return {
+          id: ub.id,
+          user_id: userId,
+          badge_id: ub.badgeId,
+          earned_date: ub.unlockedAt.toISOString(),
+          badge: badge ? {
+            id: badge.id,
+            name: badge.name,
+            description: badge.description,
+            points_value: badge.points,
+            icon_url: badge.icon,
+            criteria: JSON.stringify(badge.criteria),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          } : undefined
+        }
+      })
+    }
+    
     const { data, error } = await supabase
       .from('user_badges')
       .select(`
@@ -794,7 +859,8 @@ export class SupabaseService {
   static async getCurrentUser(): Promise<User | null> {
     if (USE_MOCK_DATA || !supabase) {
       console.log('Mock: getCurrentUser called')
-      return MOCK_USER('demo-user', { name: 'Demo User' })
+      // In demo mode, return the first user (John) as default
+      return MOCK_USER('demo-user-1', { email: 'john@demo.com' })
     }
     // In a real app, you'd get the current user ID from auth context
     // For now, return mock data
@@ -804,6 +870,10 @@ export class SupabaseService {
   static async getUserById(userId: string): Promise<User | null> {
     if (USE_MOCK_DATA || !supabase) {
       console.log('Mock: getUserById called for', userId)
+      const user = demoData.DEMO_USERS.find(u => u.id === userId || u.clerkId === userId)
+      if (user) {
+        return MOCK_USER(userId, { email: user.email })
+      }
       return MOCK_USER(userId, {})
     }
     return this.getUser(userId)
@@ -812,6 +882,27 @@ export class SupabaseService {
   static async getUserStats(userId: string): Promise<any> {
     if (USE_MOCK_DATA || !supabase) {
       console.log('Mock: getUserStats called for', userId)
+      const user = demoData.DEMO_USERS.find(u => u.id === userId || u.clerkId === userId)
+      const userBadges = demoData.getUserBadges(userId)
+      const leaderboard = demoData.getLeaderboard()
+      const userRank = leaderboard.findIndex(u => u.id === userId || u.clerkId === userId) + 1
+      
+      if (user) {
+        return {
+          totalCheckIns: user.totalCheckIns,
+          totalPoints: user.totalPointsEarned,
+          currentStreak: user.currentStreak,
+          longestStreak: user.longestStreak,
+          averageCheckInTime: '08:45 AM',
+          recentAchievements: userBadges.length,
+          rank: userRank > 0 ? userRank : 5,
+          weeklyProgress: 85,
+          badges: userBadges,
+          level: user.level,
+          pointsBalance: user.points
+        }
+      }
+      
       return {
         totalCheckIns: 25,
         totalPoints: 300,
@@ -820,7 +911,10 @@ export class SupabaseService {
         averageCheckInTime: '08:45 AM',
         recentAchievements: 3,
         rank: 2,
-        weeklyProgress: 85
+        weeklyProgress: 85,
+        badges: [],
+        level: 1,
+        pointsBalance: 150
       }
     }
     // Return mock stats for now

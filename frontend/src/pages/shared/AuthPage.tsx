@@ -1,12 +1,16 @@
 import { SignIn, SignUp } from '@clerk/clerk-react'
 import { useState } from 'react'
+import { DemoCredentials } from '../../components/DemoCredentials'
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
+  const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-8">
+      <div className={`${isDemoMode ? 'max-w-5xl' : 'max-w-md'} w-full`}>
+        <div className={`${isDemoMode ? 'grid grid-cols-1 lg:grid-cols-2 gap-8 items-start' : 'space-y-8'}`}>
+          <div className="space-y-8">
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center mb-6">
@@ -56,6 +60,15 @@ export default function AuthPage() {
               : "Don't have an account? Sign up"
             }
           </button>
+        </div>
+          </div>
+          
+          {/* Demo Credentials (only shown in demo mode) */}
+          {isDemoMode && (
+            <div className="lg:mt-0">
+              <DemoCredentials />
+            </div>
+          )}
         </div>
       </div>
     </div>
