@@ -203,27 +203,7 @@ const MOCK_USER = (clerkUserId: string, userData: Partial<User>): User => {
   }
 }
 
-const MOCK_REWARDS = (): Reward[] => demoData.DEMO_REWARDS.map(reward => ({
-  id: reward.id,
-  name: reward.name,
-  description: reward.description,
-  points_cost: reward.pointCost,
-  pointsCost: reward.pointCost, // Add camelCase for TypeScript interface
-  category: reward.category as any,
-  icon: reward.icon || '🎁',
-  available: reward.inventoryCount > 0,
-  company: 'System Kleen',
-  availability: reward.availability === 'in_stock' ? 'available' : reward.availability as any,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-  created: new Date().toISOString(),
-  updated: new Date().toISOString(),
-  is_active: true,
-  stock_quantity: reward.stock || 100,
-  inventory_count: reward.inventoryCount,
-  image_url: reward.imageUrl,
-  terms_conditions: reward.terms
-}))
+const MOCK_REWARDS = (): Reward[] => demoData.DEMO_REWARDS
 
 const MOCK_LEADERBOARD = (): User[] => {
   const leaderboard = demoData.getLeaderboard()
@@ -535,9 +515,14 @@ export class SupabaseService {
   static async getAvailableRewards(category?: string): Promise<Reward[]> {
     if (USE_MOCK_DATA) {
       console.log('Using mock data for available rewards')
-      return demoData.getDemoRewards().filter(r => 
-        (!category || r.category === category) && r.inventory_count > 0
+      const mockRewards = MOCK_REWARDS()
+      console.log('Mock rewards loaded:', mockRewards.length, 'rewards')
+      console.log('First reward example:', mockRewards[0])
+      const filteredRewards = mockRewards.filter(r => 
+        (!category || r.category === category)
       )
+      console.log('Filtered rewards:', filteredRewards.length, 'rewards')
+      return filteredRewards
     }
     
     const query = supabase
@@ -562,7 +547,21 @@ export class SupabaseService {
   static async getRewardById(rewardId: string): Promise<Reward | null> {
     if (USE_MOCK_DATA) {
       console.log('Using mock data for reward by id')
-      return demoData.getDemoRewards().find(r => r.id === rewardId) || null
+      const mockReward = demoData.DEMO_REWARDS.find(r => r.id === rewardId)
+      if (!mockReward) return null
+      
+      return {
+        id: mockReward.id,
+        name: mockReward.name,
+        description: mockReward.description,
+        pointsCost: mockReward.pointCost,
+        category: mockReward.category as any,
+        icon: mockReward.icon || '🎁',
+        available: (mockReward.stock || 100) > 0,
+        company: 'System Kleen',
+        created: new Date().toISOString(),
+        updated: new Date().toISOString()
+      }
     }
     
     const { data, error } = await supabase

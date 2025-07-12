@@ -376,43 +376,37 @@ export const DEMO_REWARDS: Reward[] = [
     id: 'reward-1',
     name: '$5 Maverick Card',
     description: 'Gas up with a $5 Maverick gift card',
-    pointCost: 5,
+    pointsCost: 5,
     category: 'weekly',
-    imageUrl: 'https://images.unsplash.com/photo-1594736797933-d0501ba2fe65',
-    availability: 'in_stock',
-    stock: 100,
-    expiresAt: null,
-    terms: 'Digital delivery within 24 hours',
-    featured: false,
-    popularity: 85
+    icon: '⛽',
+    available: true,
+    company: 'System Kleen',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
   },
   {
     id: 'reward-2',
     name: '$10 Dutch Bros Gift Card',
     description: 'Enjoy your favorite Dutch Bros drinks',
-    pointCost: 10,
+    pointsCost: 10,
     category: 'weekly',
-    imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
-    availability: 'in_stock',
-    stock: 80,
-    expiresAt: null,
-    terms: 'Digital delivery within 24 hours',
-    featured: true,
-    popularity: 92
+    icon: '☕',
+    available: true,
+    company: 'System Kleen',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
   },
   {
     id: 'reward-3',
     name: '$15 Starbucks Gift Card',
     description: 'Treat yourself to Starbucks coffee and snacks',
-    pointCost: 15,
+    pointsCost: 15,
     category: 'weekly',
-    imageUrl: 'https://images.unsplash.com/photo-1559305616-3f99cd43e353',
-    availability: 'in_stock',
-    stock: 75,
-    expiresAt: null,
-    terms: 'Digital delivery within 24 hours',
-    featured: true,
-    popularity: 90
+    icon: '☕',
+    available: true,
+    company: 'System Kleen',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
   },
   
   // Monthly Tier (25-50 points)
@@ -420,43 +414,37 @@ export const DEMO_REWARDS: Reward[] = [
     id: 'reward-4',
     name: '$25 Amazon Gift Card',
     description: 'Shop for anything you want on Amazon',
-    pointCost: 25,
+    pointsCost: 25,
     category: 'monthly',
-    imageUrl: 'https://images.unsplash.com/photo-1633158829585-23ba8f7c8caf',
-    availability: 'in_stock',
-    stock: 50,
-    expiresAt: null,
-    terms: 'Digital delivery within 24 hours',
-    featured: true,
-    popularity: 88
+    icon: '🛒',
+    available: true,
+    company: 'System Kleen',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
   },
   {
     id: 'reward-5',
     name: '$50 Scheels Gift Card',
     description: 'Get your outdoor and sports gear at Scheels',
-    pointCost: 50,
+    pointsCost: 50,
     category: 'monthly',
-    imageUrl: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256',
-    availability: 'in_stock',
-    stock: 30,
-    expiresAt: null,
-    terms: 'Digital or physical card available',
-    featured: false,
-    popularity: 75
+    icon: '🏔️',
+    available: true,
+    company: 'System Kleen',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
   },
   {
     id: 'reward-6',
     name: '$50 Amazon Gift Card',
     description: 'More shopping power on Amazon',
-    pointCost: 50,
+    pointsCost: 50,
     category: 'monthly',
-    imageUrl: 'https://images.unsplash.com/photo-1633158829585-23ba8f7c8caf',
-    availability: 'in_stock',
-    stock: 40,
-    expiresAt: null,
-    terms: 'Digital delivery within 24 hours',
-    featured: true,
-    popularity: 86
+    icon: '🛒',
+    available: true,
+    company: 'System Kleen',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
   },
   
   // Quarterly Tier (75-150 points)
@@ -464,43 +452,37 @@ export const DEMO_REWARDS: Reward[] = [
     id: 'reward-7',
     name: '$75 Gift Card (Your Choice)',
     description: 'Choose from Amazon, Scheels, Target, or Best Buy',
-    pointCost: 75,
+    pointsCost: 75,
     category: 'quarterly',
-    imageUrl: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48',
-    availability: 'in_stock',
-    stock: 20,
-    expiresAt: null,
-    terms: 'Select your preferred retailer when redeeming',
-    featured: true,
-    popularity: 82
+    icon: '🎁',
+    available: true,
+    company: 'System Kleen',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
   },
   {
     id: 'reward-8',
     name: '$100 Gift Card (Your Choice)',
     description: 'Choose from premium retailers including Amazon, Scheels, or dining',
-    pointCost: 100,
+    pointsCost: 100,
     category: 'quarterly',
-    imageUrl: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48',
-    availability: 'in_stock',
-    stock: 15,
-    expiresAt: null,
-    terms: 'Select your preferred retailer when redeeming',
-    featured: true,
-    popularity: 84
+    icon: '🎁',
+    available: true,
+    company: 'System Kleen',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
   },
   {
     id: 'reward-9',
     name: '$150 Gift Card (Premium Selection)',
     description: 'Premium gift card selection including travel, electronics, or experiences',
-    pointCost: 150,
+    pointsCost: 150,
     category: 'quarterly',
-    imageUrl: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48',
-    availability: 'in_stock',
-    stock: 10,
-    expiresAt: null,
-    terms: 'Premium retailer selection available',
-    featured: true,
-    popularity: 78
+    icon: '🎁',
+    available: true,
+    company: 'System Kleen',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
   },
   
   // Annual Tier (175+ points)
@@ -508,29 +490,25 @@ export const DEMO_REWARDS: Reward[] = [
     id: 'reward-10',
     name: 'Extra Paid Day Off',
     description: 'Enjoy an additional paid vacation day to recharge and relax',
-    pointCost: 175,
+    pointsCost: 175,
     category: 'annual',
-    imageUrl: 'https://images.unsplash.com/photo-1527004013197-933c4bb611b3',
-    availability: 'in_stock',
-    stock: 20,
-    expiresAt: new Date('2024-12-31'),
-    terms: 'Must be approved by manager. Cannot be used during blackout periods.',
-    featured: true,
-    popularity: 95
+    icon: '🏖️',
+    available: true,
+    company: 'System Kleen',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
   },
   {
     id: 'reward-11',
     name: 'Two Extra Paid Days Off',
     description: 'Take a long weekend with two additional paid vacation days',
-    pointCost: 300,
+    pointsCost: 300,
     category: 'annual',
-    imageUrl: 'https://images.unsplash.com/photo-1527004013197-933c4bb611b3',
-    availability: 'limited',
-    stock: 10,
-    expiresAt: new Date('2024-12-31'),
-    terms: 'Must be approved by manager. Subject to operational needs.',
-    featured: true,
-    popularity: 93
+    icon: '🏖️',
+    available: true,
+    company: 'System Kleen',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
   }
 ]
 
@@ -550,8 +528,8 @@ export const DEMO_TRANSACTIONS: Transaction[] = [
     id: 'trans-2',
     userId: 'demo-user-1',
     type: 'earned',
-    amount: 1,
-    description: 'Daily check-in points (on-time)',
+    amount: 2,
+    description: 'Daily check-in points (early)',
     status: 'completed',
     createdAt: new Date('2024-05-01T08:00:00')
   },
@@ -598,10 +576,10 @@ export const DEMO_TRANSACTIONS: Transaction[] = [
     id: 'trans-7',
     userId: 'demo-user-2',
     type: 'earned',
-    amount: 2,
-    description: 'Daily check-in points (early)',
+    amount: 1,
+    description: 'Daily check-in points (on-time)',
     status: 'completed',
-    createdAt: new Date('2024-05-01T07:30:00')
+    createdAt: new Date('2024-05-01T08:00:00')
   },
   {
     id: 'trans-8',
@@ -749,7 +727,7 @@ export function getTodayCheckIn(userId: string): CheckIn | undefined {
 }
 
 // Helper function to get demo rewards
-export function getDemoRewards() {
+export function getDemoRewards(): Reward[] {
   return DEMO_REWARDS
 }
 
