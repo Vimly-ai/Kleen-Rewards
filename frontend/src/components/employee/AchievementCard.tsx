@@ -135,7 +135,7 @@ export function AchievementCard({
       } else {
         // Fallback to clipboard
         navigator.clipboard.writeText(
-          `I just unlocked the \"${achievement.name}\" achievement! ${achievement.description}`
+          `I just unlocked the "${achievement.name}" achievement! ${achievement.description}`
         )
       }
     }
@@ -175,14 +175,14 @@ export function AchievementCard({
     >
       {/* Glow effect for legendary achievements */}
       {achievement.rarity === 'legendary' && achievement.unlocked && (
-        <div className=\"absolute inset-0 bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-200 opacity-20 animate-pulse\" />
+        <div className="absolute inset-0 bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-200 opacity-20 animate-pulse" />
       )}
       
       <div className={cardSizeClasses[size]}>
         {/* Header */}
-        <div className=\"flex items-start justify-between mb-4\">
+        <div className="flex items-start justify-between mb-4">
           {/* Category and Rarity */}
-          <div className=\"flex items-center gap-2\">
+          <div className="flex items-center gap-2">
             <div className={clsx(
               'p-2 rounded-lg',
               achievement.unlocked ? rarityConfig.bg : 'bg-gray-200'
@@ -209,19 +209,19 @@ export function AchievementCard({
           
           {/* Actions */}
           {achievement.unlocked && (
-            <div className=\"flex items-center gap-1\">
+            <div className="flex items-center gap-1">
               {onShare && (
-                <Tooltip content=\"Share achievement\">
+                <Tooltip content="Share achievement">
                   <Button
-                    variant=\"ghost\"
-                    size=\"small\"
+                    variant="ghost"
+                    size="small"
                     onClick={(e) => {
                       e.stopPropagation()
                       handleShare()
                     }}
-                    className=\"p-1 h-auto\"
+                    className="p-1 h-auto"
                   >
-                    <Share2 className=\"w-4 h-4\" />
+                    <Share2 className="w-4 h-4" />
                   </Button>
                 </Tooltip>
               )}
@@ -230,20 +230,20 @@ export function AchievementCard({
                 'p-1 rounded-full',
                 'bg-green-100 text-green-600'
               )}>
-                <CheckCircle className=\"w-4 h-4\" />
+                <CheckCircle className="w-4 h-4" />
               </div>
             </div>
           )}
           
           {!achievement.unlocked && achievement.isSecret && (
-            <div className=\"p-1 rounded-full bg-gray-700 text-gray-300\">
-              <Lock className=\"w-4 h-4\" />
+            <div className="p-1 rounded-full bg-gray-700 text-gray-300">
+              <Lock className="w-4 h-4" />
             </div>
           )}
         </div>
         
         {/* Icon */}
-        <div className=\"text-center mb-4\">
+        <div className="text-center mb-4">
           <div className={clsx(
             iconSizeClasses[size],
             !achievement.unlocked && 'opacity-50 grayscale',
@@ -254,7 +254,7 @@ export function AchievementCard({
         </div>
         
         {/* Content */}
-        <div className=\"text-center space-y-2\">
+        <div className="text-center space-y-2">
           <h3 className={clsx(
             'font-bold',
             size === 'small' ? 'text-sm' : size === 'medium' ? 'text-base' : 'text-lg',
@@ -275,7 +275,7 @@ export function AchievementCard({
           </p>
           
           {/* Points */}
-          <div className=\"flex items-center justify-center gap-2 text-sm\">
+          <div className="flex items-center justify-center gap-2 text-sm">
             <Star className={clsx(
               'w-4 h-4',
               achievement.unlocked ? 'text-yellow-500' : 'text-gray-400'
@@ -291,32 +291,32 @@ export function AchievementCard({
         
         {/* Progress */}
         {showProgress && achievement.progress && !achievement.unlocked && (
-          <div className=\"mt-4 space-y-2\">
-            <div className=\"flex justify-between text-xs text-gray-600\">
+          <div className="mt-4 space-y-2">
+            <div className="flex justify-between text-xs text-gray-600">
               <span>Progress</span>
               <span>
                 {achievement.progress.current.toLocaleString()} / {achievement.progress.target.toLocaleString()}
               </span>
             </div>
             
-            <div className=\"relative\">
-              <div className=\"w-full bg-gray-200 rounded-full h-2\">
+            <div className="relative">
+              <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className=\"bg-primary-600 h-2 rounded-full transition-all duration-500\"
+                  className="bg-primary-600 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(achievement.progress.percentage, 100)}%` }}
                 />
               </div>
               
               {achievement.progress.percentage >= 90 && (
-                <div className=\"absolute -top-1 -right-1\">
-                  <div className=\"w-4 h-4 bg-yellow-400 rounded-full animate-pulse flex items-center justify-center\">
-                    <Sparkles className=\"w-2 h-2 text-yellow-700\" />
+                <div className="absolute -top-1 -right-1">
+                  <div className="w-4 h-4 bg-yellow-400 rounded-full animate-pulse flex items-center justify-center">
+                    <Sparkles className="w-2 h-2 text-yellow-700" />
                   </div>
                 </div>
               )}
             </div>
             
-            <div className=\"text-center text-xs text-gray-500\">
+            <div className="text-center text-xs text-gray-500">
               {Math.round(achievement.progress.percentage)}% complete
             </div>
           </div>
@@ -324,24 +324,24 @@ export function AchievementCard({
         
         {/* Unlock Date */}
         {achievement.unlocked && achievement.unlockedAt && (
-          <div className=\"mt-4 text-center text-xs text-gray-500\">
+          <div className="mt-4 text-center text-xs text-gray-500">
             Unlocked {formatTimeAgo(achievement.unlockedAt)}
           </div>
         )}
         
         {/* View Details Button */}
         {interactive && onViewDetails && (
-          <div className=\"mt-4\">
+          <div className="mt-4">
             <Button
-              variant=\"outline\"
-              size=\"small\"
+              variant="outline"
+              size="small"
               onClick={(e) => {
                 e.stopPropagation()
                 onViewDetails(achievement)
               }}
-              className=\"w-full\"
+              className="w-full"
             >
-              <Eye className=\"w-4 h-4 mr-2\" />
+              <Eye className="w-4 h-4 mr-2" />
               View Details
             </Button>
           </div>
@@ -350,10 +350,10 @@ export function AchievementCard({
       
       {/* Unlock Animation Overlay */}
       {showUnlockAnimation && (
-        <div className=\"absolute inset-0 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 animate-pulse opacity-80 flex items-center justify-center\">
-          <div className=\"text-white text-center\">
-            <Trophy className=\"w-12 h-12 mx-auto mb-2\" />
-            <div className=\"font-bold text-lg\">UNLOCKED!</div>
+        <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 animate-pulse opacity-80 flex items-center justify-center">
+          <div className="text-white text-center">
+            <Trophy className="w-12 h-12 mx-auto mb-2" />
+            <div className="font-bold text-lg">UNLOCKED!</div>
           </div>
         </div>
       )}

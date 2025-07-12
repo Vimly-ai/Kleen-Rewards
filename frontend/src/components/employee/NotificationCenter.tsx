@@ -167,12 +167,12 @@ export function NotificationCenter({
             unreadCount > 0 && 'text-primary-600'
           )}
         >
-          <Bell className=\"w-5 h-5\" />
+          <Bell className="w-5 h-5" />
           
           {/* Unread Count Badge */}
           {unreadCount > 0 && (
-            <div className=\"absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center\">
-              <span className=\"text-xs font-bold text-white\">
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+              <span className="text-xs font-bold text-white">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             </div>
@@ -180,8 +180,8 @@ export function NotificationCenter({
           
           {/* Sound Indicator */}
           {!soundEnabled && (
-            <div className=\"absolute -bottom-1 -right-1 w-3 h-3 bg-gray-400 rounded-full flex items-center justify-center\">
-              <VolumeX className=\"w-2 h-2 text-white\" />
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-gray-400 rounded-full flex items-center justify-center">
+              <VolumeX className="w-2 h-2 text-white" />
             </div>
           )}
         </button>
@@ -191,55 +191,55 @@ export function NotificationCenter({
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        title=\"Notifications\"
-        size=\"lg\"
+        title="Notifications"
+        size="lg"
       >
-        <div className=\"space-y-4\">
+        <div className="space-y-4">
           {/* Header Actions */}
-          <div className=\"flex items-center justify-between\">
-            <div className=\"flex items-center gap-2\">
-              <span className=\"text-sm text-gray-600\">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
                 {unreadCount} unread
               </span>
               {unreadCount > 0 && (
                 <Button
-                  variant=\"ghost\"
-                  size=\"small\"
+                  variant="ghost"
+                  size="small"
                   onClick={onMarkAllAsRead}
-                  className=\"text-xs\"
+                  className="text-xs"
                 >
                   Mark all read
                 </Button>
               )}
             </div>
             
-            <div className=\"flex items-center gap-2\">
+            <div className="flex items-center gap-2">
               <Button
-                variant=\"ghost\"
-                size=\"small\"
+                variant="ghost"
+                size="small"
                 onClick={onToggleSound}
-                className=\"p-2\"
+                className="p-2"
               >
                 {soundEnabled ? (
-                  <Volume2 className=\"w-4 h-4\" />
+                  <Volume2 className="w-4 h-4" />
                 ) : (
-                  <VolumeX className=\"w-4 h-4\" />
+                  <VolumeX className="w-4 h-4" />
                 )}
               </Button>
               
               <Button
-                variant=\"ghost\"
-                size=\"small\"
+                variant="ghost"
+                size="small"
                 onClick={() => setShowSettings(true)}
-                className=\"p-2\"
+                className="p-2"
               >
-                <Settings className=\"w-4 h-4\" />
+                <Settings className="w-4 h-4" />
               </Button>
             </div>
           </div>
           
           {/* Filters */}
-          <div className=\"flex flex-wrap gap-2\">
+          <div className="flex flex-wrap gap-2">
             {filterOptions.map(option => (
               <button
                 key={option.key}
@@ -253,7 +253,7 @@ export function NotificationCenter({
               >
                 {option.label}
                 {option.count > 0 && (
-                  <Badge variant=\"secondary\" className=\"ml-1 text-xs\">
+                  <Badge variant="secondary" className="ml-1 text-xs">
                     {option.count}
                   </Badge>
                 )}
@@ -262,14 +262,14 @@ export function NotificationCenter({
           </div>
           
           {/* Notifications List */}
-          <div className=\"max-h-96 overflow-y-auto space-y-4\">
+          <div className="max-h-96 overflow-y-auto space-y-4">
             {Object.entries(groupedNotifications).map(([group, groupNotifications]) => (
               <div key={group}>
-                <h4 className=\"text-sm font-medium text-gray-900 mb-2 sticky top-0 bg-white py-1\">
+                <h4 className="text-sm font-medium text-gray-900 mb-2 sticky top-0 bg-white py-1">
                   {group}
                 </h4>
                 
-                <div className=\"space-y-2\">
+                <div className="space-y-2">
                   {groupNotifications.map(notification => {
                     const config = NOTIFICATION_CONFIG[notification.type]
                     const Icon = config.icon
@@ -285,7 +285,7 @@ export function NotificationCenter({
                         )}
                         onClick={() => handleNotificationClick(notification)}
                       >
-                        <div className=\"flex items-start gap-3\">
+                        <div className="flex items-start gap-3">
                           {/* Icon */}
                           <div className={clsx(
                             'flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center',
@@ -295,9 +295,9 @@ export function NotificationCenter({
                           </div>
                           
                           {/* Content */}
-                          <div className=\"flex-1 min-w-0\">
-                            <div className=\"flex items-start justify-between\">
-                              <div className=\"flex-1\">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
                                 <h5 className={clsx(
                                   'text-sm font-medium truncate',
                                   notification.read ? 'text-gray-700' : 'text-gray-900'
@@ -313,14 +313,14 @@ export function NotificationCenter({
                                 
                                 {/* Metadata */}
                                 {notification.metadata && (
-                                  <div className=\"flex items-center gap-2 mt-2\">
+                                  <div className="flex items-center gap-2 mt-2">
                                     {notification.metadata.points && (
-                                      <Badge variant=\"success\" className=\"text-xs\">
+                                      <Badge variant="success" className="text-xs">
                                         +{notification.metadata.points} pts
                                       </Badge>
                                     )}
                                     {notification.metadata.icon && (
-                                      <span className=\"text-lg\">
+                                      <span className="text-lg">
                                         {notification.metadata.icon}
                                       </span>
                                     )}
@@ -328,21 +328,21 @@ export function NotificationCenter({
                                 )}
                               </div>
                               
-                              <div className=\"flex items-center gap-2 ml-2\">
-                                <span className=\"text-xs text-gray-500\">
+                              <div className="flex items-center gap-2 ml-2">
+                                <span className="text-xs text-gray-500">
                                   {formatTimeAgo(notification.timestamp)}
                                 </span>
                                 
                                 <Button
-                                  variant=\"ghost\"
-                                  size=\"small\"
+                                  variant="ghost"
+                                  size="small"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     onDeleteNotification(notification.id)
                                   }}
-                                  className=\"opacity-0 group-hover:opacity-100 p-1 h-auto\"
+                                  className="opacity-0 group-hover:opacity-100 p-1 h-auto"
                                 >
-                                  <X className=\"w-3 h-3\" />
+                                  <X className="w-3 h-3" />
                                 </Button>
                               </div>
                             </div>
@@ -350,7 +350,7 @@ export function NotificationCenter({
                           
                           {/* Unread Indicator */}
                           {!notification.read && (
-                            <div className=\"absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full\" />
+                            <div className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full" />
                           )}
                         </div>
                       </div>
@@ -361,12 +361,12 @@ export function NotificationCenter({
             ))}
             
             {filteredNotifications.length === 0 && (
-              <div className=\"text-center py-8\">
-                <BellOff className=\"w-12 h-12 text-gray-400 mx-auto mb-4\" />
-                <h3 className=\"text-lg font-medium text-gray-900 mb-2\">
+              <div className="text-center py-8">
+                <BellOff className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
                   No notifications
                 </h3>
-                <p className=\"text-gray-600\">
+                <p className="text-gray-600">
                   {filter === 'all' 
                     ? 'You\\'re all caught up!' 
                     : `No ${filter} notifications found.`}
@@ -381,59 +381,59 @@ export function NotificationCenter({
       <Modal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
-        title=\"Notification Settings\"
+        title="Notification Settings"
       >
-        <div className=\"space-y-6\">
+        <div className="space-y-6">
           <div>
-            <h3 className=\"font-medium text-gray-900 mb-4\">Notification Preferences</h3>
+            <h3 className="font-medium text-gray-900 mb-4">Notification Preferences</h3>
             
-            <div className=\"space-y-4\">
-              <label className=\"flex items-center justify-between\">
+            <div className="space-y-4">
+              <label className="flex items-center justify-between">
                 <div>
-                  <span className=\"text-sm font-medium text-gray-700\">Sound notifications</span>
-                  <p className=\"text-xs text-gray-500\">Play sound when new notifications arrive</p>
+                  <span className="text-sm font-medium text-gray-700">Sound notifications</span>
+                  <p className="text-xs text-gray-500">Play sound when new notifications arrive</p>
                 </div>
                 <input
-                  type=\"checkbox\"
+                  type="checkbox"
                   checked={soundEnabled}
                   onChange={onToggleSound}
-                  className=\"rounded border-gray-300 text-primary-600 focus:ring-primary-500\"
+                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
               </label>
               
-              <label className=\"flex items-center justify-between\">
+              <label className="flex items-center justify-between">
                 <div>
-                  <span className=\"text-sm font-medium text-gray-700\">Achievement notifications</span>
-                  <p className=\"text-xs text-gray-500\">Get notified when you unlock achievements</p>
+                  <span className="text-sm font-medium text-gray-700">Achievement notifications</span>
+                  <p className="text-xs text-gray-500">Get notified when you unlock achievements</p>
                 </div>
                 <input
-                  type=\"checkbox\"
+                  type="checkbox"
                   defaultChecked={true}
-                  className=\"rounded border-gray-300 text-primary-600 focus:ring-primary-500\"
+                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
               </label>
               
-              <label className=\"flex items-center justify-between\">
+              <label className="flex items-center justify-between">
                 <div>
-                  <span className=\"text-sm font-medium text-gray-700\">Points notifications</span>
-                  <p className=\"text-xs text-gray-500\">Get notified when you earn points</p>
+                  <span className="text-sm font-medium text-gray-700">Points notifications</span>
+                  <p className="text-xs text-gray-500">Get notified when you earn points</p>
                 </div>
                 <input
-                  type=\"checkbox\"
+                  type="checkbox"
                   defaultChecked={true}
-                  className=\"rounded border-gray-300 text-primary-600 focus:ring-primary-500\"
+                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
               </label>
               
-              <label className=\"flex items-center justify-between\">
+              <label className="flex items-center justify-between">
                 <div>
-                  <span className=\"text-sm font-medium text-gray-700\">Streak reminders</span>
-                  <p className=\"text-xs text-gray-500\">Remind me to maintain my check-in streak</p>
+                  <span className="text-sm font-medium text-gray-700">Streak reminders</span>
+                  <p className="text-xs text-gray-500">Remind me to maintain my check-in streak</p>
                 </div>
                 <input
-                  type=\"checkbox\"
+                  type="checkbox"
                   defaultChecked={true}
-                  className=\"rounded border-gray-300 text-primary-600 focus:ring-primary-500\"
+                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
               </label>
             </div>

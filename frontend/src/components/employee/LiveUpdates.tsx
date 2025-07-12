@@ -128,7 +128,7 @@ export function LiveUpdates({
       case 'check_in':
         return `${userName} ${config.label}${update.details ? ` ${update.details}` : ''}`
       case 'achievement':
-        return `${userName} ${config.label}${update.details ? `: \"${update.details}\"` : ''}`
+        return `${userName} ${config.label}${update.details ? `: "${update.details}"` : ''}`
       case 'points':
         return `${userName} ${config.label}${update.points ? ` (${update.points} pts)` : ''}`
       case 'level_up':
@@ -157,24 +157,24 @@ export function LiveUpdates({
 
   return (
     <Card className={className}>
-      <div className=\"p-4\">
+      <div className="p-4">
         {/* Header */}
-        <div className=\"flex items-center justify-between mb-4\">
-          <div className=\"flex items-center gap-2\">
-            <Activity className=\"w-5 h-5 text-primary-600\" />
-            <h3 className=\"font-medium text-gray-900\">Live Activity</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Activity className="w-5 h-5 text-primary-600" />
+            <h3 className="font-medium text-gray-900">Live Activity</h3>
             {recentUpdates.length > 0 && (
-              <Badge variant=\"success\" className=\"text-xs\">
+              <Badge variant="success" className="text-xs">
                 {recentUpdates.length} recent
               </Badge>
             )}
           </div>
           
           {/* Online Users Count */}
-          <div className=\"flex items-center gap-2 text-sm text-gray-600\">
-            <div className=\"flex items-center gap-1\">
-              <div className=\"w-2 h-2 bg-green-500 rounded-full animate-pulse\" />
-              <Users className=\"w-4 h-4\" />
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <Users className="w-4 h-4" />
               <span>{onlineUsers.length} active</span>
             </div>
           </div>
@@ -182,20 +182,20 @@ export function LiveUpdates({
         
         {/* Online Users Avatars */}
         {onlineUsers.length > 0 && (
-          <div className=\"flex items-center gap-2 mb-4 pb-4 border-b border-gray-100\">
-            <span className=\"text-sm text-gray-600\">Recently active:</span>
-            <div className=\"flex items-center -space-x-2\">
+          <div className="flex items-center gap-2 mb-4 pb-4 border-b border-gray-100">
+            <span className="text-sm text-gray-600">Recently active:</span>
+            <div className="flex items-center -space-x-2">
               {onlineUsers.slice(0, 5).map(user => (
                 <Avatar
                   key={user.id}
                   src={user.avatar}
                   alt={user.name}
-                  size=\"sm\"
-                  className=\"ring-2 ring-white\"
+                  size="sm"
+                  className="ring-2 ring-white"
                 />
               ))}
               {onlineUsers.length > 5 && (
-                <div className=\"w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium text-gray-600 ring-2 ring-white\">
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium text-gray-600 ring-2 ring-white">
                   +{onlineUsers.length - 5}
                 </div>
               )}
@@ -204,7 +204,7 @@ export function LiveUpdates({
         )}
         
         {/* Activity Feed */}
-        <div className=\"space-y-3 max-h-64 overflow-y-auto\">
+        <div className="space-y-3 max-h-64 overflow-y-auto">
           {recentUpdates.length > 0 ? (
             recentUpdates.map(update => {
               const config = UPDATE_CONFIG[update.type]
@@ -226,20 +226,20 @@ export function LiveUpdates({
                   <Avatar
                     src={update.user.avatar}
                     alt={update.user.name}
-                    size=\"sm\"
-                    className=\"flex-shrink-0\"
+                    size="sm"
+                    className="flex-shrink-0"
                   />
                   
                   {/* Activity Content */}
-                  <div className=\"flex-1 min-w-0\">
-                    <div className=\"flex items-start justify-between\">
-                      <div className=\"flex-1\">
-                        <p className=\"text-sm text-gray-900\">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-900">
                           {getUpdateText(update)}
                         </p>
                         
                         {update.user.department && (
-                          <p className=\"text-xs text-gray-500\">
+                          <p className="text-xs text-gray-500">
                             {update.user.department}
                           </p>
                         )}
@@ -255,13 +255,13 @@ export function LiveUpdates({
                     </div>
                     
                     {/* Timestamp and Points */}
-                    <div className=\"flex items-center justify-between mt-1\">
-                      <span className=\"text-xs text-gray-500\">
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-gray-500">
                         {formatTimeAgo(update.timestamp)}
                       </span>
                       
                       {update.points && (
-                        <Badge variant=\"success\" className=\"text-xs\">
+                        <Badge variant="success" className="text-xs">
                           +{update.points} pts
                         </Badge>
                       )}
@@ -271,12 +271,12 @@ export function LiveUpdates({
               )
             })
           ) : (
-            <div className=\"text-center py-6\">
-              <Clock className=\"w-8 h-8 text-gray-400 mx-auto mb-2\" />
-              <p className=\"text-sm text-gray-600\">
+            <div className="text-center py-6">
+              <Clock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">
                 No recent activity
               </p>
-              <p className=\"text-xs text-gray-500\">
+              <p className="text-xs text-gray-500">
                 Activity will appear here as it happens
               </p>
             </div>
@@ -284,9 +284,9 @@ export function LiveUpdates({
         </div>
         
         {/* Real-time Indicator */}
-        <div className=\"mt-4 pt-3 border-t border-gray-100\">
-          <div className=\"flex items-center justify-center gap-2 text-xs text-gray-500\">
-            <div className=\"w-2 h-2 bg-green-500 rounded-full animate-pulse\" />
+        <div className="mt-4 pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             <span>Updates in real-time</span>
           </div>
         </div>

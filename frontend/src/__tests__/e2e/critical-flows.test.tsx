@@ -196,8 +196,8 @@ describe('Critical User Flows E2E', () => {
       })
 
       // Redeem affordable reward
-      const coffeeReward = screen.getByText('Coffee Voucher').closest('[data-testid=\"reward-card\"]')
-      const redeemButton = coffeeReward?.querySelector('button[aria-label=\"Redeem\"]')
+      const coffeeReward = screen.getByText('Coffee Voucher').closest('[data-testid="reward-card"]')
+      const redeemButton = coffeeReward?.querySelector('button[aria-label="Redeem"]')
       
       expect(redeemButton).not.toBeDisabled()
       await user.click(redeemButton!)
@@ -233,8 +233,8 @@ describe('Critical User Flows E2E', () => {
       })
 
       // Try to redeem expensive reward (200 points, user has 150)
-      const expensiveReward = screen.getByText('Extra Day Off').closest('[data-testid=\"reward-card\"]')
-      const redeemButton = expensiveReward?.querySelector('button[aria-label=\"Redeem\"]')
+      const expensiveReward = screen.getByText('Extra Day Off').closest('[data-testid="reward-card"]')
+      const redeemButton = expensiveReward?.querySelector('button[aria-label="Redeem"]')
       
       expect(redeemButton).toBeDisabled()
     })
