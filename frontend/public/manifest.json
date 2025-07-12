@@ -1,13 +1,49 @@
 {
-  "name": "Employee Rewards - System Kleen",
-  "short_name": "Employee Rewards",
-  "description": "Track check-ins, earn points, and redeem rewards",
+  "name": "Employee Rewards Enterprise",
+  "short_name": "Rewards",
+  "description": "Advanced employee check-in and rewards management system with offline support, push notifications, and real-time updates",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "theme_color": "#3B82F6",
   "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-US",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
   "icons": [
+    {
+      "src": "/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
@@ -15,14 +51,183 @@
       "purpose": "any maskable"
     },
     {
+      "src": "/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/icon-512.png", 
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["business", "productivity"],
-  "lang": "en-US",
-  "scope": "/",
-  "prefer_related_applications": false
+  "screenshots": [
+    {
+      "src": "/screenshot-desktop-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Employee Dashboard - Desktop View"
+    },
+    {
+      "src": "/screenshot-desktop-2.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Rewards Catalog - Desktop View"
+    },
+    {
+      "src": "/screenshot-mobile-1.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Employee Dashboard - Mobile View"
+    },
+    {
+      "src": "/screenshot-mobile-2.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Quick Check-in - Mobile View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick Check In",
+      "short_name": "Check In",
+      "description": "Instantly check in and earn points",
+      "url": "/employee/dashboard?action=checkin",
+      "icons": [{ 
+        "src": "/icon-checkin.png", 
+        "sizes": "96x96",
+        "type": "image/png"
+      }]
+    },
+    {
+      "name": "View Rewards",
+      "short_name": "Rewards", 
+      "description": "Browse and claim available rewards",
+      "url": "/employee/rewards",
+      "icons": [{ 
+        "src": "/icon-rewards.png", 
+        "sizes": "96x96",
+        "type": "image/png"
+      }]
+    },
+    {
+      "name": "Achievements",
+      "short_name": "Achievements",
+      "description": "View your achievements and progress",
+      "url": "/employee/achievements",
+      "icons": [{ 
+        "src": "/icon-achievements.png", 
+        "sizes": "96x96",
+        "type": "image/png"
+      }]
+    },
+    {
+      "name": "Leaderboard",
+      "short_name": "Leaderboard",
+      "description": "See top performers and rankings",
+      "url": "/leaderboard",
+      "icons": [{ 
+        "src": "/icon-leaderboard.png", 
+        "sizes": "96x96",
+        "type": "image/png"
+      }]
+    },
+    {
+      "name": "Admin Panel",
+      "short_name": "Admin",
+      "description": "Access administrative features",
+      "url": "/admin/dashboard", 
+      "icons": [{ 
+        "src": "/icon-admin.png", 
+        "sizes": "96x96",
+        "type": "image/png"
+      }]
+    }
+  ],
+  "categories": ["business", "productivity", "utilities", "lifestyle"],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+rewards",
+      "url": "/handle-protocol?action=%s"
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": ["image/*", ".pdf"]
+        }
+      ]
+    }
+  },
+  "file_handlers": [
+    {
+      "action": "/import",
+      "accept": {
+        "text/csv": [".csv"],
+        "application/json": [".json"],
+        "application/vnd.ms-excel": [".xlsx"]
+      }
+    }
+  ],
+  "permissions": [
+    "notifications",
+    "background-sync",
+    "persistent-storage",
+    "camera",
+    "geolocation"
+  ],
+  "features": [
+    "Cross Platform",
+    "Offline Support",
+    "Push Notifications",
+    "Background Sync",
+    "QR Code Scanning",
+    "Real-time Updates",
+    "Progressive Enhancement"
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.company.rewards",
+      "id": "com.company.rewards"
+    },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/employee-rewards/id123456789"
+    }
+  ],
+  "gcm_sender_id": "103953800507",
+  "gcm_user_visible_only": true
 }

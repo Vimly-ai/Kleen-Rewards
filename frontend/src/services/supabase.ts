@@ -1,11 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Supabase configuration
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://widztbcqvrpijjcpczwl.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpZHp0YmNxdnJwaWpqY3BjendsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxOTUyNjcsImV4cCI6MjA2Nzc3MTI2N30.ud6FYEeHdAkT5MCklo3NMK89B7UIzT2yBkOPd6SihB4'
+// Supabase configuration - MUST be set via environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // Check if we're in development mode and can use mock data
-const USE_MOCK_DATA = !supabaseAnonKey || supabaseAnonKey.length < 50
+const USE_MOCK_DATA = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true' || !supabaseUrl || !supabaseAnonKey
+
+if (!USE_MOCK_DATA && (!supabaseUrl || !supabaseAnonKey)) {
+  throw new Error('Supabase configuration missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.')
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
