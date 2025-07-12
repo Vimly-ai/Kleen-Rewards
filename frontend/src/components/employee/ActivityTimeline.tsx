@@ -1,1 +1,390 @@
-import { useState } from 'react'\nimport { Timeline } from '../ui/Timeline'\nimport { Button } from '../ui/Button'\nimport { Badge } from '../ui/Badge'\nimport { Card } from '../ui/Card'\nimport { \n  Calendar,\n  Star,\n  Trophy,\n  Gift,\n  Zap,\n  Target,\n  Users,\n  TrendingUp,\n  Clock,\n  Filter,\n  ChevronDown,\n  CheckCircle,\n  Award\n} from 'lucide-react'\nimport { clsx } from 'clsx'\n\ninterface ActivityTimelineProps {\n  activities: Array<{\n    id: string\n    type: 'check_in' | 'points_earned' | 'achievement_unlocked' | 'reward_redeemed' | 'level_up' | 'streak_milestone' | 'bonus_earned'\n    title: string\n    description: string\n    timestamp: Date\n    points?: number\n    metadata?: Record<string, any>\n  }>\n  loading?: boolean\n  onLoadMore?: () => void\n  hasMore?: boolean\n}\n\nconst ACTIVITY_CONFIG = {\n  check_in: {\n    icon: CheckCircle,\n    type: 'success' as const,\n    color: 'text-green-600',\n    bgColor: 'bg-green-100',\n    label: 'Check-in'\n  },\n  points_earned: {\n    icon: Star,\n    type: 'info' as const,\n    color: 'text-blue-600',\n    bgColor: 'bg-blue-100',\n    label: 'Points Earned'\n  },\n  achievement_unlocked: {\n    icon: Trophy,\n    type: 'warning' as const,\n    color: 'text-yellow-600',\n    bgColor: 'bg-yellow-100',\n    label: 'Achievement'\n  },\n  reward_redeemed: {\n    icon: Gift,\n    type: 'default' as const,\n    color: 'text-purple-600',\n    bgColor: 'bg-purple-100',\n    label: 'Reward'\n  },\n  level_up: {\n    icon: TrendingUp,\n    type: 'success' as const,\n    color: 'text-emerald-600',\n    bgColor: 'bg-emerald-100',\n    label: 'Level Up'\n  },\n  streak_milestone: {\n    icon: Zap,\n    type: 'warning' as const,\n    color: 'text-orange-600',\n    bgColor: 'bg-orange-100',\n    label: 'Streak'\n  },\n  bonus_earned: {\n    icon: Award,\n    type: 'info' as const,\n    color: 'text-indigo-600',\n    bgColor: 'bg-indigo-100',\n    label: 'Bonus'\n  }\n}\n\nconst FILTER_OPTIONS = [\n  { key: 'all', label: 'All Activities', icon: Target },\n  { key: 'check_in', label: 'Check-ins', icon: CheckCircle },\n  { key: 'points_earned', label: 'Points', icon: Star },\n  { key: 'achievement_unlocked', label: 'Achievements', icon: Trophy },\n  { key: 'reward_redeemed', label: 'Rewards', icon: Gift }\n]\n\nexport function ActivityTimeline({ \n  activities, \n  loading = false,\n  onLoadMore,\n  hasMore = false\n}: ActivityTimelineProps) {\n  const [filter, setFilter] = useState('all')\n  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'all'>('all')\n  const [showFilters, setShowFilters] = useState(false)\n  \n  // Filter activities\n  const filteredActivities = activities.filter(activity => {\n    if (filter !== 'all' && activity.type !== filter) {\n      return false\n    }\n    \n    if (timeRange !== 'all') {\n      const now = new Date()\n      const activityDate = new Date(activity.timestamp)\n      const daysDiff = Math.floor((now.getTime() - activityDate.getTime()) / (1000 * 60 * 60 * 24))\n      \n      if (timeRange === 'week' && daysDiff > 7) return false\n      if (timeRange === 'month' && daysDiff > 30) return false\n    }\n    \n    return true\n  })\n  \n  // Group activities by date\n  const groupedActivities = filteredActivities.reduce((groups, activity) => {\n    const date = activity.timestamp.toDateString()\n    if (!groups[date]) {\n      groups[date] = []\n    }\n    groups[date].push(activity)\n    return groups\n  }, {} as Record<string, typeof activities>)\n  \n  // Convert to timeline format\n  const timelineItems = Object.entries(groupedActivities)\n    .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())\n    .flatMap(([date, dayActivities]) => {\n      const isToday = new Date().toDateString() === date\n      const isYesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString() === date\n      \n      let dateLabel = new Date(date).toLocaleDateString('en-US', {\n        weekday: 'long',\n        year: 'numeric',\n        month: 'long',\n        day: 'numeric'\n      })\n      \n      if (isToday) dateLabel = 'Today'\n      else if (isYesterday) dateLabel = 'Yesterday'\n      \n      return dayActivities.map((activity, index) => {\n        const config = ACTIVITY_CONFIG[activity.type]\n        const Icon = config.icon\n        \n        return {\n          id: `${activity.id}-${index}`,\n          title: activity.title,\n          description: activity.description,\n          timestamp: activity.timestamp,\n          icon: <Icon className=\"w-4 h-4\" />,\n          type: config.type,\n          actions: (\n            <div className=\"flex items-center gap-2\">\n              <Badge \n                variant=\"secondary\" \n                className={clsx('text-xs', config.bgColor, config.color)}\n              >\n                {config.label}\n              </Badge>\n              {activity.points && (\n                <Badge variant=\"success\" className=\"text-xs\">\n                  +{activity.points} pts\n                </Badge>\n              )}\n            </div>\n          )\n        }\n      })\n    })\n  \n  const getActivityStats = () => {\n    const stats = {\n      total: filteredActivities.length,\n      checkIns: filteredActivities.filter(a => a.type === 'check_in').length,\n      achievements: filteredActivities.filter(a => a.type === 'achievement_unlocked').length,\n      points: filteredActivities.reduce((sum, a) => sum + (a.points || 0), 0)\n    }\n    return stats\n  }\n  \n  const stats = getActivityStats()\n\n  if (loading) {\n    return (\n      <Card>\n        <div className=\"p-6\">\n          <div className=\"animate-pulse space-y-4\">\n            {Array.from({ length: 3 }).map((_, i) => (\n              <div key={i} className=\"flex items-start space-x-3\">\n                <div className=\"w-8 h-8 bg-gray-200 rounded-full\" />\n                <div className=\"flex-1 space-y-2\">\n                  <div className=\"h-4 bg-gray-200 rounded w-3/4\" />\n                  <div className=\"h-3 bg-gray-200 rounded w-1/2\" />\n                </div>\n              </div>\n            ))}\n          </div>\n        </div>\n      </Card>\n    )\n  }\n\n  return (\n    <div className=\"space-y-4\">\n      {/* Header with Stats */}\n      <div className=\"flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4\">\n        <div>\n          <h3 className=\"text-lg font-semibold text-gray-900 flex items-center gap-2\">\n            <Clock className=\"w-5 h-5\" />\n            Activity Timeline\n          </h3>\n          <p className=\"text-sm text-gray-600\">\n            {stats.total} activities • {stats.points} points earned\n          </p>\n        </div>\n        \n        <div className=\"flex items-center gap-2\">\n          <Button\n            variant=\"outline\"\n            size=\"small\"\n            onClick={() => setShowFilters(!showFilters)}\n            className=\"flex items-center gap-2\"\n          >\n            <Filter className=\"w-4 h-4\" />\n            Filters\n            <ChevronDown className={clsx(\n              'w-4 h-4 transition-transform',\n              showFilters && 'rotate-180'\n            )} />\n          </Button>\n        </div>\n      </div>\n      \n      {/* Filters */}\n      {showFilters && (\n        <Card>\n          <div className=\"p-4 space-y-4\">\n            {/* Activity Type Filter */}\n            <div>\n              <h4 className=\"font-medium text-gray-900 mb-2\">Activity Type</h4>\n              <div className=\"flex flex-wrap gap-2\">\n                {FILTER_OPTIONS.map(option => {\n                  const Icon = option.icon\n                  const count = option.key === 'all' \n                    ? activities.length \n                    : activities.filter(a => a.type === option.key).length\n                  \n                  return (\n                    <button\n                      key={option.key}\n                      onClick={() => setFilter(option.key)}\n                      className={clsx(\n                        'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',\n                        filter === option.key\n                          ? 'bg-primary-100 text-primary-700 border border-primary-200'\n                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'\n                      )}\n                    >\n                      <Icon className=\"w-4 h-4\" />\n                      {option.label}\n                      <Badge variant=\"secondary\" className=\"text-xs\">\n                        {count}\n                      </Badge>\n                    </button>\n                  )\n                })}\n              </div>\n            </div>\n            \n            {/* Time Range Filter */}\n            <div>\n              <h4 className=\"font-medium text-gray-900 mb-2\">Time Range</h4>\n              <div className=\"flex gap-2\">\n                {[\n                  { key: 'week', label: 'Past Week' },\n                  { key: 'month', label: 'Past Month' },\n                  { key: 'all', label: 'All Time' }\n                ].map(option => (\n                  <button\n                    key={option.key}\n                    onClick={() => setTimeRange(option.key as any)}\n                    className={clsx(\n                      'px-3 py-2 rounded-lg text-sm font-medium transition-all',\n                      timeRange === option.key\n                        ? 'bg-primary-100 text-primary-700 border border-primary-200'\n                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'\n                    )}\n                  >\n                    {option.label}\n                  </button>\n                ))}\n              </div>\n            </div>\n          </div>\n        </Card>\n      )}\n      \n      {/* Quick Stats */}\n      <div className=\"grid grid-cols-2 sm:grid-cols-4 gap-4\">\n        <div className=\"bg-green-50 border border-green-200 rounded-lg p-3 text-center\">\n          <div className=\"text-lg font-bold text-green-600\">\n            {stats.checkIns}\n          </div>\n          <div className=\"text-xs text-green-700\">Check-ins</div>\n        </div>\n        \n        <div className=\"bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center\">\n          <div className=\"text-lg font-bold text-yellow-600\">\n            {stats.achievements}\n          </div>\n          <div className=\"text-xs text-yellow-700\">Achievements</div>\n        </div>\n        \n        <div className=\"bg-blue-50 border border-blue-200 rounded-lg p-3 text-center\">\n          <div className=\"text-lg font-bold text-blue-600\">\n            {stats.points}\n          </div>\n          <div className=\"text-xs text-blue-700\">Points</div>\n        </div>\n        \n        <div className=\"bg-purple-50 border border-purple-200 rounded-lg p-3 text-center\">\n          <div className=\"text-lg font-bold text-purple-600\">\n            {Math.round(stats.points / Math.max(stats.checkIns, 1))}\n          </div>\n          <div className=\"text-xs text-purple-700\">Avg/Day</div>\n        </div>\n      </div>\n      \n      {/* Timeline */}\n      <Card>\n        <div className=\"p-6\">\n          {timelineItems.length > 0 ? (\n            <>\n              <Timeline items={timelineItems} compact />\n              \n              {/* Load More */}\n              {hasMore && onLoadMore && (\n                <div className=\"text-center mt-6\">\n                  <Button\n                    variant=\"outline\"\n                    onClick={onLoadMore}\n                    disabled={loading}\n                  >\n                    {loading ? 'Loading...' : 'Load More Activities'}\n                  </Button>\n                </div>\n              )}\n            </>\n          ) : (\n            <div className=\"text-center py-8\">\n              <Target className=\"w-12 h-12 text-gray-400 mx-auto mb-4\" />\n              <h3 className=\"text-lg font-medium text-gray-900 mb-2\">\n                No activities found\n              </h3>\n              <p className=\"text-gray-600\">\n                {filter === 'all' && timeRange === 'all'\n                  ? 'Start using the platform to see your activity timeline!'\n                  : 'No activities match your current filters. Try adjusting them.'}\n              </p>\n              {(filter !== 'all' || timeRange !== 'all') && (\n                <Button\n                  variant=\"outline\"\n                  onClick={() => {\n                    setFilter('all')\n                    setTimeRange('all')\n                  }}\n                  className=\"mt-4\"\n                >\n                  Clear Filters\n                </Button>\n              )}\n            </div>\n          )}\n        </div>\n      </Card>\n    </div>\n  )\n}
+import { useState } from 'react'
+import { Timeline } from '../ui/Timeline'
+import { Button } from '../ui/Button'
+import { Badge } from '../ui/Badge'
+import { Card } from '../ui/Card'
+import { 
+  Calendar,
+  Star,
+  Trophy,
+  Gift,
+  Zap,
+  Target,
+  Users,
+  TrendingUp,
+  Clock,
+  Filter,
+  ChevronDown,
+  CheckCircle,
+  Award
+} from 'lucide-react'
+import { clsx } from 'clsx'
+
+interface ActivityTimelineProps {
+  activities: Array<{
+    id: string
+    type: 'check_in' | 'points_earned' | 'achievement_unlocked' | 'reward_redeemed' | 'level_up' | 'streak_milestone' | 'bonus_earned'
+    title: string
+    description: string
+    timestamp: Date
+    points?: number
+    metadata?: Record<string, any>
+  }>
+  loading?: boolean
+  onLoadMore?: () => void
+  hasMore?: boolean
+}
+
+const ACTIVITY_CONFIG = {
+  check_in: {
+    icon: CheckCircle,
+    type: 'success' as const,
+    color: 'text-green-600',
+    bgColor: 'bg-green-100',
+    label: 'Check-in'
+  },
+  points_earned: {
+    icon: Star,
+    type: 'info' as const,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100',
+    label: 'Points Earned'
+  },
+  achievement_unlocked: {
+    icon: Trophy,
+    type: 'warning' as const,
+    color: 'text-yellow-600',
+    bgColor: 'bg-yellow-100',
+    label: 'Achievement'
+  },
+  reward_redeemed: {
+    icon: Gift,
+    type: 'default' as const,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-100',
+    label: 'Reward'
+  },
+  level_up: {
+    icon: TrendingUp,
+    type: 'success' as const,
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-100',
+    label: 'Level Up'
+  },
+  streak_milestone: {
+    icon: Zap,
+    type: 'warning' as const,
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-100',
+    label: 'Streak'
+  },
+  bonus_earned: {
+    icon: Award,
+    type: 'info' as const,
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-100',
+    label: 'Bonus'
+  }
+}
+
+const FILTER_OPTIONS = [
+  { key: 'all', label: 'All Activities', icon: Target },
+  { key: 'check_in', label: 'Check-ins', icon: CheckCircle },
+  { key: 'points_earned', label: 'Points', icon: Star },
+  { key: 'achievement_unlocked', label: 'Achievements', icon: Trophy },
+  { key: 'reward_redeemed', label: 'Rewards', icon: Gift }
+]
+
+export function ActivityTimeline({ 
+  activities, 
+  loading = false,
+  onLoadMore,
+  hasMore = false
+}: ActivityTimelineProps) {
+  const [filter, setFilter] = useState('all')
+  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'all'>('all')
+  const [showFilters, setShowFilters] = useState(false)
+  
+  // Filter activities
+  const filteredActivities = activities.filter(activity => {
+    if (filter !== 'all' && activity.type !== filter) {
+      return false
+    }
+    
+    if (timeRange !== 'all') {
+      const now = new Date()
+      const activityDate = new Date(activity.timestamp)
+      const daysDiff = Math.floor((now.getTime() - activityDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      if (timeRange === 'week' && daysDiff > 7) return false
+      if (timeRange === 'month' && daysDiff > 30) return false
+    }
+    
+    return true
+  })
+  
+  // Group activities by date
+  const groupedActivities = filteredActivities.reduce((groups, activity) => {
+    const date = activity.timestamp.toDateString()
+    if (!groups[date]) {
+      groups[date] = []
+    }
+    groups[date].push(activity)
+    return groups
+  }, {} as Record<string, typeof activities>)
+  
+  // Convert to timeline format
+  const timelineItems = Object.entries(groupedActivities)
+    .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
+    .flatMap(([date, dayActivities]) => {
+      const isToday = new Date().toDateString() === date
+      const isYesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString() === date
+      
+      let dateLabel = new Date(date).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+      
+      if (isToday) dateLabel = 'Today'
+      else if (isYesterday) dateLabel = 'Yesterday'
+      
+      return dayActivities.map((activity, index) => {
+        const config = ACTIVITY_CONFIG[activity.type]
+        const Icon = config.icon
+        
+        return {
+          id: `${activity.id}-${index}`,
+          title: activity.title,
+          description: activity.description,
+          timestamp: activity.timestamp,
+          icon: <Icon className="w-4 h-4" />,
+          type: config.type,
+          actions: (
+            <div className="flex items-center gap-2">
+              <Badge 
+                variant="secondary" 
+                className={clsx('text-xs', config.bgColor, config.color)}
+              >
+                {config.label}
+              </Badge>
+              {activity.points && (
+                <Badge variant="success" className="text-xs">
+                  +{activity.points} pts
+                </Badge>
+              )}
+            </div>
+          )
+        }
+      })
+    })
+  
+  const getActivityStats = () => {
+    const stats = {
+      total: filteredActivities.length,
+      checkIns: filteredActivities.filter(a => a.type === 'check_in').length,
+      achievements: filteredActivities.filter(a => a.type === 'achievement_unlocked').length,
+      points: filteredActivities.reduce((sum, a) => sum + (a.points || 0), 0)
+    }
+    return stats
+  }
+  
+  const stats = getActivityStats()
+
+  if (loading) {
+    return (
+      <Card>
+        <div className="p-6">
+          <div className="animate-pulse space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-gray-200 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4" />
+                  <div className="h-3 bg-gray-200 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header with Stats */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            Activity Timeline
+          </h3>
+          <p className="text-sm text-gray-600">
+            {stats.total} activities • {stats.points} points earned
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="small"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+            <ChevronDown className={clsx(
+              'w-4 h-4 transition-transform',
+              showFilters && 'rotate-180'
+            )} />
+          </Button>
+        </div>
+      </div>
+      
+      {/* Filters */}
+      {showFilters && (
+        <Card>
+          <div className="p-4 space-y-4">
+            {/* Activity Type Filter */}
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Activity Type</h4>
+              <div className="flex flex-wrap gap-2">
+                {FILTER_OPTIONS.map(option => {
+                  const Icon = option.icon
+                  const count = option.key === 'all' 
+                    ? activities.length 
+                    : activities.filter(a => a.type === option.key).length
+                  
+                  return (
+                    <button
+                      key={option.key}
+                      onClick={() => setFilter(option.key)}
+                      className={clsx(
+                        'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                        filter === option.key
+                          ? 'bg-primary-100 text-primary-700 border border-primary-200'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      )}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {option.label}
+                      <Badge variant="secondary" className="text-xs">
+                        {count}
+                      </Badge>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            
+            {/* Time Range Filter */}
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Time Range</h4>
+              <div className="flex gap-2">
+                {[
+                  { key: 'week', label: 'Past Week' },
+                  { key: 'month', label: 'Past Month' },
+                  { key: 'all', label: 'All Time' }
+                ].map(option => (
+                  <button
+                    key={option.key}
+                    onClick={() => setTimeRange(option.key as any)}
+                    className={clsx(
+                      'px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                      timeRange === option.key
+                        ? 'bg-primary-100 text-primary-700 border border-primary-200'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+      
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+          <div className="text-lg font-bold text-green-600">
+            {stats.checkIns}
+          </div>
+          <div className="text-xs text-green-700">Check-ins</div>
+        </div>
+        
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+          <div className="text-lg font-bold text-yellow-600">
+            {stats.achievements}
+          </div>
+          <div className="text-xs text-yellow-700">Achievements</div>
+        </div>
+        
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+          <div className="text-lg font-bold text-blue-600">
+            {stats.points}
+          </div>
+          <div className="text-xs text-blue-700">Points</div>
+        </div>
+        
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+          <div className="text-lg font-bold text-purple-600">
+            {Math.round(stats.points / Math.max(stats.checkIns, 1))}
+          </div>
+          <div className="text-xs text-purple-700">Avg/Day</div>
+        </div>
+      </div>
+      
+      {/* Timeline */}
+      <Card>
+        <div className="p-6">
+          {timelineItems.length > 0 ? (
+            <>
+              <Timeline items={timelineItems} compact />
+              
+              {/* Load More */}
+              {hasMore && onLoadMore && (
+                <div className="text-center mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={onLoadMore}
+                    disabled={loading}
+                  >
+                    {loading ? 'Loading...' : 'Load More Activities'}
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No activities found
+              </h3>
+              <p className="text-gray-600">
+                {filter === 'all' && timeRange === 'all'
+                  ? 'Start using the platform to see your activity timeline!'
+                  : 'No activities match your current filters. Try adjusting them.'}
+              </p>
+              {(filter !== 'all' || timeRange !== 'all') && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFilter('all')
+                    setTimeRange('all')
+                  }}
+                  className="mt-4"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  )
+}
