@@ -10,6 +10,28 @@ export interface WebSocketService {
   isConnected: () => boolean
 }
 
+// Mock WebSocket hook for demo mode
+export function useWebSocket() {
+  return {
+    realtimeStats: {
+      activeUsers: 15,
+      todayCheckIns: 8,
+      totalPoints: 1250
+    },
+    onlineUsers: [
+      { id: '1', name: 'Sarah Johnson', avatar: null, status: 'online' },
+      { id: '2', name: 'Mike Chen', avatar: null, status: 'online' },
+      { id: '3', name: 'Emily Davis', avatar: null, status: 'online' }
+    ],
+    autoConnect: (userId: string) => {
+      console.log('Mock WebSocket autoConnect for user:', userId)
+    },
+    disconnect: () => {
+      console.log('Mock WebSocket disconnect')
+    }
+  }
+}
+
 class WebSocketServiceImpl implements WebSocketService {
   private socket: Socket | null = null
   private reconnectAttempts = 0

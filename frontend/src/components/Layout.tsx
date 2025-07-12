@@ -18,15 +18,17 @@ export function Layout({ children }: LayoutProps) {
   const isAdmin = user?.publicMetadata?.role === 'admin' || user?.publicMetadata?.role === 'super_admin';
 
   const employeeNavItems = [
-    { path: '/dashboard', icon: Home, label: 'Dashboard' },
-    { path: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
-    { path: '/rewards', icon: Gift, label: 'Rewards' },
-    { path: '/profile', icon: User, label: 'Profile' }
+    { path: '/employee/dashboard', icon: Home, label: 'Dashboard' },
+    { path: '/employee/leaderboard', icon: Trophy, label: 'Leaderboard' },
+    { path: '/employee/rewards', icon: Gift, label: 'Rewards' },
+    { path: '/employee/profile', icon: User, label: 'Profile' }
   ];
 
   const adminNavItems = [
-    { path: '/dashboard', icon: Settings, label: 'Admin' },
-    { path: '/profile', icon: User, label: 'Profile' }
+    { path: '/admin/dashboard', icon: Settings, label: 'Admin' },
+    { path: '/admin/users', icon: User, label: 'Users' },
+    { path: '/admin/analytics', icon: Trophy, label: 'Analytics' },
+    { path: '/admin/profile', icon: User, label: 'Profile' }
   ];
 
   const navItems = isAdmin ? adminNavItems : employeeNavItems;

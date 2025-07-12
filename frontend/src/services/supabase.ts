@@ -790,6 +790,52 @@ export class SupabaseService {
     }
   }
 
+  // Additional user methods for enhanced queries
+  static async getCurrentUser(): Promise<User | null> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: getCurrentUser called')
+      return MOCK_USER('demo-user', { name: 'Demo User' })
+    }
+    // In a real app, you'd get the current user ID from auth context
+    // For now, return mock data
+    return MOCK_USER('demo-user', { name: 'Demo User' })
+  }
+
+  static async getUserById(userId: string): Promise<User | null> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: getUserById called for', userId)
+      return MOCK_USER(userId, {})
+    }
+    return this.getUser(userId)
+  }
+
+  static async getUserStats(userId: string): Promise<any> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: getUserStats called for', userId)
+      return {
+        totalCheckIns: 25,
+        totalPoints: 300,
+        currentStreak: 5,
+        longestStreak: 12,
+        averageCheckInTime: '08:45 AM',
+        recentAchievements: 3,
+        rank: 2,
+        weeklyProgress: 85
+      }
+    }
+    // Return mock stats for now
+    return {
+      totalCheckIns: 25,
+      totalPoints: 300,
+      currentStreak: 5,
+      longestStreak: 12,
+      averageCheckInTime: '08:45 AM',
+      recentAchievements: 3,
+      rank: 2,
+      weeklyProgress: 85
+    }
+  }
+
   // Leaderboard
   static async getLeaderboard(limit: number = 10): Promise<User[]> {
     if (USE_MOCK_DATA) {
