@@ -15,7 +15,7 @@ export function useAuth() {
   if (demoAuth.isDemoMode) {
     return {
       isSignedIn: demoAuth.isSignedIn,
-      isLoaded: true,
+      isLoaded: !demoAuth.isLoading,
       user: demoAuth.demoUser ? {
         id: demoAuth.demoUser.id,
         emailAddresses: [{ emailAddress: demoAuth.demoUser.email }],

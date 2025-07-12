@@ -31,15 +31,19 @@ export const DemoSignIn: React.FC = () => {
       if (success) {
         toast.success('Welcome back!')
         
+        // Wait a moment for auth state to propagate
+        await new Promise(resolve => setTimeout(resolve, 200))
+        
         // Navigate based on role
         const isAdmin = email === DEMO_CREDENTIALS.admin.email
-        navigate(isAdmin ? '/admin/dashboard' : '/employee/dashboard')
+        navigate(isAdmin ? '/admin' : '/employee', { replace: true })
       } else {
         setError('Invalid email or password')
+        setLoading(false)
       }
     } catch (err) {
+      console.error('Demo login error:', err)
       setError('An error occurred. Please try again.')
-    } finally {
       setLoading(false)
     }
   }

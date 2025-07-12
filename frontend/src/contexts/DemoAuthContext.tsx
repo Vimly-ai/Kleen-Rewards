@@ -26,12 +26,14 @@ interface DemoAuthContextType {
   demoUser: DemoUser | null
   signIn: (email: string, password: string) => Promise<boolean>
   signOut: () => void
+  isLoading?: boolean
 }
 
 const DemoAuthContext = createContext<DemoAuthContextType | null>(null)
 
 export function DemoAuthProvider({ children }: { children: React.ReactNode }) {
   const [demoUser, setDemoUser] = useState<DemoUser | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   // Always enable demo mode for now
   const isDemoMode = true // import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 
@@ -45,14 +47,21 @@ export function DemoAuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string): Promise<boolean> => {
     if (!isDemoMode) return false
 
+    setIsLoading(true)
+    
+    // Add small delay to simulate real auth
+    await new Promise(resolve => setTimeout(resolve, 300))
+
     // Simple demo password check
     if (password !== 'demo123') {
+      setIsLoading(false)
       return false
     }
 
     // Find demo user by email
     const user = DEMO_USERS.find(u => u.email === email)
     if (!user) {
+      setIsLoading(false)
       return false
     }
 
@@ -70,6 +79,7 @@ export function DemoAuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setDemoUser(demoUserData)
+    setIsLoading(false)
     // Don't persist demo sessions to prevent auto-login issues
     return true
   }
@@ -86,7 +96,8 @@ export function DemoAuthProvider({ children }: { children: React.ReactNode }) {
         isDemoMode,
         demoUser,
         signIn,
-        signOut
+        signOut,
+        isLoading
       }}
     >
       {children}
