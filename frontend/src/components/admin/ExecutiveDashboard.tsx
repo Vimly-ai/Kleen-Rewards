@@ -86,14 +86,13 @@ export function ExecutiveDashboard() {
             user: `User ${Math.floor(Math.random() * 100)}`,
             timestamp: new Date().toISOString(),
             details: 'Checked in early'
-          },
-          ...realtimeMetrics.recentActivities.slice(0, 4)
+          }
         ]
       })
     }, 3000) // Update every 3 seconds
     
     return () => clearInterval(interval)
-  }, [autoRefresh, updateRealtimeMetrics, realtimeMetrics.recentActivities])
+  }, [autoRefresh, updateRealtimeMetrics])
   
   const { data: kpiData, isLoading } = useQuery({
     queryKey: ['executive-kpis', selectedPeriod],

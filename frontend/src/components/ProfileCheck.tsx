@@ -20,6 +20,17 @@ export function ProfileCheck({ children }: ProfileCheckProps) {
     // Skip check if still loading
     if (loading) return
 
+    // Skip check for demo users
+    const isDemoUser = user?.email && (
+      user.email === 'admin@demo.com' ||
+      user.email === 'john@demo.com' ||
+      user.email === 'emily@demo.com' ||
+      user.email === 'michael@demo.com' ||
+      user.email === 'lisa@demo.com'
+    )
+    
+    if (isDemoUser) return
+
     // Check if profile is incomplete
     if (user && (!user.first_name || !user.last_name || user.name === 'New User')) {
       navigate('/profile-setup')
@@ -28,7 +39,19 @@ export function ProfileCheck({ children }: ProfileCheckProps) {
 
   // Don't render children until we've checked the profile
   if (loading) return null
-  if (user && (!user.first_name || !user.last_name || user.name === 'New User')) return null
+  
+  // Skip blocking render for demo users
+  const isDemoUser = user?.email && (
+    user.email === 'admin@demo.com' ||
+    user.email === 'john@demo.com' ||
+    user.email === 'emily@demo.com' ||
+    user.email === 'michael@demo.com' ||
+    user.email === 'lisa@demo.com'
+  )
+  
+  if (!isDemoUser && user && (!user.first_name || !user.last_name || user.name === 'New User')) {
+    return null
+  }
 
   return <>{children}</>
 }
