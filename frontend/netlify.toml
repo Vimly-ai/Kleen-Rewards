@@ -31,3 +31,6 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  VITE_ENABLE_MOCK_DATA = "true"
+  VITE_SUPABASE_URL = "https://demo.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "demo-key"

@@ -6,7 +6,8 @@ import { DemoSignIn } from '../../components/DemoSignIn'
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [showDemoLogin, setShowDemoLogin] = useState(false)
-  const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
+  // Always show demo option for now since we're in demo deployment
+  const isDemoMode = true // import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center p-4">

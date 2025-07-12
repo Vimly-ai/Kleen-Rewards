@@ -32,7 +32,8 @@ const DemoAuthContext = createContext<DemoAuthContextType | null>(null)
 
 export function DemoAuthProvider({ children }: { children: React.ReactNode }) {
   const [demoUser, setDemoUser] = useState<DemoUser | null>(null)
-  const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
+  // Always enable demo mode for now
+  const isDemoMode = true // import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 
   // Check for saved demo session
   useEffect(() => {
