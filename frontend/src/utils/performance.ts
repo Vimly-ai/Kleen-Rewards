@@ -364,12 +364,12 @@ export function createLazyLoadObserver(callback: () => void) {
   return null
 }
 
-// Export singleton instance
-export const performance = new PerformanceMonitor()
+// Export singleton instance with different name to avoid conflict with global performance
+export const performanceMonitor = new PerformanceMonitor()
 
 // Cleanup function for app unmount
 export function cleanupPerformanceMonitoring() {
-  performance.destroy()
+  performanceMonitor.destroy()
 }
 
 // Bundle analysis for development

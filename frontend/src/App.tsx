@@ -16,7 +16,7 @@ import { InstallPrompt, UpdatePrompt, OfflineIndicator } from './components/pwa'
 
 // Services and Utils
 import { useNotificationService } from './services/notifications'
-import { performance } from './utils/performance'
+import { performanceMonitor } from './utils/performance'
 import { swUtils } from './utils/pwa'
 
 // Stores
@@ -61,8 +61,8 @@ function AppInitializer() {
 
   useEffect(() => {
     // Initialize performance monitoring
-    performance.initialize()
-    performance.markStart('app-initialization')
+    performanceMonitor.initialize()
+    performanceMonitor.markStart('app-initialization')
 
     const initializeApp = async () => {
       try {
@@ -96,11 +96,11 @@ function AppInitializer() {
           initializeWebSocket()
         }
 
-        performance.markEnd('app-initialization')
-        performance.measure('app-initialization')
+        performanceMonitor.markEnd('app-initialization')
+        performanceMonitor.measure('app-initialization')
       } catch (error) {
         console.error('Failed to initialize app:', error)
-        performance.markEnd('app-initialization')
+        performanceMonitor.markEnd('app-initialization')
       }
     }
 
@@ -177,7 +177,7 @@ export default function App() {
       onError={(error, errorInfo) => {
         // Send error to monitoring service
         console.error('Global error caught:', { error, errorInfo })
-        performance.recordError(error)
+        performanceMonitor.recordError(error)
       }}
     >
       <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
