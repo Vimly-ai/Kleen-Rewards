@@ -57,21 +57,39 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
       const hour = mstTime.getHours()
       const minute = mstTime.getMinutes()
       
+      // Check if within allowed time window (6:00 AM - 9:00 AM MST)
+      if (hour < 6 || hour >= 9) {
+        toast.error(
+          <div>
+            <p className="font-medium">Check-in window closed</p>
+            <p className="text-sm">Check-ins are only allowed between 6:00 AM - 9:00 AM MST</p>
+            <p className="text-xs mt-1">Current time: {mstTime.toLocaleTimeString('en-US', { timeZone: 'America/Denver' })}</p>
+          </div>,
+          { duration: 5000 }
+        )
+        setCheckingIn(false)
+        return
+      }
+      
       let type: 'early' | 'ontime' | 'late'
       let points: number
 
-      // Check-in rules:
-      // Early (before 7:45 AM): 2 points
-      // On-time (8:00 AM or after): 1 point
-      if (hour < 7 || (hour === 7 && minute < 45)) {
+      // Updated Check-in rules:
+      // Early (7:45 AM or earlier): 2 points
+      // On-time (7:46 AM - 8:01 AM): 1 point
+      // Late (8:02 AM or later): 0 points
+      if (hour < 7 || (hour === 7 && minute <= 45)) {
         type = 'early'
         points = 2
-      } else {
+      } else if ((hour === 7 && minute >= 46) || (hour === 8 && minute <= 1)) {
         type = 'ontime'
         points = 1
+      } else {
+        type = 'late'
+        points = 0
       }
 
-      const quote = await getUniqueMotivationalQuote(type === 'early' ? 'early' : 'ontime')
+      const quote = await getUniqueMotivationalQuote(type)
       
       // Calculate bonuses
       let bonusPoints = 0
@@ -98,21 +116,53 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
       await SupabaseService.createCheckIn(checkInData)
       
       // Show success message with bonuses
-      let successMessage = type === 'early' 
-        ? `🌅 Early Bird Success! +${points} points earned!`
-        : `⏰ Perfect Timing! +${points} point earned!`
+      let successMessage: string
+      let toastType: 'success' | 'warning' = 'success'
+      
+      if (type === 'early') {
+        successMessage = `🌅 Early Bird Success! +${points} points earned!`
+      } else if (type === 'ontime') {
+        successMessage = `⏰ Perfect Timing! +${points} point earned!`
+      } else {
+        successMessage = `📌 Check-in recorded. ${points} points earned.`
+        toastType = 'warning'
+      }
       
       if (bonusPoints > 0) {
         successMessage += ` Plus ${bonusPoints} bonus points!`
         if (newStreakDay % 7 === 0) {
-          successMessage += ' (Perfect Week!)'
+          successMessage += ' 🎯 Perfect Week!'
         }
         if (newStreakDay % 10 === 0) {
-          successMessage += ' (10-Day Streak!)'
+          successMessage += ' 🔥 10-Day Streak!'
         }
       }
       
-      toast.success(successMessage)
+      // Add time information
+      const checkInTime = mstTime.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        timeZone: 'America/Denver' 
+      })
+      
+      if (toastType === 'success') {
+        toast.success(
+          <div>
+            <p className="font-medium">{successMessage}</p>
+            <p className="text-sm mt-1">Checked in at {checkInTime} MST</p>
+          </div>,
+          { duration: 5000 }
+        )
+      } else {
+        toast.warning(
+          <div>
+            <p className="font-medium">{successMessage}</p>
+            <p className="text-sm mt-1">Checked in at {checkInTime} MST (Late)</p>
+            <p className="text-xs mt-1">Try to check in before 8:02 AM for points!</p>
+          </div>,
+          { duration: 5000 }
+        )
+      }
       
       // Show motivational quote after a delay
       setTimeout(() => {
@@ -142,11 +192,25 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
   }
 
   const handleQRScan = async (data: string) => {
-    if (data === 'systemkleen-checkin' || data.includes('systemkleen')) {
+    // Define the specific office QR code URL
+    const VALID_QR_URL = 'https://systemkleen.com/checkin'
+    const VALID_QR_CODES = [
+      'systemkleen-checkin',
+      'https://systemkleen.com/checkin',
+      'http://systemkleen.com/checkin'
+    ]
+    
+    if (VALID_QR_CODES.includes(data) || data.includes('systemkleen.com/checkin')) {
       setShowQRScanner(false)
       await handleCheckIn()
     } else {
-      toast.error('Invalid QR code. Please scan the correct check-in code.')
+      toast.error(
+        <div>
+          <p className="font-medium">Invalid QR Code</p>
+          <p className="text-sm">Please scan the official System Kleen check-in QR code located at your workstation.</p>
+        </div>,
+        { duration: 4000 }
+      )
     }
   }
 

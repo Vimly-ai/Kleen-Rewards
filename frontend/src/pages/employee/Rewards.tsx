@@ -77,6 +77,16 @@ export default function EmployeeRewards() {
   const { data: redemptions, isLoading: redemptionsLoading } = useUserRedemptions(user?.id || '')
   const redeemMutation = useRedeemReward()
   
+  // Debug logging
+  useEffect(() => {
+    console.log('Rewards Debug:', { 
+      rawRewards, 
+      rewardsLoading, 
+      userLoading,
+      user 
+    })
+  }, [rawRewards, rewardsLoading, userLoading, user])
+  
   // Mock enhanced reward data - in real app this would come from API
   const rewards: EnhancedReward[] = rawRewards?.map(reward => ({
     ...reward,

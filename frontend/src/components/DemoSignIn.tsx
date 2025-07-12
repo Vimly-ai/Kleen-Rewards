@@ -34,9 +34,9 @@ export const DemoSignIn: React.FC = () => {
         // Wait a moment for auth state to propagate
         await new Promise(resolve => setTimeout(resolve, 200))
         
-        // Navigate based on role
+        // Navigate directly to dashboard based on role
         const isAdmin = email === DEMO_CREDENTIALS.admin.email
-        navigate(isAdmin ? '/admin' : '/employee', { replace: true })
+        navigate(isAdmin ? '/admin/dashboard' : '/employee/dashboard', { replace: true })
       } else {
         setError('Invalid email or password')
         setLoading(false)

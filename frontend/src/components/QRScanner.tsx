@@ -123,12 +123,18 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
           <h3 className="text-xl font-semibold mb-2">Employee Check-In</h3>
           <p className="text-gray-600 mb-2">Point your camera at the office QR code</p>
           <div className="text-sm text-gray-500">
-            <p>Current Time: {new Date().toLocaleTimeString('en-US', { 
+            <p className="font-medium">Current Time: {new Date().toLocaleTimeString('en-US', { 
               hour: '2-digit', 
               minute: '2-digit',
               timeZone: 'America/Denver' 
             })} MST</p>
-            <p className="text-xs mt-1">Check-in window: 6:00 AM - 9:00 AM</p>
+            <p className="text-xs mt-1">Check-in window: 6:00 AM - 9:00 AM MST</p>
+          </div>
+          <div className="mt-3 p-2 bg-blue-50 rounded-lg text-xs text-blue-700">
+            <p className="font-medium">Point System:</p>
+            <p>• Early (≤7:45 AM): 2 points</p>
+            <p>• On-time (7:46-8:01 AM): 1 point</p>
+            <p>• Late (≥8:02 AM): 0 points</p>
           </div>
         </div>
 

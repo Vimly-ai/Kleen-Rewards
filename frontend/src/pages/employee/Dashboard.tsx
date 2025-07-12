@@ -28,8 +28,10 @@ import {
   ArrowRight
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export default function EmployeeDashboard() {
+  const navigate = useNavigate()
   const { user: clerkUser } = useUser()
   const { user: dbUser, loading: userLoading } = useData()
   const { data: userStats, isLoading: statsLoading } = useUserStats(dbUser?.id || '')
@@ -227,7 +229,7 @@ export default function EmployeeDashboard() {
             <Button
               variant="ghost"
               size="small"
-              onClick={() => window.location.href = '/employee/achievements'}
+              onClick={() => navigate('/employee/achievements')}
               className="text-sm"
             >
               View All
@@ -272,7 +274,7 @@ export default function EmployeeDashboard() {
                 variant="outline"
                 size="small"
                 className="mt-3"
-                onClick={() => window.location.href = '/employee/achievements'}
+                onClick={() => navigate('/employee/achievements')}
               >
                 Explore Achievements
               </Button>
@@ -291,7 +293,7 @@ export default function EmployeeDashboard() {
           <Button
             variant="outline"
             className="h-auto p-4 flex-col items-start space-y-2 hover:bg-primary-50 hover:border-primary-200 group"
-            onClick={() => window.location.href = '/employee/rewards'}
+            onClick={() => navigate('/employee/rewards')}
           >
             <div className="flex items-center space-x-2 w-full">
               <Gift className="w-5 h-5 text-primary-600" />
@@ -307,7 +309,7 @@ export default function EmployeeDashboard() {
           <Button
             variant="outline"
             className="h-auto p-4 flex-col items-start space-y-2 hover:bg-yellow-50 hover:border-yellow-200 group"
-            onClick={() => window.location.href = '/leaderboard'}
+            onClick={() => navigate('/employee/leaderboard')}
           >
             <div className="flex items-center space-x-2 w-full">
               <Trophy className="w-5 h-5 text-yellow-600" />
@@ -323,7 +325,7 @@ export default function EmployeeDashboard() {
           <Button
             variant="outline"
             className="h-auto p-4 flex-col items-start space-y-2 hover:bg-green-50 hover:border-green-200 group"
-            onClick={() => window.location.href = '/employee/achievements'}
+            onClick={() => navigate('/employee/achievements')}
           >
             <div className="flex items-center space-x-2 w-full">
               <Star className="w-5 h-5 text-green-600" />
@@ -339,7 +341,7 @@ export default function EmployeeDashboard() {
           <Button
             variant="outline"
             className="h-auto p-4 flex-col items-start space-y-2 hover:bg-purple-50 hover:border-purple-200 group"
-            onClick={() => window.location.href = '/employee/profile'}
+            onClick={() => navigate('/employee/profile')}
           >
             <div className="flex items-center space-x-2 w-full">
               <Users className="w-5 h-5 text-purple-600" />
