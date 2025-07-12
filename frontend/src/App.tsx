@@ -128,16 +128,16 @@ function AppContent() {
   useEffect(() => {
     const root = document.documentElement
     if (theme === 'dark') {
-      root.classList.add('dark')
+      root.setAttribute('data-theme', 'dark')
     } else if (theme === 'light') {
-      root.classList.remove('dark')
+      root.removeAttribute('data-theme')
     } else {
       // System theme
       const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       if (isDark) {
-        root.classList.add('dark')
+        root.setAttribute('data-theme', 'dark')
       } else {
-        root.classList.remove('dark')
+        root.removeAttribute('data-theme')
       }
     }
   }, [theme])

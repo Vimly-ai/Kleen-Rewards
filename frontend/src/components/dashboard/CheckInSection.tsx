@@ -200,7 +200,8 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
 
       {showQRScanner && (
         <QRScanner
-          onScan={handleQRScan}
+          isOpen={showQRScanner}
+          onScanSuccess={handleQRScan}
           onClose={() => setShowQRScanner(false)}
         />
       )}

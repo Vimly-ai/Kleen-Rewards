@@ -208,12 +208,19 @@ const MOCK_REWARDS = (): Reward[] => demoData.DEMO_REWARDS.map(reward => ({
   name: reward.name,
   description: reward.description,
   points_cost: reward.pointCost,
+  pointsCost: reward.pointCost, // Add camelCase for TypeScript interface
   category: reward.category as any,
+  icon: reward.icon || '🎁',
+  available: reward.inventoryCount > 0,
+  company: 'System Kleen',
   availability: reward.availability === 'in_stock' ? 'available' : reward.availability as any,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
+  created: new Date().toISOString(),
+  updated: new Date().toISOString(),
   is_active: true,
   stock_quantity: reward.stock || 100,
+  inventory_count: reward.inventoryCount,
   image_url: reward.imageUrl,
   terms_conditions: reward.terms
 }))

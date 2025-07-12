@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useRewards, useUserRedemptions, useRedeemReward } from '../../queries/rewardQueries'
-import { useCurrentUser, useUserStats } from '../../queries/userQueries'
+import { useData } from '../../contexts/DataContext'
+import { useUserStats } from '../../queries/userQueries'
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
@@ -70,7 +71,7 @@ export default function EmployeeRewards() {
     sortBy: 'popularity'
   })
 
-  const { data: user } = useCurrentUser()
+  const { user, loading: userLoading } = useData()
   const { data: userStats } = useUserStats(user?.id || '')
   const { data: rawRewards, isLoading: rewardsLoading } = useRewards()
   const { data: redemptions, isLoading: redemptionsLoading } = useUserRedemptions(user?.id || '')
@@ -150,7 +151,7 @@ export default function EmployeeRewards() {
 
   const canAffordReward = (reward: EnhancedReward) => userPoints >= reward.pointsCost
 
-  if (rewardsLoading) {
+  if (userLoading || rewardsLoading) {
     return <LoadingSpinner size="large" text="Loading rewards marketplace..." />
   }
 
