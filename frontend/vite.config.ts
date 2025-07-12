@@ -7,7 +7,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true, // Enable sourcemaps for debugging
-    minify: 'esbuild',
+    minify: false, // Disable minification completely for debugging
     target: 'es2020', // Use more modern target
     // Clear output directory before build
     emptyOutDir: true,
@@ -28,10 +28,7 @@ export default defineConfig({
       }
     },
     // Bundle size warning limit
-    chunkSizeWarningLimit: 1000,
-    // Minification options - disable aggressive optimizations
-    minifyIdentifiers: false,
-    keepNames: true
+    chunkSizeWarningLimit: 2000 // Increase limit since we're not minifying
   },
   // Ensure proper asset handling
   base: '/',

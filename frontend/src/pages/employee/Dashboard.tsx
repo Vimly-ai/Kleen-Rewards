@@ -38,8 +38,12 @@ export default function EmployeeDashboard() {
 
   // Auto-connect to WebSocket for real-time updates
   useEffect(() => {
-    if (dbUser?.id) {
-      autoConnect(dbUser.id)
+    if (dbUser?.id && autoConnect && typeof autoConnect === 'function') {
+      try {
+        autoConnect(dbUser.id)
+      } catch (error) {
+        console.warn('Failed to auto-connect WebSocket:', error)
+      }
     }
   }, [dbUser?.id, autoConnect])
 

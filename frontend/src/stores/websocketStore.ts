@@ -17,6 +17,7 @@ interface WebSocketState {
   } | null
   
   // Actions
+  initialize: () => void
   connect: (userId: string) => void
   disconnect: () => void
   emit: (event: string, data: any) => void
@@ -34,6 +35,23 @@ export const useWebSocketStore = create<WebSocketState>()(
       lastActivity: null,
       onlineUsers: [],
       realtimeStats: null,
+      
+      initialize: () => {
+        console.log('WebSocket store initialized')
+        // In demo mode, just set some mock data
+        if (import.meta.env.VITE_ENABLE_MOCK_DATA === 'true') {
+          set({
+            isConnected: true,
+            connectionStatus: 'connected',
+            realtimeStats: {
+              totalCheckIns: 25,
+              activeUsers: 15,
+              todayPoints: 1250
+            },
+            onlineUsers: ['user1', 'user2', 'user3']
+          })
+        }
+      },
       
       connect: (userId) => {
         const state = get()
