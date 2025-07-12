@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import QRScanner from '../QRScanner'
 import { useData } from '../../contexts/DataContext'
 import SupabaseService from '../../services/supabase'
+import QRCodeService from '../../services/qrCodeService'
 import { withErrorHandling } from '../../utils/errorHandler'
 
 interface CheckInSectionProps {
@@ -52,18 +53,15 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
     setCheckingIn(true)
     
     await withErrorHandling(async () => {
-      const now = new Date()
-      const mstTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Denver" }))
-      const hour = mstTime.getHours()
-      const minute = mstTime.getMinutes()
-      
-      // Check if within allowed time window (6:00 AM - 9:00 AM MST)
-      if (hour < 6 || hour >= 9) {
+      // Check if within allowed time window
+      const windowCheck = QRCodeService.isWithinCheckInWindow()
+      if (!windowCheck.allowed) {
+        const settings = QRCodeService.getCheckInSettings()
         toast.error(
           <div>
             <p className="font-medium">Check-in window closed</p>
-            <p className="text-sm">Check-ins are only allowed between 6:00 AM - 9:00 AM MST</p>
-            <p className="text-xs mt-1">Current time: {mstTime.toLocaleTimeString('en-US', { timeZone: 'America/Denver' })}</p>
+            <p className="text-sm">{windowCheck.message}</p>
+            <p className="text-xs mt-1">Current time: {windowCheck.currentTime.toLocaleTimeString('en-US', { timeZone: settings.timeWindow.timezone })}</p>
           </div>,
           { duration: 5000 }
         )
@@ -71,23 +69,8 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
         return
       }
       
-      let type: 'early' | 'ontime' | 'late'
-      let points: number
-
-      // Updated Check-in rules:
-      // Early (7:45 AM or earlier): 2 points
-      // On-time (7:46 AM - 8:01 AM): 1 point
-      // Late (8:02 AM or later): 0 points
-      if (hour < 7 || (hour === 7 && minute <= 45)) {
-        type = 'early'
-        points = 2
-      } else if ((hour === 7 && minute >= 46) || (hour === 8 && minute <= 1)) {
-        type = 'ontime'
-        points = 1
-      } else {
-        type = 'late'
-        points = 0
-      }
+      // Calculate points based on check-in time
+      const { points, type } = QRCodeService.calculatePoints()
 
       const quote = await getUniqueMotivationalQuote(type)
       
@@ -107,7 +90,7 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
       
       const checkInData = {
         user_id: dbUser.id,
-        check_in_time: mstTime.toISOString(),
+        check_in_time: windowCheck.currentTime.toISOString(),
         points_earned: points + bonusPoints,
         check_in_type: type,
         streak_day: newStreakDay
@@ -139,10 +122,11 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
       }
       
       // Add time information
-      const checkInTime = mstTime.toLocaleTimeString('en-US', { 
+      const settings = QRCodeService.getCheckInSettings()
+      const checkInTime = windowCheck.currentTime.toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit',
-        timeZone: 'America/Denver' 
+        timeZone: settings.timeWindow.timezone 
       })
       
       if (toastType === 'success') {
@@ -192,22 +176,18 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
   }
 
   const handleQRScan = async (data: string) => {
-    // Define the specific office QR code URL
-    const VALID_QR_URL = 'https://systemkleen.com/checkin'
-    const VALID_QR_CODES = [
-      'systemkleen-checkin',
-      'https://systemkleen.com/checkin',
-      'http://systemkleen.com/checkin'
-    ]
+    // Validate QR code using the service
+    const validation = QRCodeService.validateQRCode(data)
     
-    if (VALID_QR_CODES.includes(data) || data.includes('systemkleen.com/checkin')) {
+    if (validation.valid && validation.code) {
       setShowQRScanner(false)
+      console.log('Valid QR code scanned:', validation.code)
       await handleCheckIn()
     } else {
       toast.error(
         <div>
           <p className="font-medium">Invalid QR Code</p>
-          <p className="text-sm">Please scan the official System Kleen check-in QR code located at your workstation.</p>
+          <p className="text-sm">{validation.error || 'Please scan the official System Kleen check-in QR code located at your workstation.'}</p>
         </div>,
         { duration: 4000 }
       )

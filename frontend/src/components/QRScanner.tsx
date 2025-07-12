@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
 import { X, Camera } from 'lucide-react'
+import QRCodeService from '../services/qrCodeService'
 
 interface QRScannerProps {
   onScanSuccess: (data: string) => void
@@ -122,20 +123,34 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
           <Camera className="w-12 h-12 text-blue-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Employee Check-In</h3>
           <p className="text-gray-600 mb-2">Point your camera at the office QR code</p>
-          <div className="text-sm text-gray-500">
-            <p className="font-medium">Current Time: {new Date().toLocaleTimeString('en-US', { 
+          {(() => {
+            const settings = QRCodeService.getCheckInSettings()
+            const now = new Date()
+            const timeStr = now.toLocaleTimeString('en-US', { 
               hour: '2-digit', 
               minute: '2-digit',
-              timeZone: 'America/Denver' 
-            })} MST</p>
-            <p className="text-xs mt-1">Check-in window: 6:00 AM - 9:00 AM MST</p>
-          </div>
-          <div className="mt-3 p-2 bg-blue-50 rounded-lg text-xs text-blue-700">
-            <p className="font-medium">Point System:</p>
-            <p>• Early (≤7:45 AM): 2 points</p>
-            <p>• On-time (7:46-8:01 AM): 1 point</p>
-            <p>• Late (≥8:02 AM): 0 points</p>
-          </div>
+              timeZone: settings.timeWindow.timezone 
+            })
+            const tzAbbr = settings.timeWindow.timezone === 'America/Denver' ? 'MST' : 
+                          settings.timeWindow.timezone === 'America/Chicago' ? 'CST' :
+                          settings.timeWindow.timezone === 'America/New_York' ? 'EST' :
+                          settings.timeWindow.timezone === 'America/Los_Angeles' ? 'PST' : 'TZ'
+            
+            return (
+              <>
+                <div className="text-sm text-gray-500">
+                  <p className="font-medium">Current Time: {timeStr} {tzAbbr}</p>
+                  <p className="text-xs mt-1">Check-in window: {settings.timeWindow.startTime} - {settings.timeWindow.endTime} {tzAbbr}</p>
+                </div>
+                <div className="mt-3 p-2 bg-blue-50 rounded-lg text-xs text-blue-700">
+                  <p className="font-medium">Point System:</p>
+                  <p>• Early (≤{settings.pointsConfig.earlyBirdTime}): {settings.pointsConfig.earlyBirdPoints} points</p>
+                  <p>• On-time ({settings.pointsConfig.earlyBirdTime}-{settings.pointsConfig.onTimeEndTime}): {settings.pointsConfig.onTimePoints} point</p>
+                  <p>• Late (≥{settings.pointsConfig.onTimeEndTime}): {settings.pointsConfig.latePoints} points</p>
+                </div>
+              </>
+            )
+          })()}
         </div>
 
         {error ? (

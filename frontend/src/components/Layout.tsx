@@ -6,7 +6,8 @@ import {
   Gift, 
   User,
   Settings,
-  LogOut
+  LogOut,
+  QrCode
 } from 'lucide-react';
 import { UserButton } from '@clerk/clerk-react';
 import { useAuth } from '../hooks/useAuth';
@@ -33,6 +34,7 @@ export function Layout({ children }: LayoutProps) {
     { path: '/admin/dashboard', icon: Settings, label: 'Admin' },
     { path: '/admin/users', icon: User, label: 'Users' },
     { path: '/admin/analytics', icon: Trophy, label: 'Analytics' },
+    { path: '/admin/qr-settings', icon: QrCode, label: 'QR Settings' },
     { path: '/admin/profile', icon: User, label: 'Profile' }
   ];
 
