@@ -29,34 +29,36 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
     const [imageLoaded, setImageLoaded] = useState(false);
     
     // Size configurations
+    const sizeConfigs = {
+      sm: {
+        container: 'h-8 w-8',
+        text: 'text-xs',
+        icon: 'h-4 w-4',
+      },
+      md: {
+        container: 'h-10 w-10',
+        text: 'text-sm',
+        icon: 'h-5 w-5',
+      },
+      lg: {
+        container: 'h-12 w-12',
+        text: 'text-base',
+        icon: 'h-6 w-6',
+      },
+      xl: {
+        container: 'h-16 w-16',
+        text: 'text-lg',
+        icon: 'h-8 w-8',
+      },
+    };
+    
     const sizeConfig = typeof size === 'number' 
       ? {
           container: `h-[${size}px] w-[${size}px]`,
           text: 'text-sm',
           icon: 'h-5 w-5',
         }
-      : {
-          sm: {
-            container: 'h-8 w-8',
-            text: 'text-xs',
-            icon: 'h-4 w-4',
-          },
-          md: {
-            container: 'h-10 w-10',
-            text: 'text-sm',
-            icon: 'h-5 w-5',
-          },
-          lg: {
-            container: 'h-12 w-12',
-            text: 'text-base',
-            icon: 'h-6 w-6',
-          },
-          xl: {
-            container: 'h-16 w-16',
-            text: 'text-lg',
-            icon: 'h-8 w-8',
-          },
-        }[size];
+      : sizeConfigs[size as keyof typeof sizeConfigs] || sizeConfigs.md;
 
     const showImage = src && !imageError && !loading;
     const showInitials = name && !showImage;
