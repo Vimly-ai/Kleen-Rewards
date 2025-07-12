@@ -7,6 +7,7 @@ import { Toaster } from 'sonner'
 
 // Context Providers
 import { DataProvider } from './contexts/DataContext'
+import { DemoAuthProvider } from './contexts/DemoAuthContext'
 
 // Components
 import { AppRouter } from './router/AppRouter'
@@ -180,22 +181,24 @@ export default function App() {
         performanceMonitor.recordError(error)
       }}
     >
-      <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-        <QueryClientProvider client={queryClient}>
-          <DataProvider>
-            <BrowserRouter>
-              <Suspense fallback={<AppLoader />}>
-                <AppContent />
-              </Suspense>
-              
-              {/* Development Tools */}
-              {import.meta.env.DEV && (
-                <ReactQueryDevtools initialIsOpen={false} />
-              )}
-            </BrowserRouter>
-          </DataProvider>
-        </QueryClientProvider>
-      </ClerkProvider>
+      <DemoAuthProvider>
+        <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+          <QueryClientProvider client={queryClient}>
+            <DataProvider>
+              <BrowserRouter>
+                <Suspense fallback={<AppLoader />}>
+                  <AppContent />
+                </Suspense>
+                
+                {/* Development Tools */}
+                {import.meta.env.DEV && (
+                  <ReactQueryDevtools initialIsOpen={false} />
+                )}
+              </BrowserRouter>
+            </DataProvider>
+          </QueryClientProvider>
+        </ClerkProvider>
+      </DemoAuthProvider>
     </ErrorBoundary>
   )
 }

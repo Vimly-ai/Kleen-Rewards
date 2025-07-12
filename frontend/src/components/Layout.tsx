@@ -1,20 +1,25 @@
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Trophy, 
   Gift, 
   User,
-  Settings
+  Settings,
+  LogOut
 } from 'lucide-react';
-import { UserButton, useUser } from '@clerk/clerk-react';
+import { UserButton } from '@clerk/clerk-react';
+import { useAuth } from '../hooks/useAuth';
+import { useDemoAuth } from '../contexts/DemoAuthContext';
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { user } = useUser();
+  const { user } = useAuth();
+  const { isDemoMode, signOut: demoSignOut } = useDemoAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.publicMetadata?.role === 'admin' || user?.publicMetadata?.role === 'super_admin';
 
   const employeeNavItems = [
@@ -54,7 +59,20 @@ export function Layout({ children }: LayoutProps) {
               <span className="text-sm text-gray-700">
                 Welcome, {user?.firstName || 'Employee'}
               </span>
-              <UserButton afterSignOutUrl="/" />
+              {isDemoMode ? (
+                <button
+                  onClick={() => {
+                    demoSignOut();
+                    navigate('/auth');
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              ) : (
+                <UserButton afterSignOutUrl="/" />
+              )}
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
-import { useUser } from '@clerk/clerk-react'
+import { useAuth } from '../hooks/useAuth'
 import { Layout } from '../components/Layout'
 import { RoleGuard } from '../components/shared/RoleGuard'
 import { LoadingSpinner } from '../components/shared/LoadingSpinner'
@@ -53,7 +53,7 @@ function AdminLayout() {
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isSignedIn, isLoaded } = useUser()
+  const { isSignedIn, isLoaded } = useAuth()
 
   if (!isLoaded) {
     return <PageLoader />
@@ -69,7 +69,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 // Remove AdminRoute as it's now handled by RoleGuard component
 
 export function AppRouter() {
-  const { isSignedIn, user } = useUser()
+  const { isSignedIn, user } = useAuth()
   const userRole = user?.publicMetadata?.role as string || 'employee'
 
   return (

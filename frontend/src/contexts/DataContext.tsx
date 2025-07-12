@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { useUser } from '@clerk/clerk-react'
+import { useAuth } from '../hooks/useAuth'
 import SupabaseService from '../services/supabase'
 import type { User as SBUser } from '../services/supabase'
 
@@ -14,14 +14,14 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | null>(null)
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const { user: clerkUser, isLoaded } = useUser()
+  const { user: authUser, isLoaded } = useAuth()
   const [user, setUser] = useState<SBUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Initialize or sync user data between Clerk and PocketBase
+  // Initialize or sync user data between auth provider and database
   const initializeUser = async () => {
-    if (!clerkUser || !isLoaded) {
+    if (!authUser || !isLoaded) {
       setLoading(false)
       return
     }
@@ -30,21 +30,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setLoading(true)
       setError(null)
 
-      // Get role from Clerk metadata
-      const role = clerkUser.publicMetadata?.role === 'admin' ? 'admin' : 'employee'
+      // Get role from auth metadata
+      const role = authUser.publicMetadata?.role === 'admin' ? 'admin' : 'employee'
       
-      // Prepare user data from Clerk
+      // Prepare user data from auth
       const userData = {
-        email: clerkUser.emailAddresses[0]?.emailAddress || '',
-        name: clerkUser.fullName || clerkUser.firstName || 'Unknown',
-        employee_id: clerkUser.id,
-        department: clerkUser.publicMetadata?.department as string || 'General',
-        hire_date: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        email: authUser.emailAddresses[0]?.emailAddress || '',
+        name: authUser.fullName || authUser.firstName || 'Unknown',
+        employee_id: authUser.id,
+        department: authUser.publicMetadata?.department as string || 'General',
+        hire_date: authUser.createdAt ? new Date(authUser.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         role: role as 'employee' | 'admin'
       }
 
       // Get or create user in Supabase
-      const sbUser = await SupabaseService.getOrCreateUser(clerkUser.id, userData)
+      const sbUser = await SupabaseService.getOrCreateUser(authUser.id, userData)
       setUser(sbUser)
     } catch (err: any) {
       console.error('Failed to initialize user:', err)
@@ -58,10 +58,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // Refresh user data from Supabase
   const refreshUser = async () => {
-    if (!clerkUser) return
+    if (!authUser) return
 
     try {
-      const sbUser = await SupabaseService.getUser(clerkUser.id)
+      const sbUser = await SupabaseService.getUser(authUser.id)
       setUser(sbUser)
     } catch (err) {
       console.error('Failed to refresh user:', err)
@@ -85,10 +85,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Initialize user when Clerk user loads
+  // Initialize user when auth user loads
   useEffect(() => {
     initializeUser()
-  }, [clerkUser, isLoaded])
+  }, [authUser, isLoaded])
 
   const value = {
     user,

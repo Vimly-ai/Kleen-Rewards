@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
-import { useUser } from '@clerk/clerk-react'
+import { useAuth } from '../../hooks/useAuth'
 import { LoadingSpinner } from './LoadingSpinner'
 
 interface RoleGuardProps {
@@ -14,7 +14,7 @@ export function RoleGuard({
   allowedRoles, 
   fallbackPath = '/unauthorized' 
 }: RoleGuardProps) {
-  const { user, isLoaded, isSignedIn } = useUser()
+  const { user, isLoaded, isSignedIn } = useAuth()
 
   // Show loading while checking authentication
   if (!isLoaded) {
