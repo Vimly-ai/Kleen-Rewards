@@ -11,7 +11,7 @@ export interface WebSocketService {
 }
 
 // Mock WebSocket hook for demo mode
-export function useWebSocket() {
+export function useMockWebSocket() {
   return {
     realtimeStats: {
       activeUsers: 15,
@@ -280,6 +280,32 @@ export const websocketService = new WebSocketServiceImpl()
 // React hook for easier use in components
 export function useWebSocket() {
   const store = useWebSocketStore()
+  
+  // Return mock data in demo mode
+  const USE_MOCK_DATA = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
+  
+  if (USE_MOCK_DATA) {
+    return {
+      realtimeStats: {
+        activeUsers: 15,
+        todayCheckIns: 8,
+        totalPoints: 1250
+      },
+      onlineUsers: [
+        { id: '1', name: 'Sarah Johnson', avatar: null, status: 'online' },
+        { id: '2', name: 'Mike Chen', avatar: null, status: 'online' },
+        { id: '3', name: 'Emily Davis', avatar: null, status: 'online' }
+      ],
+      autoConnect: (userId: string) => {
+        console.log('Mock WebSocket autoConnect for user:', userId)
+      },
+      disconnect: () => {
+        console.log('Mock WebSocket disconnect')
+      },
+      isConnected: true,
+      connectionStatus: 'connected' as const
+    }
+  }
   
   return {
     ...store,
