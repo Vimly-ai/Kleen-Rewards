@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { BrowserMultiFormatReader, NotFoundException } from '@zxing/browser'
+import { BrowserMultiFormatReader } from '@zxing/browser'
 import { X, Camera } from 'lucide-react'
 
 interface QRScannerProps {
@@ -84,8 +84,8 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
               stopScanning()
               onClose()
             }
-            if (error && !(error instanceof NotFoundException)) {
-              // Only log non-NotFoundException errors
+            if (error) {
+              // Log scanning errors (but don't stop scanning for common errors)
               console.log('Scanning error:', error)
             }
           }
