@@ -4,11 +4,13 @@ import { useAuth } from '../hooks/useAuth'
 import { Layout } from '../components/Layout'
 import { RoleGuard } from '../components/shared/RoleGuard'
 import { LoadingSpinner } from '../components/shared/LoadingSpinner'
+import { ProfileCheck } from '../components/ProfileCheck'
 
 // Lazy load shared pages
 const AuthPage = lazy(() => import('../pages/shared/AuthPage'))
 const NotFoundPage = lazy(() => import('../pages/shared/NotFoundPage'))
 const UnauthorizedPage = lazy(() => import('../pages/shared/UnauthorizedPage'))
+const ProfileSetup = lazy(() => import('../components/ProfileSetup').then(module => ({ default: module.ProfileSetup })))
 
 // Lazy load employee pages
 const EmployeeDashboard = lazy(() => import('../pages/employee/Dashboard'))
@@ -33,9 +35,11 @@ function PageLoader() {
 function EmployeeLayout() {
   return (
     <RoleGuard allowedRoles={['employee', 'admin', 'super_admin']}>
-      <Layout>
-        <Outlet />
-      </Layout>
+      <ProfileCheck>
+        <Layout>
+          <Outlet />
+        </Layout>
+      </ProfileCheck>
     </RoleGuard>
   )
 }
@@ -44,9 +48,11 @@ function EmployeeLayout() {
 function AdminLayout() {
   return (
     <RoleGuard allowedRoles={['admin', 'super_admin']}>
-      <Layout>
-        <Outlet />
-      </Layout>
+      <ProfileCheck>
+        <Layout>
+          <Outlet />
+        </Layout>
+      </ProfileCheck>
     </RoleGuard>
   )
 }
@@ -86,6 +92,16 @@ export function AppRouter() {
         />
         
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        
+        {/* Profile Setup */}
+        <Route 
+          path="/profile-setup" 
+          element={
+            <ProtectedRoute>
+              <ProfileSetup />
+            </ProtectedRoute>
+          } 
+        />
 
         {/* Employee routes */}
         <Route path="/employee" element={<EmployeeLayout />}>

@@ -145,50 +145,58 @@ export interface PointTransaction {
 
 // Mock data for when Supabase is not available
 const MOCK_USER = (clerkUserId: string, userData: Partial<User>): User => {
-  // Try to find a demo user by email or clerk ID
-  const demoUser = demoData.getDemoUserByEmail(userData.email || '') || 
-                   demoData.DEMO_USERS.find(u => u.clerkId === clerkUserId)
+  // Only return demo user data if it's actually a demo account
+  const isDemoEmail = userData.email && (
+    userData.email === 'admin@demo.com' ||
+    userData.email === 'john@demo.com' ||
+    userData.email === 'emily@demo.com' ||
+    userData.email === 'michael@demo.com' ||
+    userData.email === 'lisa@demo.com'
+  )
   
-  if (demoUser) {
-    return {
-      id: clerkUserId,
-      email: demoUser.email,
-      name: demoUser.name,
-      employee_id: demoUser.id,
-      department: demoUser.department,
-      hire_date: demoUser.joinedAt.toISOString().split('T')[0],
-      role: demoUser.role,
-      status: 'active',
-      points_balance: demoUser.points,
-      total_points_earned: demoUser.totalPointsEarned,
-      current_streak: demoUser.currentStreak,
-      longest_streak: demoUser.longestStreak,
-      last_check_in: demoData.getTodayCheckIn(demoUser.id)?.checkInTime.toISOString() || new Date().toISOString(),
-      first_name: demoUser.name.split(' ')[0],
-      last_name: demoUser.name.split(' ')[1] || '',
-      phone: null,
-      created_at: demoUser.joinedAt.toISOString(),
-      updated_at: new Date().toISOString()
+  if (isDemoEmail) {
+    const demoUser = demoData.getDemoUserByEmail(userData.email)
+    if (demoUser) {
+      return {
+        id: clerkUserId,
+        email: demoUser.email,
+        name: demoUser.name,
+        employee_id: demoUser.id,
+        department: demoUser.department,
+        hire_date: demoUser.joinedAt.toISOString().split('T')[0],
+        role: demoUser.role,
+        status: 'active',
+        points_balance: demoUser.points,
+        total_points_earned: demoUser.totalPointsEarned,
+        current_streak: demoUser.currentStreak,
+        longest_streak: demoUser.longestStreak,
+        last_check_in: demoData.getTodayCheckIn(demoUser.id)?.checkInTime.toISOString() || new Date().toISOString(),
+        first_name: demoUser.name.split(' ')[0],
+        last_name: demoUser.name.split(' ')[1] || '',
+        phone: null,
+        created_at: demoUser.joinedAt.toISOString(),
+        updated_at: new Date().toISOString()
+      }
     }
   }
   
-  // Fallback for new users
+  // For real users, create a fresh profile with starting points
   return {
     id: clerkUserId,
-    email: userData.email || 'demo@systemkleen.com',
-    name: userData.name || 'Demo User',
+    email: userData.email || '',
+    name: userData.name || 'New User',
     employee_id: userData.employee_id || clerkUserId,
     department: userData.department || 'General',
     hire_date: userData.hire_date || new Date().toISOString().split('T')[0],
     role: userData.role || 'employee',
     status: 'active',
-    points_balance: 150,
-    total_points_earned: 300,
-    current_streak: 5,
-    longest_streak: 12,
-    last_check_in: new Date().toISOString(),
-    first_name: userData.name?.split(' ')[0] || 'Demo',
-    last_name: userData.name?.split(' ')[1] || 'User',
+    points_balance: 0, // Start with 0 points
+    total_points_earned: 0,
+    current_streak: 0,
+    longest_streak: 0,
+    last_check_in: null,
+    first_name: userData.name?.split(' ')[0] || '',
+    last_name: userData.name?.split(' ')[1] || '',
     phone: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -859,12 +867,11 @@ export class SupabaseService {
   static async getCurrentUser(): Promise<User | null> {
     if (USE_MOCK_DATA || !supabase) {
       console.log('Mock: getCurrentUser called')
-      // In demo mode, return the first user (John) as default
-      return MOCK_USER('demo-user-1', { email: 'john@demo.com' })
+      // Return null to force proper user creation flow
+      return null
     }
     // In a real app, you'd get the current user ID from auth context
-    // For now, return mock data
-    return MOCK_USER('demo-user', { name: 'Demo User' })
+    return null
   }
 
   static async getUserById(userId: string): Promise<User | null> {
