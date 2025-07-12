@@ -1,7 +1,7 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
-import Layout from '../components/Layout'
+import { Layout } from '../components/Layout'
 import { RoleGuard } from '../components/shared/RoleGuard'
 import { LoadingSpinner } from '../components/shared/LoadingSpinner'
 
