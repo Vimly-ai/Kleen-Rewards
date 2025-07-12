@@ -146,17 +146,23 @@ export default function AdminUserManagement() {
   const handleAwardBonus = async () => {
     if (!selectedUser || !bonusPoints || !bonusReason) return
     
-    await awardBonusMutation.mutateAsync({
-      userId: selectedUser.id,
-      points: parseInt(bonusPoints),
-      reason: bonusReason,
-      awardedBy: 'current-admin-id' // This should come from current admin user
-    })
-    
-    setShowBonusModal(false)
-    setSelectedUser(null)
-    setBonusPoints('')
-    setBonusReason('')
+    try {
+      await awardBonusMutation.mutateAsync({
+        userId: selectedUser.id,
+        points: parseInt(bonusPoints),
+        reason: bonusReason,
+        awardedBy: 'current-admin-id' // This should come from current admin user
+      })
+      
+      // Close modal and reset form after successful award
+      setShowBonusModal(false)
+      setSelectedUser(null)
+      setBonusPoints('')
+      setBonusReason('')
+    } catch (error) {
+      // Error is handled by the mutation
+      console.error('Failed to award bonus points:', error)
+    }
   }
 
   const getStatusBadge = (status: User['status']) => {
@@ -375,6 +381,10 @@ export default function AdminUserManagement() {
                       <Button
                         variant="secondary"
                         size="small"
+                        onClick={() => {
+                          // Navigate to user detail page or open modal
+                          window.location.href = `/admin/users/${user.id}`
+                        }}
                         className="flex items-center gap-1"
                       >
                         <Eye className="w-3 h-3" />

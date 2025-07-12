@@ -1,5 +1,6 @@
 import { useUser } from '@clerk/clerk-react'
-import { useCurrentUser, useUserStats } from '../../queries/userQueries'
+import { useData } from '../../contexts/DataContext'
+import { useUserStats } from '../../queries/userQueries'
 import { useTodaysCheckIn } from '../../queries/checkInQueries'
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner'
 import { StatsCards } from '../../components/dashboard/StatsCards'
@@ -30,7 +31,7 @@ import { useEffect, useState } from 'react'
 
 export default function EmployeeDashboard() {
   const { user: clerkUser } = useUser()
-  const { data: dbUser, isLoading: userLoading } = useCurrentUser()
+  const { user: dbUser, loading: userLoading } = useData()
   const { data: userStats, isLoading: statsLoading } = useUserStats(dbUser?.id || '')
   const { data: todayCheckIn, isLoading: checkInLoading } = useTodaysCheckIn(dbUser?.id || '')
   const { realtimeStats, onlineUsers, autoConnect } = useWebSocket()

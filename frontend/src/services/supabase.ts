@@ -525,6 +525,52 @@ export class SupabaseService {
     }
   }
 
+  static async getAvailableRewards(category?: string): Promise<Reward[]> {
+    if (USE_MOCK_DATA) {
+      console.log('Using mock data for available rewards')
+      return demoData.getDemoRewards().filter(r => 
+        (!category || r.category === category) && r.inventory_count > 0
+      )
+    }
+    
+    const query = supabase
+      .from('rewards')
+      .select('*')
+      .gt('inventory_count', 0)
+      .eq('is_active', true)
+    
+    if (category) {
+      query.eq('category', category)
+    }
+    
+    const { data, error } = await query.order('points_cost', { ascending: true })
+    
+    if (error) {
+      throw error
+    }
+    
+    return data || []
+  }
+
+  static async getRewardById(rewardId: string): Promise<Reward | null> {
+    if (USE_MOCK_DATA) {
+      console.log('Using mock data for reward by id')
+      return demoData.getDemoRewards().find(r => r.id === rewardId) || null
+    }
+    
+    const { data, error } = await supabase
+      .from('rewards')
+      .select('*')
+      .eq('id', rewardId)
+      .single()
+    
+    if (error) {
+      throw error
+    }
+    
+    return data
+  }
+
   static async createReward(rewardData: Omit<Reward, 'id' | 'created_at' | 'updated_at'>): Promise<Reward> {
     const { data, error } = await supabase
       .from('rewards')
@@ -867,7 +913,8 @@ export class SupabaseService {
   static async getCurrentUser(): Promise<User | null> {
     if (USE_MOCK_DATA || !supabase) {
       console.log('Mock: getCurrentUser called')
-      // Return null to force proper user creation flow
+      // In demo mode, this should be handled by DataContext
+      // Return null here as the actual user will be set via getOrCreateUser
       return null
     }
     // In a real app, you'd get the current user ID from auth context

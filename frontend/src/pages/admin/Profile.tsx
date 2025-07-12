@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useUser } from '@clerk/clerk-react'
-import { useCurrentUser, useUpdateUserProfile } from '../../queries/userQueries'
+import { useData } from '../../contexts/DataContext'
+import { useUpdateUserProfile } from '../../queries/userQueries'
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
@@ -11,7 +12,7 @@ import { User, Shield, Save, Edit, X } from 'lucide-react'
 
 export default function AdminProfile() {
   const { user: clerkUser } = useUser()
-  const { data: dbUser, isLoading } = useCurrentUser()
+  const { user: dbUser, loading: isLoading } = useData()
   const updateProfileMutation = useUpdateUserProfile()
   
   const [isEditing, setIsEditing] = useState(false)
@@ -20,7 +21,7 @@ export default function AdminProfile() {
     department: ''
   })
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (dbUser) {
       setProfileForm({
         name: dbUser.name,
@@ -168,7 +169,7 @@ export default function AdminProfile() {
                 
                 <div className="border rounded-lg p-4">
                   <div className="text-sm font-medium text-gray-500">Company</div>
-                  <div className="text-gray-900">{dbUser.company}</div>
+                  <div className="text-gray-900">{dbUser.company || 'System Kleen'}</div>
                 </div>
                 
                 {dbUser.department && (
@@ -185,7 +186,7 @@ export default function AdminProfile() {
                 
                 <div className="border rounded-lg p-4">
                   <div className="text-sm font-medium text-gray-500">Member Since</div>
-                  <div className="text-gray-900">{new Date(dbUser.created).toLocaleDateString()}</div>
+                  <div className="text-gray-900">{new Date(dbUser.created_at || dbUser.created || Date.now()).toLocaleDateString()}</div>
                 </div>
               </div>
             )}

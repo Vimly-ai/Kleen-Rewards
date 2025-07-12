@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/clerk-react'
-import { useCurrentUser, useUpdateUserProfile, useUserStats } from '../../queries/userQueries'
+import { useData } from '../../contexts/DataContext'
+import { useUpdateUserProfile, useUserStats } from '../../queries/userQueries'
 import { useAppStore } from '../../stores/appStore'
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner'
 import { Card } from '../../components/ui/Card'
@@ -36,7 +37,7 @@ import { clsx } from 'clsx'
 
 export default function EmployeeProfile() {
   const { user: clerkUser } = useUser()
-  const { data: dbUser, isLoading } = useCurrentUser()
+  const { user: dbUser, loading: isLoading } = useData()
   const { data: userStats } = useUserStats(dbUser?.id || '')
   const updateProfileMutation = useUpdateUserProfile()
   const { theme, setTheme, preferences, updatePreferences } = useAppStore()
@@ -357,7 +358,7 @@ export default function EmployeeProfile() {
                         <Building className="w-5 h-5 text-gray-400" />
                         <div>
                           <div className="text-sm font-medium text-gray-700">Company</div>
-                          <div className="text-gray-900">{dbUser.company}</div>
+                          <div className="text-gray-900">{dbUser.company || 'System Kleen'}</div>
                         </div>
                       </div>
                       
@@ -513,7 +514,7 @@ export default function EmployeeProfile() {
                   <div>
                     <div className="text-sm font-medium text-gray-700">Member Since</div>
                     <div className="text-gray-900">
-                      {new Date(dbUser.created).toLocaleDateString()}
+                      {new Date(dbUser.created_at || dbUser.created || Date.now()).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -523,7 +524,7 @@ export default function EmployeeProfile() {
                   <div>
                     <div className="text-sm font-medium text-gray-700">Last Updated</div>
                     <div className="text-gray-900">
-                      {new Date(dbUser.updated).toLocaleDateString()}
+                      {new Date(dbUser.updated_at || dbUser.updated || Date.now()).toLocaleDateString()}
                     </div>
                   </div>
                 </div>

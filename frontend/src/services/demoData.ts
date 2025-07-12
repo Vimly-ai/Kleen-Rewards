@@ -748,6 +748,11 @@ export function getTodayCheckIn(userId: string): CheckIn | undefined {
   )
 }
 
+// Helper function to get demo rewards
+export function getDemoRewards() {
+  return DEMO_REWARDS
+}
+
 // Helper function to calculate leaderboard
 export function getLeaderboard(): Array<User & { rank: number, trend: 'up' | 'down' | 'same' }> {
   const sorted = [...DEMO_USERS]
