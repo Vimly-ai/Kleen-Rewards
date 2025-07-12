@@ -64,7 +64,7 @@ interface AlertSummary {
 
 export function ExecutiveDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'quarter'>('month')
-  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [autoRefresh, setAutoRefresh] = useState(false) // Disable auto-refresh by default
   
   const { realtimeMetrics, updateRealtimeMetrics, alerts } = useAdminStore()
   const { isConnected, service } = useWebSocket()

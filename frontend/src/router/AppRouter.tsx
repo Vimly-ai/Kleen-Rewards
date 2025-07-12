@@ -11,6 +11,7 @@ const AuthPage = lazy(() => import('../pages/shared/AuthPage'))
 const NotFoundPage = lazy(() => import('../pages/shared/NotFoundPage'))
 const UnauthorizedPage = lazy(() => import('../pages/shared/UnauthorizedPage'))
 const ProfileSetup = lazy(() => import('../components/ProfileSetup').then(module => ({ default: module.ProfileSetup })))
+const ClearSession = lazy(() => import('../pages/ClearSession'))
 
 // Lazy load employee pages
 const EmployeeDashboard = lazy(() => import('../pages/employee/Dashboard'))
@@ -92,6 +93,7 @@ export function AppRouter() {
         />
         
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        <Route path="/clear" element={<ClearSession />} />
         
         {/* Profile Setup */}
         <Route 

@@ -35,29 +35,12 @@ export function DemoAuthProvider({ children }: { children: React.ReactNode }) {
   // Always enable demo mode for now
   const isDemoMode = true // import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 
-  // Check for saved demo session
+  // Disabled auto-restore of demo sessions to prevent automatic redirect issues
+  // Users must explicitly click demo login buttons
   useEffect(() => {
-    if (isDemoMode) {
-      const savedEmail = localStorage.getItem('demo_user_email')
-      if (savedEmail) {
-        const user = DEMO_USERS.find(u => u.email === savedEmail)
-        if (user) {
-          setDemoUser({
-            id: user.clerkId,
-            email: user.email,
-            firstName: user.name.split(' ')[0],
-            lastName: user.name.split(' ')[1] || '',
-            fullName: user.name,
-            imageUrl: user.avatarUrl,
-            publicMetadata: {
-              role: user.role,
-              department: user.department
-            }
-          })
-        }
-      }
-    }
-  }, [isDemoMode])
+    // Clear any stored demo session on mount to ensure clean state
+    localStorage.removeItem('demo_user_email')
+  }, [])
 
   const signIn = async (email: string, password: string): Promise<boolean> => {
     if (!isDemoMode) return false
@@ -87,7 +70,7 @@ export function DemoAuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setDemoUser(demoUserData)
-    localStorage.setItem('demo_user_email', email)
+    // Don't persist demo sessions to prevent auto-login issues
     return true
   }
 
