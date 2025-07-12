@@ -45,26 +45,6 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
     return categoryQuotes[Math.floor(Math.random() * categoryQuotes.length)]
   }
 
-  const showCheckInSuccess = (points: number, type: 'early' | 'ontime' | 'late', quote: any) => {
-    const messages = {
-      early: `🌅 Early Bird Success! +${points} points earned!`,
-      ontime: `⏰ Perfect Timing! +${points} point earned!`,
-      late: `📅 Better Late Than Never! Thanks for checking in!`
-    }
-
-    toast.success(messages[type])
-
-    setTimeout(() => {
-      toast(
-        <div className="p-2">
-          <p className="font-medium text-gray-800 mb-2">💪 Daily Motivation</p>
-          <p className="text-sm text-gray-600 italic">"{quote.text}"</p>
-          <p className="text-xs text-gray-500 mt-1">- {quote.author}</p>
-        </div>,
-        { duration: 8000 }
-      )
-    }, 2000)
-  }
 
   const handleCheckIn = async () => {
     if (!dbUser?.id || hasCheckedInToday) return
@@ -75,34 +55,77 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
       const now = new Date()
       const mstTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Denver" }))
       const hour = mstTime.getHours()
+      const minute = mstTime.getMinutes()
       
       let type: 'early' | 'ontime' | 'late'
       let points: number
 
-      if (hour < 6) {
+      // Check-in rules:
+      // Early (before 7:45 AM): 2 points
+      // On-time (8:00 AM or after): 1 point
+      if (hour < 7 || (hour === 7 && minute < 45)) {
         type = 'early'
-        points = 10
-      } else if (hour <= 9) {
-        type = 'ontime'
-        points = 5
+        points = 2
       } else {
-        type = 'late'
-        points = 0
+        type = 'ontime'
+        points = 1
       }
 
-      const quote = await getUniqueMotivationalQuote(type)
+      const quote = await getUniqueMotivationalQuote(type === 'early' ? 'early' : 'ontime')
+      
+      // Calculate bonuses
+      let bonusPoints = 0
+      const newStreakDay = dbUser.current_streak + 1
+      
+      // Perfect week bonus (every 7 days)
+      if (newStreakDay % 7 === 0) {
+        bonusPoints += 5
+      }
+      
+      // 10-day streak bonus (every 10 days)
+      if (newStreakDay % 10 === 0) {
+        bonusPoints += 10
+      }
       
       const checkInData = {
         user_id: dbUser.id,
         check_in_time: mstTime.toISOString(),
-        points_earned: points,
+        points_earned: points + bonusPoints,
         check_in_type: type,
-        streak_day: type === 'late' ? 0 : dbUser.current_streak + 1
+        streak_day: newStreakDay
       }
 
       await SupabaseService.createCheckIn(checkInData)
       
-      showCheckInSuccess(points, type, quote)
+      // Show success message with bonuses
+      let successMessage = type === 'early' 
+        ? `🌅 Early Bird Success! +${points} points earned!`
+        : `⏰ Perfect Timing! +${points} point earned!`
+      
+      if (bonusPoints > 0) {
+        successMessage += ` Plus ${bonusPoints} bonus points!`
+        if (newStreakDay % 7 === 0) {
+          successMessage += ' (Perfect Week!)'
+        }
+        if (newStreakDay % 10 === 0) {
+          successMessage += ' (10-Day Streak!)'
+        }
+      }
+      
+      toast.success(successMessage)
+      
+      // Show motivational quote after a delay
+      setTimeout(() => {
+        toast(
+          <div className="p-2">
+            <p className="font-medium text-gray-800 mb-2">💪 Daily Motivation</p>
+            <p className="text-sm text-gray-600 italic">"{quote.text}"</p>
+            <p className="text-xs text-gray-500 mt-1">- {quote.author}</p>
+          </div>,
+          { duration: 8000 }
+        )
+      }, 2000)
+      
       await refreshUser()
       onCheckInSuccess()
     }, {

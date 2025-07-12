@@ -26,12 +26,12 @@ export const DEMO_USERS: User[] = [
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
     role: 'admin',
     department: 'Human Resources',
-    points: 15750,
+    points: 187, // Current available points
     currentStreak: 45,
     longestStreak: 120,
     totalCheckIns: 342,
-    totalPointsEarned: 45650,
-    totalPointsRedeemed: 29900,
+    totalPointsEarned: 487, // Total earned with new point system
+    totalPointsRedeemed: 300, // Redeemed 2 extra days off
     level: 12,
     achievements: 28,
     joinedAt: new Date('2023-01-15'),
@@ -52,12 +52,12 @@ export const DEMO_USERS: User[] = [
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
     role: 'employee',
     department: 'Engineering',
-    points: 8500,
+    points: 78, // Current available points
     currentStreak: 15,
     longestStreak: 30,
     totalCheckIns: 156,
-    totalPointsEarned: 22500,
-    totalPointsRedeemed: 14000,
+    totalPointsEarned: 238, // Total earned with new point system
+    totalPointsRedeemed: 160, // Redeemed various rewards
     level: 8,
     achievements: 15,
     joinedAt: new Date('2023-06-20'),
@@ -78,12 +78,12 @@ export const DEMO_USERS: User[] = [
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emily',
     role: 'employee',
     department: 'Marketing',
-    points: 12300,
+    points: 142, // Current available points
     currentStreak: 89,
     longestStreak: 89,
     totalCheckIns: 245,
-    totalPointsEarned: 35400,
-    totalPointsRedeemed: 23100,
+    totalPointsEarned: 392, // Total earned with new point system (lots of bonuses)
+    totalPointsRedeemed: 250, // Redeemed gift cards and day off
     level: 10,
     achievements: 22,
     joinedAt: new Date('2023-03-10'),
@@ -104,12 +104,12 @@ export const DEMO_USERS: User[] = [
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Michael',
     role: 'employee',
     department: 'Sales',
-    points: 5200,
+    points: 32, // Current available points
     currentStreak: 7,
     longestStreak: 42,
     totalCheckIns: 98,
-    totalPointsEarned: 15600,
-    totalPointsRedeemed: 10400,
+    totalPointsEarned: 152, // Total earned with new point system
+    totalPointsRedeemed: 120, // Redeemed multiple gift cards
     level: 6,
     achievements: 11,
     joinedAt: new Date('2023-09-01'),
@@ -130,12 +130,12 @@ export const DEMO_USERS: User[] = [
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lisa',
     role: 'employee',
     department: 'Design',
-    points: 9800,
+    points: 95, // Current available points
     currentStreak: 0,
     longestStreak: 65,
     totalCheckIns: 189,
-    totalPointsEarned: 28400,
-    totalPointsRedeemed: 18600,
+    totalPointsEarned: 295, // Total earned with new point system
+    totalPointsRedeemed: 200, // Redeemed day off and gift cards
     level: 9,
     achievements: 18,
     joinedAt: new Date('2023-04-22'),
@@ -280,19 +280,19 @@ export const DEMO_CHECKINS: CheckIn[] = [
   { 
     id: 'ci-1', 
     userId: 'demo-user-1', 
-    checkInTime: new Date(new Date().setHours(8, 30, 0)), 
-    points: 50,
-    bonusPoints: 10,
-    isEarly: true,
+    checkInTime: new Date(new Date().setHours(8, 0, 0)), 
+    points: 1, // On-time check-in
+    bonusPoints: 10, // 10-day streak bonus (hit on day 10)
+    isEarly: false,
     streakDay: 15,
     mood: 'great'
   },
   { 
     id: 'ci-2', 
     userId: 'demo-user-2', 
-    checkInTime: new Date(new Date().setHours(7, 45, 0)), 
-    points: 50,
-    bonusPoints: 25,
+    checkInTime: new Date(new Date().setHours(7, 30, 0)), 
+    points: 2, // Early check-in (before 7:45 AM)
+    bonusPoints: 5, // Perfect week bonus
     isEarly: true,
     streakDay: 89,
     mood: 'excellent'
@@ -300,9 +300,9 @@ export const DEMO_CHECKINS: CheckIn[] = [
   { 
     id: 'ci-3', 
     userId: 'demo-admin-1', 
-    checkInTime: new Date(new Date().setHours(8, 0, 0)), 
-    points: 50,
-    bonusPoints: 20,
+    checkInTime: new Date(new Date().setHours(7, 40, 0)), 
+    points: 2, // Early check-in (before 7:45 AM)
+    bonusPoints: 0,
     isEarly: true,
     streakDay: 45,
     mood: 'good'
@@ -310,8 +310,8 @@ export const DEMO_CHECKINS: CheckIn[] = [
   { 
     id: 'ci-4', 
     userId: 'demo-user-3', 
-    checkInTime: new Date(new Date().setHours(9, 15, 0)), 
-    points: 50,
+    checkInTime: new Date(new Date().setHours(8, 15, 0)), 
+    points: 1, // On-time check-in (after 8:00 AM is still on-time)
     bonusPoints: 0,
     isEarly: false,
     streakDay: 7,
@@ -330,16 +330,37 @@ function generateHistoricalCheckIns(): CheckIn[] {
     for (let i = 1; i <= daysToGenerate; i++) {
       const date = new Date()
       date.setDate(date.getDate() - i)
-      date.setHours(7 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 60), 0)
+      const hour = 7 + Math.floor(Math.random() * 2)
+      const minute = Math.floor(Math.random() * 60)
+      date.setHours(hour, minute, 0)
+      
+      const isEarly = hour < 8 || (hour === 7 && minute < 45)
+      const basePoints = isEarly ? 2 : 1
+      
+      // Calculate bonuses
+      let bonusPoints = 0
+      const streakDay = Math.max(1, user.currentStreak - i)
+      
+      // 10-day streak bonus
+      if (streakDay === 10 || streakDay === 20 || streakDay === 30 || 
+          streakDay === 40 || streakDay === 50 || streakDay === 60 ||
+          streakDay === 70 || streakDay === 80 || streakDay === 90) {
+        bonusPoints += 10
+      }
+      
+      // Perfect week bonus (every 7th day)
+      if (streakDay % 7 === 0 && streakDay > 0) {
+        bonusPoints += 5
+      }
       
       historicalCheckIns.push({
         id: `ci-${checkInId++}`,
         userId: user.id,
         checkInTime: date,
-        points: 50,
-        bonusPoints: Math.random() > 0.7 ? Math.floor(Math.random() * 25) : 0,
-        isEarly: date.getHours() < 8,
-        streakDay: Math.max(1, user.currentStreak - i),
+        points: basePoints,
+        bonusPoints: bonusPoints,
+        isEarly: isEarly,
+        streakDay: streakDay,
         mood: ['great', 'good', 'okay', 'tired'][Math.floor(Math.random() * 4)] as any
       })
     }
@@ -350,26 +371,57 @@ function generateHistoricalCheckIns(): CheckIn[] {
 
 // Demo rewards catalog
 export const DEMO_REWARDS: Reward[] = [
+  // Weekly Tier (5-15 points)
   {
     id: 'reward-1',
-    name: 'Extra Day Off',
-    description: 'Enjoy an additional paid day off to recharge and relax',
-    pointCost: 5000,
-    category: 'time-off',
-    imageUrl: 'https://images.unsplash.com/photo-1527004013197-933c4bb611b3',
+    name: '$5 Maverick Card',
+    description: 'Gas up with a $5 Maverick gift card',
+    pointCost: 5,
+    category: 'weekly',
+    imageUrl: 'https://images.unsplash.com/photo-1594736797933-d0501ba2fe65',
     availability: 'in_stock',
-    stock: 10,
-    expiresAt: new Date('2024-12-31'),
-    terms: 'Must be approved by manager. Cannot be used during blackout periods.',
-    featured: true,
-    popularity: 95
+    stock: 100,
+    expiresAt: null,
+    terms: 'Digital delivery within 24 hours',
+    featured: false,
+    popularity: 85
   },
   {
     id: 'reward-2',
-    name: 'Amazon Gift Card - $50',
+    name: '$10 Dutch Bros Gift Card',
+    description: 'Enjoy your favorite Dutch Bros drinks',
+    pointCost: 10,
+    category: 'weekly',
+    imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
+    availability: 'in_stock',
+    stock: 80,
+    expiresAt: null,
+    terms: 'Digital delivery within 24 hours',
+    featured: true,
+    popularity: 92
+  },
+  {
+    id: 'reward-3',
+    name: '$15 Starbucks Gift Card',
+    description: 'Treat yourself to Starbucks coffee and snacks',
+    pointCost: 15,
+    category: 'weekly',
+    imageUrl: 'https://images.unsplash.com/photo-1559305616-3f99cd43e353',
+    availability: 'in_stock',
+    stock: 75,
+    expiresAt: null,
+    terms: 'Digital delivery within 24 hours',
+    featured: true,
+    popularity: 90
+  },
+  
+  // Monthly Tier (25-50 points)
+  {
+    id: 'reward-4',
+    name: '$25 Amazon Gift Card',
     description: 'Shop for anything you want on Amazon',
-    pointCost: 2500,
-    category: 'gift-cards',
+    pointCost: 25,
+    category: 'monthly',
     imageUrl: 'https://images.unsplash.com/photo-1633158829585-23ba8f7c8caf',
     availability: 'in_stock',
     stock: 50,
@@ -379,88 +431,106 @@ export const DEMO_REWARDS: Reward[] = [
     popularity: 88
   },
   {
-    id: 'reward-3',
-    name: 'Premium Parking Spot - 1 Month',
-    description: 'Reserved parking spot close to the entrance for one month',
-    pointCost: 1500,
-    category: 'perks',
-    imageUrl: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a',
-    availability: 'in_stock',
-    stock: 5,
-    expiresAt: new Date('2024-12-31'),
-    terms: 'Subject to availability. First come, first served.',
-    featured: false,
-    popularity: 72
-  },
-  {
-    id: 'reward-4',
-    name: 'Team Lunch with CEO',
-    description: 'Join the CEO for an exclusive team lunch and discussion',
-    pointCost: 3000,
-    category: 'experiences',
-    imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4',
-    availability: 'limited',
-    stock: 2,
-    expiresAt: new Date('2024-08-31'),
-    terms: 'Date to be scheduled based on CEO availability',
-    featured: true,
-    popularity: 85
-  },
-  {
     id: 'reward-5',
-    name: 'Fitness Tracker',
-    description: 'Latest model fitness tracker to help you stay healthy',
-    pointCost: 4000,
-    category: 'merchandise',
-    imageUrl: 'https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6',
+    name: '$50 Scheels Gift Card',
+    description: 'Get your outdoor and sports gear at Scheels',
+    pointCost: 50,
+    category: 'monthly',
+    imageUrl: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256',
     availability: 'in_stock',
-    stock: 15,
+    stock: 30,
     expiresAt: null,
-    terms: 'Choice of Fitbit or Apple Watch SE',
+    terms: 'Digital or physical card available',
     featured: false,
-    popularity: 78
+    popularity: 75
   },
   {
     id: 'reward-6',
-    name: 'Professional Development Course',
-    description: 'Access to any online course up to $500 value',
-    pointCost: 3500,
-    category: 'learning',
-    imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f',
+    name: '$50 Amazon Gift Card',
+    description: 'More shopping power on Amazon',
+    pointCost: 50,
+    category: 'monthly',
+    imageUrl: 'https://images.unsplash.com/photo-1633158829585-23ba8f7c8caf',
+    availability: 'in_stock',
+    stock: 40,
+    expiresAt: null,
+    terms: 'Digital delivery within 24 hours',
+    featured: true,
+    popularity: 86
+  },
+  
+  // Quarterly Tier (75-150 points)
+  {
+    id: 'reward-7',
+    name: '$75 Gift Card (Your Choice)',
+    description: 'Choose from Amazon, Scheels, Target, or Best Buy',
+    pointCost: 75,
+    category: 'quarterly',
+    imageUrl: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48',
     availability: 'in_stock',
     stock: 20,
-    expiresAt: new Date('2024-12-31'),
-    terms: 'Course must be job-related and pre-approved',
+    expiresAt: null,
+    terms: 'Select your preferred retailer when redeeming',
     featured: true,
     popularity: 82
   },
   {
-    id: 'reward-7',
-    name: 'Work From Home Day',
-    description: 'Enjoy the flexibility of working from home for one day',
-    pointCost: 1000,
-    category: 'flexibility',
-    imageUrl: 'https://images.unsplash.com/photo-1565843708714-52ecf69ab81f',
+    id: 'reward-8',
+    name: '$100 Gift Card (Your Choice)',
+    description: 'Choose from premium retailers including Amazon, Scheels, or dining',
+    pointCost: 100,
+    category: 'quarterly',
+    imageUrl: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48',
     availability: 'in_stock',
-    stock: 100,
+    stock: 15,
     expiresAt: null,
-    terms: 'Subject to manager approval and team schedule',
-    featured: false,
-    popularity: 90
+    terms: 'Select your preferred retailer when redeeming',
+    featured: true,
+    popularity: 84
   },
   {
-    id: 'reward-8',
-    name: 'Company Swag Bundle',
-    description: 'Premium company merchandise bundle including hoodie, mug, and backpack',
-    pointCost: 1200,
-    category: 'merchandise',
-    imageUrl: 'https://images.unsplash.com/photo-1588414734732-660b07304ddb',
+    id: 'reward-9',
+    name: '$150 Gift Card (Premium Selection)',
+    description: 'Premium gift card selection including travel, electronics, or experiences',
+    pointCost: 150,
+    category: 'quarterly',
+    imageUrl: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48',
     availability: 'in_stock',
-    stock: 30,
+    stock: 10,
     expiresAt: null,
-    terms: 'Available in multiple sizes and colors',
-    featured: false,
-    popularity: 65
+    terms: 'Premium retailer selection available',
+    featured: true,
+    popularity: 78
+  },
+  
+  // Annual Tier (175+ points)
+  {
+    id: 'reward-10',
+    name: 'Extra Paid Day Off',
+    description: 'Enjoy an additional paid vacation day to recharge and relax',
+    pointCost: 175,
+    category: 'annual',
+    imageUrl: 'https://images.unsplash.com/photo-1527004013197-933c4bb611b3',
+    availability: 'in_stock',
+    stock: 20,
+    expiresAt: new Date('2024-12-31'),
+    terms: 'Must be approved by manager. Cannot be used during blackout periods.',
+    featured: true,
+    popularity: 95
+  },
+  {
+    id: 'reward-11',
+    name: 'Two Extra Paid Days Off',
+    description: 'Take a long weekend with two additional paid vacation days',
+    pointCost: 300,
+    category: 'annual',
+    imageUrl: 'https://images.unsplash.com/photo-1527004013197-933c4bb611b3',
+    availability: 'limited',
+    stock: 10,
+    expiresAt: new Date('2024-12-31'),
+    terms: 'Must be approved by manager. Subject to operational needs.',
+    featured: true,
+    popularity: 93
   }
 ]
 
@@ -470,9 +540,9 @@ export const DEMO_TRANSACTIONS: Transaction[] = [
     id: 'trans-1',
     userId: 'demo-user-1',
     type: 'redemption',
-    amount: -2500,
-    description: 'Redeemed: Amazon Gift Card - $50',
-    rewardId: 'reward-2',
+    amount: -50,
+    description: 'Redeemed: $50 Amazon Gift Card',
+    rewardId: 'reward-6',
     status: 'completed',
     createdAt: new Date('2024-04-15T10:30:00')
   },
@@ -480,27 +550,27 @@ export const DEMO_TRANSACTIONS: Transaction[] = [
     id: 'trans-2',
     userId: 'demo-user-1',
     type: 'earned',
-    amount: 50,
-    description: 'Daily check-in points',
+    amount: 1,
+    description: 'Daily check-in points (on-time)',
     status: 'completed',
-    createdAt: new Date('2024-05-01T08:30:00')
+    createdAt: new Date('2024-05-01T08:00:00')
   },
   {
     id: 'trans-3',
     userId: 'demo-user-2',
     type: 'redemption',
-    amount: -5000,
-    description: 'Redeemed: Extra Day Off',
-    rewardId: 'reward-1',
-    status: 'pending',
+    amount: -175,
+    description: 'Redeemed: Extra Paid Day Off',
+    rewardId: 'reward-10',
+    status: 'approved',
     createdAt: new Date('2024-04-28T14:20:00')
   },
   {
     id: 'trans-4',
     userId: 'demo-user-2',
     type: 'bonus',
-    amount: 500,
-    description: 'Perfect Month achievement bonus',
+    amount: 10,
+    description: '10-day streak bonus',
     status: 'completed',
     createdAt: new Date('2024-04-30T17:00:00')
   },
@@ -508,9 +578,9 @@ export const DEMO_TRANSACTIONS: Transaction[] = [
     id: 'trans-5',
     userId: 'demo-user-3',
     type: 'redemption',
-    amount: -1000,
-    description: 'Redeemed: Work From Home Day',
-    rewardId: 'reward-7',
+    amount: -15,
+    description: 'Redeemed: $15 Starbucks Gift Card',
+    rewardId: 'reward-3',
     status: 'completed',
     createdAt: new Date('2024-04-20T11:45:00')
   },
@@ -518,11 +588,49 @@ export const DEMO_TRANSACTIONS: Transaction[] = [
     id: 'trans-6',
     userId: 'demo-admin-1',
     type: 'redemption',
-    amount: -3500,
-    description: 'Redeemed: Professional Development Course',
-    rewardId: 'reward-6',
+    amount: -100,
+    description: 'Redeemed: $100 Gift Card (Amazon)',
+    rewardId: 'reward-8',
     status: 'completed',
     createdAt: new Date('2024-03-10T09:15:00')
+  },
+  {
+    id: 'trans-7',
+    userId: 'demo-user-2',
+    type: 'earned',
+    amount: 2,
+    description: 'Daily check-in points (early)',
+    status: 'completed',
+    createdAt: new Date('2024-05-01T07:30:00')
+  },
+  {
+    id: 'trans-8',
+    userId: 'demo-user-2',
+    type: 'bonus',
+    amount: 5,
+    description: 'Perfect week bonus',
+    status: 'completed',
+    createdAt: new Date('2024-05-01T07:30:00')
+  },
+  {
+    id: 'trans-9',
+    userId: 'demo-user-4',
+    type: 'redemption',
+    amount: -25,
+    description: 'Redeemed: $25 Amazon Gift Card',
+    rewardId: 'reward-4',
+    status: 'completed',
+    createdAt: new Date('2024-04-01T09:00:00')
+  },
+  {
+    id: 'trans-10',
+    userId: 'demo-admin-1',
+    type: 'redemption',
+    amount: -175,
+    description: 'Redeemed: Extra Paid Day Off',
+    rewardId: 'reward-10',
+    status: 'completed',
+    createdAt: new Date('2024-02-15T10:00:00')
   }
 ]
 
