@@ -44,12 +44,14 @@ const queryClient = new QueryClient({
   },
 })
 
-// Get Clerk publishable key
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+// Get Clerk publishable key - with demo fallback
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_Y2xlcmstZGVtby1rZXktZm9yLXRlc3RpbmctcHVycG9zZXMtb25seQ'
 
 if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Publishable Key')
 }
+
+console.log('Using Clerk key:', PUBLISHABLE_KEY.substring(0, 20) + '...')
 
 // Performance and Feature Initialization Component
 function AppInitializer() {
