@@ -11,7 +11,10 @@ if (!USE_MOCK_DATA && (!supabaseUrl || !supabaseAnonKey)) {
   throw new Error('Supabase configuration missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Only create Supabase client if we have valid credentials and not using mock data
+export const supabase = USE_MOCK_DATA 
+  ? null 
+  : createClient(supabaseUrl, supabaseAnonKey)
 
 console.log('Supabase config:', { 
   url: supabaseUrl, 
@@ -269,6 +272,10 @@ export class SupabaseService {
   }
 
   static async getUser(userId: string): Promise<User> {
+    if (USE_MOCK_DATA || !supabase) {
+      return MOCK_USER(userId, {})
+    }
+
     const { data, error } = await supabase
       .from('employees')
       .select('*')
@@ -283,6 +290,11 @@ export class SupabaseService {
   }
 
   static async updateUser(userId: string, userData: Partial<User>): Promise<User> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: updateUser called for', userId, userData)
+      return MOCK_USER(userId, userData)
+    }
+
     const { data, error } = await supabase
       .from('employees')
       .update(userData)
@@ -330,6 +342,34 @@ export class SupabaseService {
   }
 
   static async getUserCheckIns(userId: string, limit?: number): Promise<CheckIn[]> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: getUserCheckIns called for', userId)
+      // Return some mock check-ins
+      const mockCheckIns: CheckIn[] = [
+        {
+          id: '1',
+          user_id: userId,
+          check_in_time: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          points_earned: 10,
+          check_in_type: 'ontime',
+          streak_day: 4,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          user_id: userId,
+          check_in_time: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          points_earned: 15,
+          check_in_type: 'early',
+          streak_day: 3,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]
+      return limit ? mockCheckIns.slice(0, limit) : mockCheckIns
+    }
+
     let query = supabase
       .from('check_ins')
       .select(`
@@ -353,6 +393,11 @@ export class SupabaseService {
   }
 
   static async getTodaysCheckIn(userId: string): Promise<CheckIn | null> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: getTodaysCheckIn called for', userId)
+      return null // No check-in today in mock mode
+    }
+
     const today = new Date().toISOString().split('T')[0]
     
     const { data, error } = await supabase
