@@ -216,6 +216,15 @@ export class QRCodeService {
     const now = new Date()
     const timezone = settings.timeWindow.timezone
     
+    // FOR DEMO: Always allow check-ins
+    const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true' || localStorage.getItem('demoMode') === 'true'
+    if (isDemoMode) {
+      // Get time in specified timezone for display
+      const timeStr = now.toLocaleString("en-US", { timeZone: timezone })
+      const localTime = new Date(timeStr)
+      return { allowed: true, currentTime: localTime }
+    }
+    
     // Get time in specified timezone
     const timeStr = now.toLocaleString("en-US", { timeZone: timezone })
     const localTime = new Date(timeStr)

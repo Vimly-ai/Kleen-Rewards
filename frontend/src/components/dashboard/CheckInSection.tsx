@@ -136,14 +136,13 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
       }
       
       const checkInData = {
-        user_id: dbUser.id,
         check_in_time: windowCheck.currentTime.toISOString(),
         points_earned: points + bonusPoints,
         check_in_type: type,
         streak_day: newStreakDay
       }
 
-      await SupabaseService.createCheckIn(checkInData)
+      await SupabaseService.createCheckIn(dbUser.id, checkInData)
       
       // Show success message with bonuses
       let successMessage: string

@@ -346,6 +346,45 @@ export class SupabaseService {
 
   // Check-ins
   static async createCheckIn(userId: string, checkInData: Omit<CheckIn, 'id' | 'created_at' | 'updated_at'>): Promise<CheckIn> {
+    if (USE_MOCK_DATA || !supabase) {
+      // For demo mode, create a mock check-in
+      const mockCheckIn: CheckIn = {
+        id: `ci-${Date.now()}`,
+        user_id: userId,
+        ...checkInData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      // Update user's points and streak in demo data
+      const demoUser = demoData.DEMO_USERS.find(u => u.id === userId)
+      if (demoUser && checkInData.points_earned) {
+        demoUser.points += checkInData.points_earned
+        demoUser.totalPointsEarned += checkInData.points_earned
+        if (checkInData.streak_day) {
+          demoUser.currentStreak = checkInData.streak_day
+          if (checkInData.streak_day > demoUser.longestStreak) {
+            demoUser.longestStreak = checkInData.streak_day
+          }
+        }
+        demoUser.totalCheckIns += 1
+      }
+      
+      // Add to demo check-ins
+      demoData.DEMO_CHECKINS.push({
+        id: mockCheckIn.id,
+        userId: mockCheckIn.user_id,
+        checkInTime: new Date(mockCheckIn.check_in_time),
+        points: checkInData.points_earned || 0,
+        bonusPoints: 0,
+        isEarly: checkInData.check_in_type === 'early',
+        streakDay: checkInData.streak_day || 1,
+        mood: 'great' as any
+      })
+      
+      return mockCheckIn
+    }
+
     const { data, error } = await supabase
       .from('check_ins')
       .insert([{

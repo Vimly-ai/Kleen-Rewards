@@ -79,6 +79,7 @@ export function DemoAuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setDemoUser(demoUserData)
+    localStorage.setItem('demoMode', 'true') // Set demo mode flag for check-ins
     setIsLoading(false)
     // Don't persist demo sessions to prevent auto-login issues
     return true
@@ -87,6 +88,7 @@ export function DemoAuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = () => {
     setDemoUser(null)
     localStorage.removeItem('demo_user_email')
+    localStorage.removeItem('demoMode') // Clear demo mode flag
   }
 
   return (

@@ -17,6 +17,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
   const readerRef = useRef<BrowserMultiFormatReader | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isProcessingRef = useRef<boolean>(false)
 
   useEffect(() => {
     if (!isOpen) {
@@ -111,8 +112,9 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
           selectedDeviceId,
           videoRef.current,
           (result, error) => {
-            if (result && !hasScanned) {
+            if (result && !hasScanned && !isProcessingRef.current) {
               // Prevent multiple scans
+              isProcessingRef.current = true
               setHasScanned(true)
               console.log('QR Code detected:', result.getText())
               
@@ -123,6 +125,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
               setTimeout(() => {
                 onScanSuccess(result.getText())
                 onClose()
+                isProcessingRef.current = false
               }, 100)
             }
             if (error && error.name !== 'NotFoundException') {
@@ -170,6 +173,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
       setIsScanning(false)
       setError(null)
       setHasScanned(false)
+      isProcessingRef.current = false
     } catch (err) {
       console.error('Error stopping scanner:', err)
     }
