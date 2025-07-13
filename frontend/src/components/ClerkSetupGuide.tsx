@@ -3,6 +3,7 @@ import { Card } from './ui/Card'
 import { Button } from './ui/Button'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { ClerkDashboardHelper } from './ClerkDashboardHelper'
 
 export function ClerkSetupGuide() {
   const [copiedStep, setCopiedStep] = useState<number | null>(null)
@@ -31,15 +32,21 @@ export function ClerkSetupGuide() {
             
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
               <p className="text-sm text-yellow-800">
-                <strong>Current Status:</strong> Invalid or missing Clerk configuration detected. 
-                OAuth features are disabled.
+                <strong>Current Status:</strong> The key format appears incomplete. 
+                OAuth features require a full publishable key.
               </p>
               <p className="text-xs text-yellow-600 mt-1">
                 Current key: {import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ? 
                   `${import.meta.env.VITE_CLERK_PUBLISHABLE_KEY.substring(0, 20)}...` : 
                   'Not configured'}
               </p>
+              <p className="text-xs text-yellow-600">
+                Your instance: golden-grackle-88.clerk.accounts.dev
+              </p>
             </div>
+            
+            {/* Add the dashboard helper */}
+            <ClerkDashboardHelper />
 
             <h4 className="font-medium text-gray-900 mb-3">Quick Setup Guide:</h4>
             
