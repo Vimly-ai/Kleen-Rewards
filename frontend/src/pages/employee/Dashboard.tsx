@@ -71,41 +71,45 @@ export default function EmployeeDashboard() {
 
   const hasCheckedInToday = !!todayCheckIn
 
-  // Mock activity data - in real app this would come from API
-  const mockActivities = [
-    {
-      id: '1',
+  // Get real activity data - empty for new users
+  const userActivities = userStats?.badges?.map((badge, index) => ({
+    id: `badge-${index}`,
+    type: 'achievement' as const,
+    title: 'Achievement Unlocked',
+    description: `You unlocked a new badge!`,
+    timestamp: new Date(badge.unlockedAt),
+    points: 100
+  })) || []
+  
+  // Add today's check-in if exists
+  if (todayCheckIn) {
+    userActivities.unshift({
+      id: 'today-checkin',
       type: 'check_in' as const,
       title: 'Daily Check-in',
-      description: 'Checked in at 9:15 AM',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30),
-      points: 50
-    },
-    {
-      id: '2', 
-      type: 'achievement' as const,
-      title: 'Early Bird',
-      description: 'Unlocked for checking in early 5 times',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-      points: 100
-    },
-    {
-      id: '3',
-      type: 'points_earned' as const,
-      title: 'Bonus Points',
-      description: 'Earned bonus points for perfect attendance',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-      points: 75
-    }
-  ]
+      description: `Checked in at ${new Date(todayCheckIn.checkInTime).toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+      })}`,
+      timestamp: new Date(todayCheckIn.checkInTime),
+      points: todayCheckIn.pointsEarned || 50
+    })
+  }
 
+  // Calculate today's points from today's check-in
+  const todaysPoints = todayCheckIn ? (todayCheckIn.pointsEarned || 50) : 0
+  
+  // Calculate this month's check-ins (for now using total, will improve later)
+  const thisMonthCheckIns = userStats?.totalCheckIns || 0
+  
   const quickStatsData = userStats ? {
     totalPoints: userStats.totalPoints,
-    todayPoints: 50, // Mock today's points
+    todayPoints: todaysPoints,
     currentStreak: userStats.currentStreak,
     longestStreak: userStats.longestStreak || userStats.currentStreak,
     totalCheckIns: userStats.totalCheckIns || 0,
-    thisMonthCheckIns: 15, // Mock this month's check-ins
+    thisMonthCheckIns: thisMonthCheckIns,
     achievementsUnlocked: userStats.badges?.length || 0,
     nextLevelPoints: 1000,
     currentLevelProgress: (userStats.totalPoints % 1000) / 10
@@ -215,7 +219,7 @@ export default function EmployeeDashboard() {
           collapsible
         >
           <ActivityFeed 
-            activities={mockActivities}
+            activities={userActivities}
             loading={false}
           />
         </DashboardWidget>
