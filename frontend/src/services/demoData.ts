@@ -37,6 +37,7 @@ export const DEMO_USERS: User[] = [
     joinedAt: new Date('2023-01-15'),
     lastActiveAt: new Date(),
     status: 'online',
+    approvalStatus: 'approved', // Admin approval status
     bio: 'HR Director passionate about employee engagement and recognition.',
     preferences: {
       notifications: true,
@@ -63,6 +64,7 @@ export const DEMO_USERS: User[] = [
     joinedAt: new Date('2023-06-20'),
     lastActiveAt: new Date(),
     status: 'online',
+    approvalStatus: 'approved', // Employee approval status
     bio: 'Senior Software Engineer | Coffee enthusiast | Team player',
     preferences: {
       notifications: true,
@@ -89,6 +91,7 @@ export const DEMO_USERS: User[] = [
     joinedAt: new Date('2023-03-10'),
     lastActiveAt: new Date(Date.now() - 1000 * 60 * 30),
     status: 'away',
+    approvalStatus: 'approved', // Employee approval status
     bio: 'Marketing Manager | Creative thinker | Wellness advocate',
     preferences: {
       notifications: true,
@@ -115,6 +118,7 @@ export const DEMO_USERS: User[] = [
     joinedAt: new Date('2023-09-01'),
     lastActiveAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
     status: 'busy',
+    approvalStatus: 'pending', // Pending approval
     bio: 'Sales Representative | Goal crusher | Basketball fan',
     preferences: {
       notifications: true,
@@ -141,11 +145,66 @@ export const DEMO_USERS: User[] = [
     joinedAt: new Date('2023-04-22'),
     lastActiveAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
     status: 'offline',
+    approvalStatus: 'suspended', // Suspended account
     bio: 'UX Designer | Innovation lover | Yoga practitioner',
     preferences: {
       notifications: false,
       emailUpdates: true,
       theme: 'light'
+    }
+  },
+  {
+    id: 'demo-user-5',
+    clerkId: 'demo_user_5_clerk_id',
+    email: 'david@demo.com',
+    name: 'David Kim',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
+    role: 'employee',
+    department: 'Operations',
+    points: 45,
+    currentStreak: 3,
+    longestStreak: 25,
+    totalCheckIns: 67,
+    totalPointsEarned: 115,
+    totalPointsRedeemed: 70,
+    level: 5,
+    achievements: 8,
+    joinedAt: new Date('2023-11-15'),
+    lastActiveAt: new Date(Date.now() - 1000 * 60 * 45),
+    status: 'away',
+    approvalStatus: 'rejected', // Rejected account
+    bio: 'Operations Specialist | Process improvement enthusiast',
+    preferences: {
+      notifications: true,
+      emailUpdates: false,
+      theme: 'light'
+    }
+  },
+  {
+    id: 'demo-user-6',
+    clerkId: 'demo_user_6_clerk_id',
+    email: 'jennifer@demo.com',
+    name: 'Jennifer Martinez',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jennifer',
+    role: 'employee',
+    department: 'Finance',
+    points: 120,
+    currentStreak: 22,
+    longestStreak: 60,
+    totalCheckIns: 145,
+    totalPointsEarned: 280,
+    totalPointsRedeemed: 160,
+    level: 8,
+    achievements: 16,
+    joinedAt: new Date('2023-05-10'),
+    lastActiveAt: new Date(),
+    status: 'online',
+    approvalStatus: 'pending', // Another pending user
+    bio: 'Financial Analyst | Numbers wizard | Marathon runner',
+    preferences: {
+      notifications: true,
+      emailUpdates: true,
+      theme: 'system'
     }
   }
 ]

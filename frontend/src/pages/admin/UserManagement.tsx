@@ -70,7 +70,7 @@ export default function AdminUserManagement() {
         role: demoUser.role as User['role'],
         company: 'System Kleen',
         department: demoUser.department,
-        status: demoUser.status as User['status'] || 'approved',
+        status: demoUser.approvalStatus as User['status'] || 'approved',
         approvedBy: demoUser.role === 'admin' ? 'system' : 'demo-admin-1',
         approvedAt: demoUser.joinedAt.toISOString(),
         created: demoUser.joinedAt.toISOString(),
