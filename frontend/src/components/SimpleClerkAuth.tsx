@@ -33,11 +33,12 @@ export function SimpleClerkAuth({ mode }: SimpleClerkAuthProps) {
 
   // Simplified routing configuration
   const routingProps = {
-    routing: 'path',
+    routing: 'path' as const,
     path: '/auth',
     afterSignInUrl: '/',
     afterSignUpUrl: '/',
-    redirectUrl: '/'
+    signInUrl: '/auth',
+    signUpUrl: '/auth'
   }
 
   return (

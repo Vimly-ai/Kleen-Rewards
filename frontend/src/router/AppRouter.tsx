@@ -91,7 +91,7 @@ export function AppRouter() {
       <Routes>
         {/* Public routes */}
         <Route 
-          path="/auth" 
+          path="/auth/*" 
           element={
             isSignedIn ? 
               <Navigate to={userRole === 'admin' || userRole === 'super_admin' ? '/admin' : '/employee'} replace /> : 

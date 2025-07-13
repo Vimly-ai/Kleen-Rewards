@@ -41,7 +41,15 @@ export function ClerkProviderWithFallback({ children, publishableKey }: ClerkPro
     return (
       <ClerkProvider 
         publishableKey={publishableKey}
-        navigate={(to) => window.location.href = to}
+        navigate={(to) => {
+          // Handle internal navigation for Clerk routes
+          if (to.startsWith('/')) {
+            window.history.pushState({}, '', to)
+            window.dispatchEvent(new PopStateEvent('popstate'))
+          } else {
+            window.location.href = to
+          }
+        }}
         appearance={{
           elements: {
             rootBox: 'clerk-root-box',
