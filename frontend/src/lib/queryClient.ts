@@ -65,9 +65,10 @@ export const queryKeys = {
   // Admin queries
   admin: {
     all: ['admin'] as const,
-    users: (page: number, search?: string) => [...queryKeys.admin.all, 'users', page, search] as const,
+    users: (page: number, search?: string, status?: string) => [...queryKeys.admin.all, 'users', page, search, status] as const,
     analytics: (period: string) => [...queryKeys.admin.all, 'analytics', period] as const,
-    settings: () => [...queryKeys.admin.all, 'settings'] as const
+    settings: () => [...queryKeys.admin.all, 'settings'] as const,
+    redemptions: (status?: string) => [...queryKeys.admin.all, 'redemptions', status] as const
   },
   
   // Company queries
