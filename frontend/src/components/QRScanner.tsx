@@ -12,20 +12,31 @@ interface QRScannerProps {
 export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, isOpen }) => {
   const [isScanning, setIsScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasScanned, setHasScanned] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const readerRef = useRef<BrowserMultiFormatReader | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (!isOpen) {
       stopScanning()
+      setHasScanned(false)
       return
     }
 
-    startScanning()
+    // Reset state when opening
+    setHasScanned(false)
+    setError(null)
+    
+    // Start scanning after a small delay
+    const startTimeout = setTimeout(() => {
+      startScanning()
+    }, 500)
     
     // Cleanup function
     return () => {
+      clearTimeout(startTimeout)
       stopScanning()
     }
   }, [isOpen])
@@ -100,11 +111,19 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
           selectedDeviceId,
           videoRef.current,
           (result, error) => {
-            if (result) {
+            if (result && !hasScanned) {
+              // Prevent multiple scans
+              setHasScanned(true)
               console.log('QR Code detected:', result.getText())
-              onScanSuccess(result.getText())
+              
+              // Stop scanning immediately
               stopScanning()
-              onClose()
+              
+              // Add a small delay before calling success callback
+              setTimeout(() => {
+                onScanSuccess(result.getText())
+                onClose()
+              }, 100)
             }
             if (error && error.name !== 'NotFoundException') {
               // Log scanning errors (but don't stop scanning for "not found" errors)
@@ -123,6 +142,12 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
 
   const stopScanning = () => {
     try {
+      // Clear any pending timeouts
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current)
+        scanTimeoutRef.current = null
+      }
+      
       // Stop the video stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => {
@@ -144,6 +169,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
       readerRef.current = null
       setIsScanning(false)
       setError(null)
+      setHasScanned(false)
     } catch (err) {
       console.error('Error stopping scanner:', err)
     }

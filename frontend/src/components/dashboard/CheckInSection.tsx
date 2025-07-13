@@ -16,6 +16,7 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
   const { user: dbUser, refreshUser } = useData()
   const [showQRScanner, setShowQRScanner] = useState(false)
   const [checkingIn, setCheckingIn] = useState(false)
+  const [lastCheckInAttempt, setLastCheckInAttempt] = useState<number>(0)
 
   const getUniqueMotivationalQuote = async (category: 'early' | 'ontime' | 'late') => {
     const quotes = {
@@ -48,7 +49,15 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
 
 
   const handleCheckIn = async () => {
-    if (!dbUser?.id || hasCheckedInToday) return
+    if (!dbUser?.id || hasCheckedInToday || checkingIn) return
+
+    // Prevent multiple check-ins within 5 seconds
+    const now = Date.now()
+    if (now - lastCheckInAttempt < 5000) {
+      console.log('Check-in attempt too soon, ignoring')
+      return
+    }
+    setLastCheckInAttempt(now)
 
     setCheckingIn(true)
     
@@ -176,13 +185,18 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
   }
 
   const handleQRScan = async (data: string) => {
+    // Close scanner immediately to prevent multiple scans
+    setShowQRScanner(false)
+    
     // Validate QR code using the service
     const validation = QRCodeService.validateQRCode(data)
     
     if (validation.valid && validation.code) {
-      setShowQRScanner(false)
       console.log('Valid QR code scanned:', validation.code)
-      await handleCheckIn()
+      // Small delay to ensure scanner is fully closed
+      setTimeout(async () => {
+        await handleCheckIn()
+      }, 200)
     } else {
       toast.error(
         <div>
