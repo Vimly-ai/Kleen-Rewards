@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { SignIn, SignUp, useAuth } from '@clerk/clerk-react'
-import { useNavigate } from 'react-router-dom'
+import { SignIn, SignUp, useAuth, useClerk } from '@clerk/clerk-react'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 interface ClerkAuthWrapperProps {
   mode: 'signin' | 'signup'
@@ -8,24 +8,72 @@ interface ClerkAuthWrapperProps {
 
 export function ClerkAuthWrapper({ mode }: ClerkAuthWrapperProps) {
   const { isSignedIn, isLoaded } = useAuth()
+  const clerk = useClerk()
   const navigate = useNavigate()
+  const location = useLocation()
   const [shouldRender, setShouldRender] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(true)
 
   useEffect(() => {
-    // Prevent rendering until Clerk is loaded
-    if (isLoaded) {
-      if (isSignedIn) {
-        // If already signed in, redirect away from auth page
-        navigate('/', { replace: true })
-      } else {
-        // Only render auth components if not signed in
-        setShouldRender(true)
+    let mounted = true;
+    
+    const checkAuthState = async () => {
+      try {
+        // Add timeout to prevent infinite loading
+        const timeout = setTimeout(() => {
+          if (mounted && !shouldRender) {
+            console.warn('Clerk loading timeout - showing auth form')
+            setShouldRender(true)
+            setIsInitializing(false)
+          }
+        }, 5000) // 5 second timeout
+        
+        // Wait for Clerk to be fully loaded
+        if (!clerk.loaded) {
+          await new Promise(resolve => {
+            const checkLoaded = setInterval(() => {
+              if (clerk.loaded || !mounted) {
+                clearInterval(checkLoaded)
+                clearTimeout(timeout)
+                resolve(true)
+              }
+            }, 100)
+          })
+        }
+        
+        if (!mounted) return;
+        
+        // Check if user is signed in
+        if (isLoaded && isSignedIn) {
+          // Get redirect URL from location state or default
+          const from = location.state?.from?.pathname || '/'
+          navigate(from, { replace: true })
+        } else if (isLoaded) {
+          // Only render auth components after confirming not signed in
+          setShouldRender(true)
+        }
+      } catch (error) {
+        console.error('Auth check error:', error)
+        // Still show auth form on error
+        if (mounted) {
+          setShouldRender(true)
+        }
+      } finally {
+        if (mounted) {
+          setIsInitializing(false)
+        }
       }
     }
-  }, [isLoaded, isSignedIn, navigate])
+    
+    checkAuthState()
+    
+    return () => {
+      mounted = false
+    }
+  }, [isLoaded, isSignedIn, navigate, clerk, location])
 
-  // Don't render anything until we've checked auth state
-  if (!shouldRender) {
+  // Show loading state while initializing
+  if (isInitializing || !shouldRender) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>

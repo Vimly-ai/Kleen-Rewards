@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { DemoCredentials } from '../../components/DemoCredentials'
 import { DemoSignIn } from '../../components/DemoSignIn'
-import { ClerkAuthWrapper } from '../../components/ClerkAuthWrapper'
+import { SimpleClerkAuth } from '../../components/SimpleClerkAuth'
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
-  const [showDemoLogin, setShowDemoLogin] = useState(false)
-  // Always show demo option for now since we're in demo deployment
+  // Start with demo login shown by default in demo mode
   const isDemoMode = true // import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
+  const [showDemoLogin, setShowDemoLogin] = useState(isDemoMode)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center p-4">
@@ -33,9 +33,17 @@ export default function AuthPage() {
         {showDemoLogin && isDemoMode ? (
           <DemoSignIn />
         ) : (
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <ClerkAuthWrapper mode={isSignUp ? 'signup' : 'signin'} />
-          </div>
+          <>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> Clerk authentication is currently in development mode. 
+                For testing, please use the "Use demo accounts" option below.
+              </p>
+            </div>
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <SimpleClerkAuth mode={isSignUp ? 'signup' : 'signin'} />
+            </div>
+          </>
         )}
         
         {/* Demo Mode Options */}
