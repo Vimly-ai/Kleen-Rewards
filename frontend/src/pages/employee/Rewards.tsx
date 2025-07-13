@@ -71,7 +71,7 @@ export default function EmployeeRewards() {
     sortBy: 'popularity'
   })
 
-  const { user, loading: userLoading } = useData()
+  const { user, loading: userLoading, refreshUser } = useData()
   const { data: userStats } = useUserStats(user?.id || '')
   const { data: rawRewards, isLoading: rewardsLoading } = useRewards()
   const { data: redemptions, isLoading: redemptionsLoading } = useUserRedemptions(user?.id || '')
@@ -141,8 +141,11 @@ export default function EmployeeRewards() {
       })
       setShowRedemptionModal(false)
       setSelectedReward(null)
+      // Refresh user data to update points balance
+      await refreshUser()
     } catch (error) {
       // Error is handled by the mutation
+      console.error('Redemption error:', error)
     }
   }
   
@@ -409,17 +412,41 @@ export default function EmployeeRewards() {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="text-lg font-medium text-gray-900">
-                        Reward Redemption
+                        {redemption.reward?.name || 'Reward Redemption'}
                       </h3>
                       <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
-                        <span>Points: {redemption.pointsCost}</span>
-                        <span>
-                          Redeemed: {new Date(redemption.created).toLocaleDateString()}
+                        <span className="flex items-center gap-1">
+                          <Zap className="w-4 h-4" />
+                          {redemption.pointsCost} points
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {new Date(redemption.created).toLocaleDateString()}
                         </span>
                       </div>
-                      {redemption.notes && (
+                      {redemption.reward?.description && (
                         <p className="mt-2 text-sm text-gray-600">
-                          {redemption.notes}
+                          {redemption.reward.description}
+                        </p>
+                      )}
+                      {redemption.status === 'pending' && (
+                        <p className="mt-3 text-sm text-yellow-600 font-medium">
+                          ⏳ Awaiting admin approval
+                        </p>
+                      )}
+                      {redemption.status === 'approved' && (
+                        <p className="mt-3 text-sm text-blue-600 font-medium">
+                          ✅ Approved - Processing your reward
+                        </p>
+                      )}
+                      {redemption.status === 'completed' && (
+                        <p className="mt-3 text-sm text-green-600 font-medium">
+                          🎉 Completed - Enjoy your reward!
+                        </p>
+                      )}
+                      {redemption.status === 'rejected' && redemption.notes && (
+                        <p className="mt-3 text-sm text-red-600">
+                          ❌ Reason: {redemption.notes}
                         </p>
                       )}
                     </div>

@@ -52,10 +52,14 @@ export function useRedeemReward() {
       userId: string
       rewardId: string
     }) => {
+      console.log('Starting reward redemption:', data)
       const redemption = await SupabaseService.redeemReward(data.userId, data.rewardId)
+      console.log('Redemption completed:', redemption)
       return redemption
     },
     onSuccess: (redemption, variables) => {
+      console.log('Redemption success, invalidating queries...')
+      
       // Invalidate user's redemptions
       queryClient.invalidateQueries({ 
         queryKey: queryKeys.rewards.redemptions(variables.userId) 
@@ -64,6 +68,11 @@ export function useRedeemReward() {
       // Invalidate user stats to reflect updated points
       queryClient.invalidateQueries({ 
         queryKey: queryKeys.user.stats(variables.userId) 
+      })
+      
+      // Invalidate user data to refresh points balance
+      queryClient.invalidateQueries({ 
+        queryKey: queryKeys.user.detail(variables.userId) 
       })
       
       // Optionally invalidate reward details if stock is limited

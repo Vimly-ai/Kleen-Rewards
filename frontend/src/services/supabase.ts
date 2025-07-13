@@ -670,7 +670,7 @@ export class SupabaseService {
       // Deduct points from user
       user.points -= reward.pointCost
       
-      // Create mock redemption
+      // Create mock redemption with reward details
       const mockRedemption: Redemption = {
         id: `red-${Date.now()}`,
         user_id: userId,
@@ -679,8 +679,25 @@ export class SupabaseService {
         status: 'pending',
         requested_date: new Date().toISOString(),
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        reward: {
+          id: reward.id,
+          name: reward.name,
+          description: reward.description,
+          category: reward.category as any,
+          points_cost: reward.pointCost,
+          quantity_available: reward.stock || 100,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
       }
+      
+      // Store the redemption in demo data (optional, for persistence)
+      if (!demoData.DEMO_REDEMPTIONS) {
+        (demoData as any).DEMO_REDEMPTIONS = []
+      }
+      (demoData as any).DEMO_REDEMPTIONS.push(mockRedemption)
       
       return mockRedemption
     }
@@ -792,8 +809,21 @@ export class SupabaseService {
   static async getUserRedemptions(userId: string): Promise<any[]> {
     if (USE_MOCK_DATA || !supabase) {
       console.log('Mock: getUserRedemptions called for', userId)
-      // Return mock redemptions with simplified structure
-      return []
+      // Return stored mock redemptions
+      const redemptions = (demoData as any).DEMO_REDEMPTIONS || []
+      const userRedemptions = redemptions.filter((r: any) => r.user_id === userId)
+      
+      // Transform to expected format
+      return userRedemptions.map((r: any) => ({
+        id: r.id,
+        userId: r.user_id,
+        rewardId: r.reward_id,
+        pointsCost: r.points_spent,
+        status: r.status,
+        created: r.requested_date,
+        notes: r.rejection_reason || '',
+        reward: r.reward
+      }))
     }
     
     const { data, error } = await supabase
