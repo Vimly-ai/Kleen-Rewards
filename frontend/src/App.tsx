@@ -51,7 +51,8 @@ const queryClient = new QueryClient({
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_Z29sZGVuLWdyYWNrbGUtODguY2xlcmsuYWNjb3VudHMuZGV2JA'
 
 // Validate Clerk key format
-const isValidClerkKey = PUBLISHABLE_KEY.startsWith('pk_test_') || PUBLISHABLE_KEY.startsWith('pk_live_')
+const isValidClerkKey = PUBLISHABLE_KEY.startsWith('pk_test_') || PUBLISHABLE_KEY.startsWith('pk_live_') ||
+  PUBLISHABLE_KEY === 'pk_test_Z29sZGVuLWdyYWNrbGUtODguY2xlcmsuYWNjb3VudHMuZGV2JA'
 if (!isValidClerkKey) {
   console.error('Invalid Clerk publishable key format. Expected format: pk_test_... or pk_live_...')
   console.error('Current key:', PUBLISHABLE_KEY.substring(0, 20) + '...')

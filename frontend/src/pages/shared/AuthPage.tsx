@@ -7,6 +7,7 @@ import { SimpleClerkAuth } from '../../components/SimpleClerkAuth'
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner'
 import { useAuthModeFallback } from '../../components/AuthModeFallback'
 import { ClerkSetupGuide } from '../../components/ClerkSetupGuide'
+import { ClerkKeyValidator } from '../../components/ClerkKeyValidator'
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -16,7 +17,8 @@ export default function AuthPage() {
   
   // Check if Clerk key is valid
   const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || ''
-  const hasValidClerkKey = clerkKey.startsWith('pk_test_') || clerkKey.startsWith('pk_live_')
+  const hasValidClerkKey = clerkKey.startsWith('pk_test_') || clerkKey.startsWith('pk_live_') || 
+    clerkKey === 'pk_test_Z29sZGVuLWdyYWNrbGUtODguY2xlcmsuYWNjb3VudHMuZGV2JA'
   
   // Check URL params for demo mode override
   const urlParams = new URLSearchParams(window.location.search)
@@ -62,6 +64,11 @@ export default function AuthPage() {
             {isSignUp ? 'Create your account' : 'Sign in to your account'}
           </p>
         </div>
+
+        {/* Key Validator (only show in dev mode or when debugging) */}
+        {(import.meta.env.DEV || !hasValidClerkKey) && (
+          <ClerkKeyValidator />
+        )}
 
         {/* Auth Component */}
         {showDemoLogin && isDemoMode ? (
