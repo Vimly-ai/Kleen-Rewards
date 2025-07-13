@@ -60,49 +60,28 @@ export default function EmployeeProfile() {
     }
   }, [dbUser])
   
-  // Mock activity data - in real app this would come from API
-  const mockActivities = [
-    {
-      id: '1',
-      type: 'check_in' as const,
-      title: 'Daily Check-in',
-      description: 'Checked in at 9:15 AM',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30),
-      points: 50
-    },
-    {
-      id: '2',
+  // Get real user activities from their data
+  const userActivities = []
+  
+  // Add achievements as activities
+  if (userStats?.badges) {
+    userActivities.push(...userStats.badges.map((badge, index) => ({
+      id: `achievement-${index}`,
       type: 'achievement_unlocked' as const,
-      title: 'Early Bird Achievement',
-      description: 'Unlocked for checking in early 5 times',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
+      title: 'Achievement Unlocked',
+      description: `You unlocked a new achievement!`,
+      timestamp: new Date(badge.unlockedAt),
       points: 100
-    },
-    {
-      id: '3',
-      type: 'points_earned' as const,
-      title: 'Bonus Points',
-      description: 'Earned bonus points for perfect attendance',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-      points: 75
-    },
-    {
-      id: '4',
-      type: 'streak_milestone' as const,
-      title: '7-Day Streak',
-      description: 'Maintained check-in streak for a full week',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-      points: 200
-    },
-    {
-      id: '5',
-      type: 'reward_redeemed' as const,
-      title: 'Coffee Voucher',
-      description: 'Redeemed $5 coffee shop voucher',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
-      points: -250
-    }
-  ]
+    })))
+  }
+  
+  // For now, we'll show empty state for new users until they have real activities
+  // In a full implementation, this would include:
+  // - Check-in history from database
+  // - Point transactions
+  // - Reward redemptions
+  // - Level ups
+  // - Streak milestones
 
   const handleSaveProfile = async () => {
     if (!dbUser) return
@@ -166,16 +145,16 @@ export default function EmployeeProfile() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-6 border border-indigo-100 dark:border-indigo-800">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
             <User className="w-8 h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               Profile & Settings
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               Manage your account, preferences, and view your activity
             </p>
           </div>
@@ -183,15 +162,15 @@ export default function EmployeeProfile() {
       </div>
       
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('overview')}
             className={clsx(
               'py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2',
               activeTab === 'overview'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
             )}
           >
             <User className="w-4 h-4" />
@@ -203,8 +182,8 @@ export default function EmployeeProfile() {
             className={clsx(
               'py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2',
               activeTab === 'settings'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
             )}
           >
             <Settings className="w-4 h-4" />
@@ -216,8 +195,8 @@ export default function EmployeeProfile() {
             className={clsx(
               'py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2',
               activeTab === 'activity'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
             )}
           >
             <Activity className="w-4 h-4" />
@@ -419,7 +398,7 @@ export default function EmployeeProfile() {
               <div className="space-y-6">
                 {/* Theme Selection */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Theme</h3>
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Theme</h3>
                   <div className="grid grid-cols-3 gap-3">
                     {[
                       { key: 'light', label: 'Light', icon: Sun },
@@ -432,8 +411,8 @@ export default function EmployeeProfile() {
                         className={clsx(
                           'flex items-center gap-2 p-3 rounded-lg border transition-all',
                           theme === themeOption.key
-                            ? 'border-primary-500 bg-primary-50 text-primary-700'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
+                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 dark:border-primary-400'
+                            : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
                         )}
                       >
                         <themeOption.icon className="w-4 h-4" />
@@ -445,28 +424,28 @@ export default function EmployeeProfile() {
 
                 {/* Notification Preferences */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                     <Bell className="w-4 h-4" />
                     Notifications
                   </h3>
                   <div className="space-y-3">
                     <label className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Sound notifications</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Sound notifications</span>
                       <input
                         type="checkbox"
                         checked={preferences.soundEnabled}
                         onChange={(e) => updatePreferences({ soundEnabled: e.target.checked })}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        className="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary-600 focus:ring-primary-500"
                       />
                     </label>
                     
                     <label className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Auto check-in reminders</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Auto check-in reminders</span>
                       <input
                         type="checkbox"
                         checked={preferences.autoCheckIn}
                         onChange={(e) => updatePreferences({ autoCheckIn: e.target.checked })}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        className="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary-600 focus:ring-primary-500"
                       />
                     </label>
                   </div>
@@ -474,25 +453,25 @@ export default function EmployeeProfile() {
 
                 {/* Display Preferences */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Display</h3>
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Display</h3>
                   <div className="space-y-3">
                     <label className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Enable animations</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Enable animations</span>
                       <input
                         type="checkbox"
                         checked={preferences.animationsEnabled}
                         onChange={(e) => updatePreferences({ animationsEnabled: e.target.checked })}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        className="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary-600 focus:ring-primary-500"
                       />
                     </label>
                     
                     <label className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Compact mode</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Compact mode</span>
                       <input
                         type="checkbox"
                         checked={preferences.compactMode}
                         onChange={(e) => updatePreferences({ compactMode: e.target.checked })}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        className="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary-600 focus:ring-primary-500"
                       />
                     </label>
                   </div>
@@ -556,7 +535,7 @@ export default function EmployeeProfile() {
 
       {activeTab === 'activity' && (
         <ActivityTimeline
-          activities={mockActivities}
+          activities={userActivities}
           loading={false}
           onLoadMore={() => {}}
           hasMore={false}

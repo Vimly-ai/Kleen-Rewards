@@ -127,17 +127,31 @@ function AppContent() {
   // Apply theme to document
   useEffect(() => {
     const root = document.documentElement
+    const body = document.body
+    
     if (theme === 'dark') {
       root.setAttribute('data-theme', 'dark')
+      root.classList.add('dark')
+      body.style.backgroundColor = 'rgb(2, 6, 23)' // Dark background
+      body.style.color = 'rgb(248, 250, 252)' // Light text
     } else if (theme === 'light') {
       root.removeAttribute('data-theme')
+      root.classList.remove('dark')
+      body.style.backgroundColor = 'rgb(248, 250, 252)' // Light background
+      body.style.color = 'rgb(15, 23, 42)' // Dark text
     } else {
       // System theme
       const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       if (isDark) {
         root.setAttribute('data-theme', 'dark')
+        root.classList.add('dark')
+        body.style.backgroundColor = 'rgb(2, 6, 23)'
+        body.style.color = 'rgb(248, 250, 252)'
       } else {
         root.removeAttribute('data-theme')
+        root.classList.remove('dark')
+        body.style.backgroundColor = 'rgb(248, 250, 252)'
+        body.style.color = 'rgb(15, 23, 42)'
       }
     }
   }, [theme])
