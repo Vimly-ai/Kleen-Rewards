@@ -98,7 +98,7 @@ export default function EmployeeRewards() {
     isWishlisted: wishlist.includes(reward.id)
   })) || []
 
-  const userPoints = userStats?.totalPoints || 0
+  const userPoints = user?.points_balance || 0
 
   // Filter and sort rewards
   const filteredRewards = rewards.filter(reward => {

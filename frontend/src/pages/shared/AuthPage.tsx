@@ -45,6 +45,10 @@ export default function AuthPage() {
                     colorPrimary: '#3B82F6'
                   }
                 }}
+                routing="path"
+                path="/auth"
+                redirectUrl="/"
+                afterSignUpUrl="/"
               />
             ) : (
               <SignIn 
@@ -57,6 +61,10 @@ export default function AuthPage() {
                     colorPrimary: '#3B82F6'
                   }
                 }}
+                routing="path"
+                path="/auth"
+                redirectUrl="/"
+                afterSignInUrl="/"
               />
             )}
           </div>
