@@ -32,10 +32,11 @@ export function ProfileCheck({ children }: ProfileCheckProps) {
     
     if (isDemoUser) return
 
-    // Check if profile is incomplete
-    if (user && (!user.first_name || !user.last_name || user.name === 'New User')) {
-      navigate('/profile-setup', { replace: true })
-    }
+    // For now, skip profile setup requirement to allow immediate dashboard access
+    // Uncomment below to enforce profile completion
+    // if (user && (!user.first_name || !user.last_name || user.name === 'New User')) {
+    //   navigate('/profile-setup', { replace: true })
+    // }
   }, [user?.email, user?.name, loading]) // Remove navigate from deps to prevent loops
 
   // Don't render children until we've checked the profile
@@ -50,9 +51,11 @@ export function ProfileCheck({ children }: ProfileCheckProps) {
     user.email === 'lisa@demo.com'
   )
   
-  if (!isDemoUser && user && (!user.first_name || !user.last_name || user.name === 'New User')) {
-    return null
-  }
+  // For now, allow access even with incomplete profile
+  // Uncomment below to enforce profile completion
+  // if (!isDemoUser && user && (!user.first_name || !user.last_name || user.name === 'New User')) {
+  //   return null
+  // }
 
   return <>{children}</>
 }

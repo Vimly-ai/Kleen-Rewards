@@ -34,9 +34,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const role = authUser.publicMetadata?.role === 'admin' ? 'admin' : 'employee'
       
       // Prepare user data from auth
+      const fullName = authUser.fullName || 
+                      (authUser.firstName && authUser.lastName ? `${authUser.firstName} ${authUser.lastName}` : '') ||
+                      authUser.firstName || 
+                      authUser.emailAddresses[0]?.emailAddress?.split('@')[0] || 
+                      'Unknown User'
+                      
       const userData = {
         email: authUser.emailAddresses[0]?.emailAddress || '',
-        name: authUser.fullName || authUser.firstName || 'Unknown',
+        name: fullName,
+        first_name: authUser.firstName || fullName.split(' ')[0] || '',
+        last_name: authUser.lastName || fullName.split(' ').slice(1).join(' ') || '',
         employee_id: authUser.id,
         department: authUser.publicMetadata?.department as string || 'General',
         hire_date: authUser.createdAt ? new Date(authUser.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
