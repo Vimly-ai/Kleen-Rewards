@@ -72,31 +72,56 @@ export default function QRCodeSettings() {
 
   const loadQRCodeData = async () => {
     await withErrorHandling(async () => {
-      // In production, load from database
-      const mockActiveCode: QRCodeConfig = {
-        id: 'qr-001',
-        code: 'SK2024-MAIN-001',
-        url: 'https://systemkleen.com/checkin/SK2024-MAIN-001',
-        isActive: true,
-        createdAt: new Date('2024-01-01'),
-        expiresAt: null,
-        usageCount: 156
+      // Load from localStorage or use demo data
+      const storedCode = localStorage.getItem('systemkleen_active_qr_code')
+      
+      if (storedCode) {
+        const qrCode = JSON.parse(storedCode)
+        setActiveQRCode({
+          ...qrCode,
+          createdAt: new Date(qrCode.createdAt),
+          expiresAt: qrCode.expiresAt ? new Date(qrCode.expiresAt) : null
+        })
+      } else {
+        // Demo QR code
+        const mockActiveCode: QRCodeConfig = {
+          id: 'qr-001',
+          code: 'SK2024-MAIN-001',
+          url: 'https://systemkleen.com/checkin/SK2024-MAIN-001',
+          isActive: true,
+          createdAt: new Date('2024-01-01'),
+          expiresAt: null,
+          usageCount: 156
+        }
+        
+        // Save to localStorage so QR scanner works
+        localStorage.setItem('systemkleen_active_qr_code', JSON.stringify(mockActiveCode))
+        setActiveQRCode(mockActiveCode)
       }
       
-      const mockHistory: QRCodeConfig[] = [
-        {
-          id: 'qr-old-001',
-          code: 'SK2023-DEC-001',
-          url: 'https://systemkleen.com/checkin/SK2023-DEC-001',
-          isActive: false,
-          createdAt: new Date('2023-12-01'),
-          expiresAt: new Date('2023-12-31'),
-          usageCount: 450
-        }
-      ]
-      
-      setActiveQRCode(mockActiveCode)
-      setQrCodeHistory(mockHistory)
+      // Load history
+      const storedHistory = localStorage.getItem('systemkleen_qr_history')
+      if (storedHistory) {
+        const history = JSON.parse(storedHistory)
+        setQrCodeHistory(history.map((qr: any) => ({
+          ...qr,
+          createdAt: new Date(qr.createdAt),
+          expiresAt: qr.expiresAt ? new Date(qr.expiresAt) : null
+        })))
+      } else {
+        const mockHistory: QRCodeConfig[] = [
+          {
+            id: 'qr-old-001',
+            code: 'SK2023-DEC-001',
+            url: 'https://systemkleen.com/checkin/SK2023-DEC-001',
+            isActive: false,
+            createdAt: new Date('2023-12-01'),
+            expiresAt: new Date('2023-12-31'),
+            usageCount: 450
+          }
+        ]
+        setQrCodeHistory(mockHistory)
+      }
     })
   }
 
