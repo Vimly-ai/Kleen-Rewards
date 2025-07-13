@@ -141,6 +141,7 @@ export const SimpleQRScanner: React.FC<SimpleQRScannerProps> = ({ onScanSuccess,
 
 Example: systemkleen-checkin-office-main')
     if (qrData && qrData.trim()) {
+      stopScanning()
       onScanSuccess(qrData.trim())
       onClose()
     }
@@ -148,7 +149,13 @@ Example: systemkleen-checkin-office-main')
 
   const handleTestCheckIn = () => {
     // Simulate a valid QR code scan for testing
+    stopScanning()
     onScanSuccess('systemkleen-checkin-office-main')
+    onClose()
+  }
+
+  const handleClose = () => {
+    stopScanning()
     onClose()
   }
 
@@ -158,7 +165,7 @@ Example: systemkleen-checkin-office-main')
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 relative">
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full"
         >
           <X className="w-6 h-6" />

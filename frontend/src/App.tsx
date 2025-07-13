@@ -184,11 +184,6 @@ export default function App() {
       <DemoAuthProvider>
         <ClerkProvider 
           publishableKey={PUBLISHABLE_KEY}
-          navigate={(to) => window.location.href = to}
-          appearance={{
-            signIn: { routing: 'path', path: '/auth' },
-            signUp: { routing: 'path', path: '/auth' }
-          }}
         >
           <QueryClientProvider client={queryClient}>
             <DataProvider>

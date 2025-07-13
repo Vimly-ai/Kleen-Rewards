@@ -78,8 +78,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 // Remove AdminRoute as it's now handled by RoleGuard component
 
 export function AppRouter() {
-  const { isSignedIn, user } = useAuth()
+  const { isSignedIn, user, isLoaded } = useAuth()
   const userRole = user?.publicMetadata?.role as string || 'employee'
+  
+  // Prevent rendering routes until auth is loaded
+  if (!isLoaded) {
+    return <PageLoader />
+  }
 
   return (
     <Suspense fallback={<PageLoader />}>

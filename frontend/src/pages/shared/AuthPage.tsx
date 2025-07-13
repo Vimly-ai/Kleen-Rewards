@@ -1,7 +1,7 @@
-import { SignIn, SignUp } from '@clerk/clerk-react'
 import { useState } from 'react'
 import { DemoCredentials } from '../../components/DemoCredentials'
 import { DemoSignIn } from '../../components/DemoSignIn'
+import { ClerkAuthWrapper } from '../../components/ClerkAuthWrapper'
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -34,39 +34,7 @@ export default function AuthPage() {
           <DemoSignIn />
         ) : (
           <div className="bg-white rounded-lg shadow-lg p-6">
-            {isSignUp ? (
-              <SignUp 
-                appearance={{
-                  elements: {
-                    rootBox: 'w-full',
-                    card: 'shadow-none border-0 p-0',
-                  },
-                  variables: {
-                    colorPrimary: '#3B82F6'
-                  }
-                }}
-                routing="path"
-                path="/auth"
-                redirectUrl="/"
-                afterSignUpUrl="/"
-              />
-            ) : (
-              <SignIn 
-                appearance={{
-                  elements: {
-                    rootBox: 'w-full',
-                    card: 'shadow-none border-0 p-0',
-                  },
-                  variables: {
-                    colorPrimary: '#3B82F6'
-                  }
-                }}
-                routing="path"
-                path="/auth"
-                redirectUrl="/"
-                afterSignInUrl="/"
-              />
-            )}
+            <ClerkAuthWrapper mode={isSignUp ? 'signup' : 'signin'} />
           </div>
         )}
         

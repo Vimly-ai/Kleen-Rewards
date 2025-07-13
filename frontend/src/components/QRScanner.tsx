@@ -209,11 +209,12 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
             e.preventDefault()
             e.stopPropagation()
             console.log('Close button clicked - stopping scanner')
-            stopScanning()
-            // Ensure close is called after stop
-            setTimeout(() => {
+            // Create a proper close handler
+            const handleClose = () => {
+              stopScanning()
               onClose()
-            }, 100)
+            }
+            handleClose()
           }}
           className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full z-10"
         >

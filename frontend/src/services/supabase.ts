@@ -646,6 +646,129 @@ export class SupabaseService {
   }
 
   // Redemptions
+  static async redeemReward(userId: string, rewardId: string): Promise<Redemption> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: redeemReward called', { userId, rewardId })
+      
+      // Get reward details
+      const reward = demoData.DEMO_REWARDS.find(r => r.id === rewardId)
+      if (!reward) {
+        throw new Error('Reward not found')
+      }
+      
+      // Get user details
+      const user = demoData.DEMO_USERS.find(u => u.id === userId || u.clerkId === userId)
+      if (!user) {
+        throw new Error('User not found')
+      }
+      
+      // Check if user has enough points
+      if (user.points < reward.pointCost) {
+        throw new Error('Insufficient points')
+      }
+      
+      // Deduct points from user
+      user.points -= reward.pointCost
+      
+      // Create mock redemption
+      const mockRedemption: Redemption = {
+        id: `red-${Date.now()}`,
+        user_id: userId,
+        reward_id: rewardId,
+        points_spent: reward.pointCost,
+        status: 'pending',
+        requested_date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      return mockRedemption
+    }
+    
+    // First, get the reward to check availability and cost
+    const { data: reward, error: rewardError } = await supabase
+      .from('rewards')
+      .select('*')
+      .eq('id', rewardId)
+      .single()
+    
+    if (rewardError || !reward) {
+      throw new Error('Reward not found')
+    }
+    
+    if (!reward.is_active || reward.quantity_available <= 0) {
+      throw new Error('Reward not available')
+    }
+    
+    // Get user to check points
+    const { data: user, error: userError } = await supabase
+      .from('employees')
+      .select('points_balance')
+      .eq('id', userId)
+      .single()
+    
+    if (userError || !user) {
+      throw new Error('User not found')
+    }
+    
+    if (user.points_balance < reward.points_cost) {
+      throw new Error('Insufficient points')
+    }
+    
+    // Start a transaction
+    // 1. Create redemption
+    const { data: redemption, error: redemptionError } = await supabase
+      .from('redemptions')
+      .insert([{
+        user_id: userId,
+        reward_id: rewardId,
+        points_spent: reward.points_cost,
+        status: 'pending',
+        requested_date: new Date().toISOString()
+      }])
+      .select()
+      .single()
+    
+    if (redemptionError) {
+      throw redemptionError
+    }
+    
+    // 2. Update user points
+    const { error: updateUserError } = await supabase
+      .from('employees')
+      .update({
+        points_balance: user.points_balance - reward.points_cost
+      })
+      .eq('id', userId)
+    
+    if (updateUserError) {
+      // TODO: In production, this should be wrapped in a database transaction
+      throw updateUserError
+    }
+    
+    // 3. Create point transaction record
+    await this.createPointTransaction({
+      user_id: userId,
+      transaction_type: 'spent',
+      points_amount: -reward.points_cost,
+      reference_type: 'redemption',
+      reference_id: redemption.id,
+      description: `Redeemed: ${reward.name}`
+    })
+    
+    // 4. Update reward quantity if needed
+    if (reward.quantity_available > 0) {
+      await supabase
+        .from('rewards')
+        .update({
+          quantity_available: reward.quantity_available - 1
+        })
+        .eq('id', rewardId)
+    }
+    
+    return redemption
+  }
+
   static async createRedemption(userId: string, rewardId: string, pointsCost: number): Promise<Redemption> {
     const { data, error } = await supabase
       .from('redemptions')
@@ -666,7 +789,13 @@ export class SupabaseService {
     return data
   }
 
-  static async getUserRedemptions(userId: string): Promise<Redemption[]> {
+  static async getUserRedemptions(userId: string): Promise<any[]> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: getUserRedemptions called for', userId)
+      // Return mock redemptions with simplified structure
+      return []
+    }
+    
     const { data, error } = await supabase
       .from('redemptions')
       .select(`
@@ -680,7 +809,17 @@ export class SupabaseService {
       throw error
     }
 
-    return data || []
+    // Transform data to match expected format
+    return (data || []).map(redemption => ({
+      id: redemption.id,
+      userId: redemption.user_id,
+      rewardId: redemption.reward_id,
+      pointsCost: redemption.points_spent,
+      status: redemption.status,
+      created: redemption.requested_date,
+      notes: redemption.fulfillment_notes || redemption.rejection_reason || '',
+      reward: redemption.reward
+    }))
   }
 
   static async getPendingRedemptions(): Promise<Redemption[]> {

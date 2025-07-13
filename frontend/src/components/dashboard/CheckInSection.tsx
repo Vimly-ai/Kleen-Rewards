@@ -271,7 +271,7 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
       console.log('Valid QR code scanned:', validation.code)
       toast.info('Processing check-in...', { duration: 2000 })
       
-      // Small delay to ensure scanner is fully closed
+      // Small delay to ensure scanner modal is fully closed before check-in
       setTimeout(async () => {
         try {
           await handleCheckIn()
@@ -279,7 +279,7 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
           console.error('Check-in error:', error)
           toast.error('Failed to complete check-in. Please try again.')
         }
-      }, 500)
+      }, 100)
     } else {
       console.error('Invalid QR code:', validation.error)
       toast.error(

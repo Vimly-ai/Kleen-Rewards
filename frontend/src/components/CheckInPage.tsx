@@ -266,7 +266,10 @@ export function CheckInPage() {
     
     if (qrData.includes('systemkleen-checkin') || qrData.includes('check-in') || qrData.includes('test') || qrData.includes('demo')) {
       console.log('Valid QR code detected, starting check-in process...')
-      performCheckIn()
+      // Add a small delay to ensure scanner closes first
+      setTimeout(() => {
+        performCheckIn()
+      }, 100)
     } else {
       console.log('Invalid QR code:', qrData)
       toast.error('Invalid QR code. Please scan the correct check-in QR code.')
