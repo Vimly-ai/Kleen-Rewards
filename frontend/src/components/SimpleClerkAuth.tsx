@@ -7,36 +7,51 @@ interface SimpleClerkAuthProps {
 }
 
 export function SimpleClerkAuth({ mode }: SimpleClerkAuthProps) {
+  // Log for debugging
+  useEffect(() => {
+    console.log('SimpleClerkAuth rendered with mode:', mode)
+  }, [mode])
 
   const appearance = {
     elements: {
       rootBox: 'w-full',
       card: 'shadow-none border-0 p-0',
+      formButtonPrimary: 'bg-blue-600 hover:bg-blue-700',
+      socialButtonsBlockButton: 'border-gray-300',
+      formFieldInput: 'border-gray-300',
+      footerActionLink: 'text-blue-600 hover:text-blue-700'
     },
     variables: {
-      colorPrimary: '#3B82F6'
+      colorPrimary: '#3B82F6',
+      colorBackground: '#ffffff',
+      colorText: '#1f2937',
+      colorTextSecondary: '#6b7280',
+      colorDanger: '#ef4444',
+      borderRadius: '0.5rem'
     }
   }
 
-  // Simplified props without routing to prevent conflicts
-  const signInProps = {
-    appearance,
-    afterSignInUrl: window.location.origin,
-    signUpUrl: window.location.origin + '/auth'
-  }
-
-  const signUpProps = {
-    appearance,
-    afterSignUpUrl: window.location.origin,
-    signInUrl: window.location.origin + '/auth'
+  // Simplified routing configuration
+  const routingProps = {
+    routing: 'path',
+    path: '/auth',
+    afterSignInUrl: '/',
+    afterSignUpUrl: '/',
+    redirectUrl: '/'
   }
 
   return (
     <ClerkErrorBoundary>
       {mode === 'signup' ? (
-        <SignUp {...signUpProps} />
+        <SignUp 
+          appearance={appearance}
+          {...routingProps}
+        />
       ) : (
-        <SignIn {...signInProps} />
+        <SignIn 
+          appearance={appearance}
+          {...routingProps}
+        />
       )}
     </ClerkErrorBoundary>
   )

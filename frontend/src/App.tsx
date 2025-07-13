@@ -1,6 +1,6 @@
 import React, { useEffect, Suspense } from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { ClerkProvider } from '@clerk/clerk-react'
+import { ClerkProviderWithFallback } from './components/ClerkProviderWithFallback'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from 'sonner'
@@ -15,6 +15,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { LoadingSpinner } from './components/shared/LoadingSpinner'
 import { InstallPrompt, UpdatePrompt, OfflineIndicator } from './components/pwa'
 import { ClerkDebug } from './components/ClerkDebug'
+import { ClerkAuthDebug } from './components/ClerkAuthDebug'
 
 // Services and Utils
 import { useNotificationService } from './services/notifications'
@@ -48,6 +49,13 @@ const queryClient = new QueryClient({
 
 // Get Clerk publishable key - with correct fallback
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_Z29sZGVuLWdyYWNrbGUtODguY2xlcmsuYWNjb3VudHMuZGV2JA'
+
+// Validate Clerk key format
+const isValidClerkKey = PUBLISHABLE_KEY.startsWith('pk_test_') || PUBLISHABLE_KEY.startsWith('pk_live_')
+if (!isValidClerkKey) {
+  console.error('Invalid Clerk publishable key format. Expected format: pk_test_... or pk_live_...')
+  console.error('Current key:', PUBLISHABLE_KEY.substring(0, 20) + '...')
+}
 
 if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Publishable Key')
@@ -166,8 +174,9 @@ function AppContent() {
       <UpdatePrompt />
       <OfflineIndicator />
       
-      {/* Debug Component */}
+      {/* Debug Components */}
       <ClerkDebug />
+      <ClerkAuthDebug />
     </>
   )
 }
@@ -183,7 +192,7 @@ export default function App() {
       }}
     >
       <DemoAuthProvider>
-        <ClerkProvider 
+        <ClerkProviderWithFallback 
           publishableKey={PUBLISHABLE_KEY}
         >
           <QueryClientProvider client={queryClient}>
@@ -200,7 +209,7 @@ export default function App() {
               </BrowserRouter>
             </DataProvider>
           </QueryClientProvider>
-        </ClerkProvider>
+        </ClerkProviderWithFallback>
       </DemoAuthProvider>
     </ErrorBoundary>
   )

@@ -6,6 +6,7 @@ import { DemoSignIn } from '../../components/DemoSignIn'
 import { SimpleClerkAuth } from '../../components/SimpleClerkAuth'
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner'
 import { useAuthModeFallback } from '../../components/AuthModeFallback'
+import { ClerkSetupGuide } from '../../components/ClerkSetupGuide'
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -13,14 +14,18 @@ export default function AuthPage() {
   const navigate = useNavigate()
   const shouldFallbackToDemo = useAuthModeFallback()
   
+  // Check if Clerk key is valid
+  const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || ''
+  const hasValidClerkKey = clerkKey.startsWith('pk_test_') || clerkKey.startsWith('pk_live_')
+  
   // Check URL params for demo mode override
   const urlParams = new URLSearchParams(window.location.search)
   const forceDemoMode = urlParams.get('demo') === 'true'
   
   // Check if we're in demo mode
   const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true' || shouldFallbackToDemo || forceDemoMode
-  // Always start with Clerk auth, user can switch to demo if needed
-  const [showDemoLogin, setShowDemoLogin] = useState(false)
+  // Show demo login if Clerk is not configured or in demo mode
+  const [showDemoLogin, setShowDemoLogin] = useState(!hasValidClerkKey || isDemoMode)
   
   // Redirect if already signed in with Clerk
   useEffect(() => {
@@ -61,18 +66,12 @@ export default function AuthPage() {
         {/* Auth Component */}
         {showDemoLogin && isDemoMode ? (
           <DemoSignIn />
+        ) : !hasValidClerkKey ? (
+          <ClerkSetupGuide />
         ) : (
-          <>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> Clerk authentication is currently in development mode. 
-                For testing, please use the "Use demo accounts" option below.
-              </p>
-            </div>
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <SimpleClerkAuth mode={isSignUp ? 'signup' : 'signin'} />
-            </div>
-          </>
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <SimpleClerkAuth mode={isSignUp ? 'signup' : 'signin'} />
+          </div>
         )}
         
         {/* Demo Mode Options */}
@@ -116,6 +115,11 @@ export default function AuthPage() {
               }
             </button>
           </div>
+        )}
+        
+        {/* Setup Guide for invalid Clerk configuration */}
+        {!showDemoLogin && !hasValidClerkKey && (
+          <ClerkSetupGuide />
         )}
           </div>
           
