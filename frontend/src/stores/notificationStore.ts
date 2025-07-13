@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import { toast } from 'sonner'
 
 export interface Notification {
   id: string
@@ -47,6 +48,39 @@ export const useNotificationStore = create<NotificationState>()(
           notifications: [newNotification, ...state.notifications],
           unreadCount: state.unreadCount + 1
         }))
+        
+        // Also show as toast notification
+        const toastOptions = {
+          duration: newNotification.duration,
+          id: newNotification.id
+        }
+        
+        switch (notification.type) {
+          case 'success':
+            toast.success(notification.title, {
+              ...toastOptions,
+              description: notification.message
+            })
+            break
+          case 'error':
+            toast.error(notification.title, {
+              ...toastOptions,
+              description: notification.message
+            })
+            break
+          case 'warning':
+            toast.warning(notification.title, {
+              ...toastOptions,
+              description: notification.message
+            })
+            break
+          case 'info':
+            toast.info(notification.title, {
+              ...toastOptions,
+              description: notification.message
+            })
+            break
+        }
         
         // Auto remove non-persistent notifications
         if (!notification.persistent && newNotification.duration && newNotification.duration > 0) {

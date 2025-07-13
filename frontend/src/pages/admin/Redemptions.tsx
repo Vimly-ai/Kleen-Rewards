@@ -19,8 +19,9 @@ import {
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { toast } from 'sonner'
-import { DEMO_TRANSACTIONS, DEMO_REWARDS, DEMO_USERS } from '../../services/demoData'
-import type { Transaction } from '../../services/demoData'
+import { DEMO_REWARDS, DEMO_USERS } from '../../services/demoData'
+import SupabaseService from '../../services/supabase'
+import type { Redemption } from '../../services/supabase'
 
 const REDEMPTION_STATUSES = [
   { key: 'all', label: 'All Requests', color: 'bg-gray-100 text-gray-800' },
@@ -32,7 +33,7 @@ const REDEMPTION_STATUSES = [
 
 export default function AdminRedemptions() {
   const [statusFilter, setStatusFilter] = useState('all')
-  const [selectedRedemption, setSelectedRedemption] = useState<Transaction | null>(null)
+  const [selectedRedemption, setSelectedRedemption] = useState<Redemption | null>(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [actionReason, setActionReason] = useState('')
   const [processingId, setProcessingId] = useState<string | null>(null)
@@ -40,22 +41,25 @@ export default function AdminRedemptions() {
   const { data: redemptionsData, isLoading, refetch } = useQuery({
     queryKey: queryKeys.admin.redemptions(statusFilter),
     queryFn: async () => {
-      // Filter redemption transactions from demo data
-      let redemptions = DEMO_TRANSACTIONS.filter(t => t.type === 'redemption')
+      // Get all redemptions from the service
+      const allRedemptions = await SupabaseService.getAllRedemptions()
       
+      let redemptions = allRedemptions
       if (statusFilter !== 'all') {
         redemptions = redemptions.filter(r => r.status === statusFilter)
       }
       
       // Sort by date, newest first
-      redemptions.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      redemptions.sort((a, b) => 
+        new Date(b.requested_date).getTime() - new Date(a.requested_date).getTime()
+      )
       
       return {
         redemptions,
         total: redemptions.length,
         pending: redemptions.filter(r => r.status === 'pending').length,
         approved: redemptions.filter(r => r.status === 'approved').length,
-        completed: redemptions.filter(r => r.status === 'completed').length,
+        completed: redemptions.filter(r => r.status === 'completed' || r.status === 'fulfilled').length,
         rejected: redemptions.filter(r => r.status === 'rejected').length
       }
     }
@@ -65,8 +69,14 @@ export default function AdminRedemptions() {
     setProcessingId(redemptionId)
     
     try {
-      // In a real app, this would call an API
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+      // Update the redemption status
+      await SupabaseService.updateRedemptionStatus(
+        redemptionId,
+        newStatus as 'approved' | 'rejected' | 'fulfilled',
+        'admin', // TODO: Get actual admin ID
+        newStatus === 'rejected' ? reason : undefined,
+        newStatus === 'completed' || newStatus === 'fulfilled' ? reason : undefined
+      )
       
       const statusLabels = {
         approved: 'approved',
@@ -104,11 +114,12 @@ export default function AdminRedemptions() {
     )
   }
 
-  const getRedemptionDetails = (redemption: Transaction) => {
-    const user = DEMO_USERS.find(u => u.id === redemption.userId)
-    const reward = redemption.rewardId ? DEMO_REWARDS.find(r => r.id === redemption.rewardId) : null
-    
-    return { user, reward }
+  const getRedemptionDetails = (redemption: Redemption) => {
+    // The user and reward should already be included in the redemption object
+    return { 
+      user: redemption.user,
+      reward: redemption.reward
+    }
   }
 
   if (isLoading) {
@@ -215,11 +226,11 @@ export default function AdminRedemptions() {
                   <tr key={redemption.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
-                        <Avatar 
-                          src={user?.avatarUrl} 
-                          alt={user?.name || 'User'} 
-                          size="small" 
-                        />
+                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                          <span className="text-xs font-medium text-gray-600">
+                            {user?.name?.charAt(0) || 'U'}
+                          </span>
+                        </div>
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {user?.name || 'Unknown User'}
@@ -232,7 +243,7 @@ export default function AdminRedemptions() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900 font-medium">
-                        {redemption.description.replace('Redeemed: ', '')}
+                        {reward?.name || 'Unknown Reward'}
                       </div>
                       {reward && (
                         <div className="text-sm text-gray-500">
@@ -242,16 +253,16 @@ export default function AdminRedemptions() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {Math.abs(redemption.amount)} pts
+                        {redemption.points_spent} pts
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        {redemption.createdAt.toLocaleDateString()}
+                        {new Date(redemption.requested_date).toLocaleDateString()}
                       </div>
                       <div className="text-xs text-gray-400">
-                        {redemption.createdAt.toLocaleTimeString()}
+                        {new Date(redemption.requested_date).toLocaleTimeString()}
                       </div>
                     </td>
                     <td className="px-6 py-4">
