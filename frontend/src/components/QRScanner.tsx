@@ -118,17 +118,22 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
               setHasScanned(true)
               console.log('QR Code detected:', result.getText())
               
-              // Stop scanning immediately
+              // Stop the reader immediately to prevent further scanning
+              if (readerRef.current) {
+                readerRef.current.reset()
+              }
+              
+              // Stop scanning and cleanup
               stopScanning()
               
-              // Add a small delay before calling success callback
+              // Call success callback after ensuring scanner is stopped
               setTimeout(() => {
                 onScanSuccess(result.getText())
                 onClose()
                 isProcessingRef.current = false
               }, 100)
             }
-            if (error && error.name !== 'NotFoundException') {
+            if (error && error.name !== 'NotFoundException' && !hasScanned) {
               // Log scanning errors (but don't stop scanning for "not found" errors)
               console.debug('Scanning error:', error)
             }
@@ -151,6 +156,13 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
         scanTimeoutRef.current = null
       }
       
+      // Reset the reader if it exists
+      if (readerRef.current) {
+        // This stops the decode loop
+        readerRef.current.reset()
+        readerRef.current = null
+      }
+      
       // Stop the video stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => {
@@ -168,8 +180,6 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
         videoRef.current.srcObject = null
       }
       
-      // Clean up the reader
-      readerRef.current = null
       setIsScanning(false)
       setError(null)
       setHasScanned(false)

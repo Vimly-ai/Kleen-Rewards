@@ -201,7 +201,7 @@ export default function EmployeeDashboard() {
       >
         <CheckInSection 
           hasCheckedInToday={hasCheckedInToday}
-          todayCheckIn={todayCheckIn}
+          onCheckInSuccess={handleRefreshStats}
         />
       </DashboardWidget>
 
