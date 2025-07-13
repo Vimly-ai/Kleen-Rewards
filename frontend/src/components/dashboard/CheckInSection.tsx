@@ -26,6 +26,11 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
         { text: "Champions start their day before the rest of the world wakes up.", author: "System Kleen" },
         { text: "Your commitment to excellence shines brighter than the morning sun!", author: "System Kleen" },
         { text: "Early birds don't just catch worms - they catch opportunities!", author: "System Kleen" },
+        { text: "Rise and shine! Your dedication today builds tomorrow's success.", author: "System Kleen" },
+        { text: "The sunrise rewards those who greet it. Well done, champion!", author: "System Kleen" },
+        { text: "Your early arrival sets the tone for an exceptional day ahead!", author: "System Kleen" },
+        { text: "Leaders rise early, and today you're leading by example!", author: "System Kleen" },
+        { text: "Dawn brings new possibilities, and you're here to seize them all!", author: "System Kleen" }
       ],
       ontime: [
         { text: "Punctuality is the politeness of kings. You're royalty today!", author: "System Kleen" },
@@ -33,6 +38,11 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
         { text: "Consistency breeds excellence. Keep up the great work!", author: "System Kleen" },
         { text: "Right on time means right on track for success!", author: "System Kleen" },
         { text: "Reliability is a superpower - and you've got it!", author: "System Kleen" },
+        { text: "On time, every time - that's the mark of a true professional!", author: "System Kleen" },
+        { text: "Your punctuality today paves the way for tomorrow's achievements!", author: "System Kleen" },
+        { text: "Showing up on time shows you value yourself and others. Excellent!", author: "System Kleen" },
+        { text: "Consistent commitment creates lasting success. You're building it daily!", author: "System Kleen" },
+        { text: "Time management is life management - and you're mastering both!", author: "System Kleen" }
       ],
       late: [
         { text: "Every champion faces setbacks. What matters is how you bounce back!", author: "System Kleen" },
@@ -40,11 +50,39 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
         { text: "Progress, not perfection. You're here and that's what counts!", author: "System Kleen" },
         { text: "The best time to plant a tree was yesterday. The second best time is now!", author: "System Kleen" },
         { text: "Your presence makes a difference, no matter what time you arrive.", author: "System Kleen" },
+        { text: "Better late than never - your contribution today still matters!", author: "System Kleen" },
+        { text: "Every step forward is progress. Keep moving in the right direction!", author: "System Kleen" },
+        { text: "Today's delay doesn't define tomorrow's success. Keep pushing forward!", author: "System Kleen" },
+        { text: "You showed up, and that takes courage. Tomorrow is yours to conquer!", author: "System Kleen" },
+        { text: "Great things take time. Your journey continues, one day at a time!", author: "System Kleen" }
       ]
     }
 
     const categoryQuotes = quotes[category]
-    return categoryQuotes[Math.floor(Math.random() * categoryQuotes.length)]
+    // Keep track of recently used quotes to avoid repetition
+    const recentQuotesKey = `recent_quotes_${category}`
+    const recentQuotes = JSON.parse(localStorage.getItem(recentQuotesKey) || '[]')
+    
+    // Filter out recently used quotes
+    const availableQuotes = categoryQuotes.filter(q => !recentQuotes.includes(q.text))
+    
+    // If all quotes have been used, reset
+    if (availableQuotes.length === 0) {
+      localStorage.setItem(recentQuotesKey, '[]')
+      return categoryQuotes[Math.floor(Math.random() * categoryQuotes.length)]
+    }
+    
+    // Select a random quote from available ones
+    const selectedQuote = availableQuotes[Math.floor(Math.random() * availableQuotes.length)]
+    
+    // Store this quote as recently used (keep last 3)
+    recentQuotes.push(selectedQuote.text)
+    if (recentQuotes.length > 3) {
+      recentQuotes.shift()
+    }
+    localStorage.setItem(recentQuotesKey, JSON.stringify(recentQuotes))
+    
+    return selectedQuote
   }
 
 
@@ -110,25 +148,32 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
       // Show success message with bonuses
       let successMessage: string
       let toastType: 'success' | 'warning' = 'success'
+      let totalPoints = points + bonusPoints
       
       if (type === 'early') {
-        successMessage = `🌅 Early Bird Success! +${points} points earned!`
+        successMessage = `🌅 Early Bird Check-in Complete!`
       } else if (type === 'ontime') {
-        successMessage = `⏰ Perfect Timing! +${points} point earned!`
+        successMessage = `⏰ Perfect Timing Check-in!`
       } else {
-        successMessage = `📌 Check-in recorded. ${points} points earned.`
+        successMessage = `📌 Check-in Recorded`
         toastType = 'warning'
       }
       
+      // Build detailed points message
+      let pointsDetails = `<div class="mt-2 space-y-1">`
+      pointsDetails += `<p class="text-sm font-medium">✨ Base Points: +${points}</p>`
+      
       if (bonusPoints > 0) {
-        successMessage += ` Plus ${bonusPoints} bonus points!`
-        if (newStreakDay % 7 === 0) {
-          successMessage += ' 🎯 Perfect Week!'
-        }
         if (newStreakDay % 10 === 0) {
-          successMessage += ' 🔥 10-Day Streak!'
+          pointsDetails += `<p class="text-sm font-medium">🔥 10-Day Streak Bonus: +10 points</p>`
+        }
+        if (newStreakDay % 7 === 0 && newStreakDay % 10 !== 0) {
+          pointsDetails += `<p class="text-sm font-medium">🎯 Perfect Week Bonus: +5 points</p>`
         }
       }
+      
+      pointsDetails += `<p class="text-sm font-bold mt-2 pt-2 border-t">💰 Total Points Earned: +${totalPoints}</p>`
+      pointsDetails += `</div>`
       
       // Add time information
       const settings = QRCodeService.getCheckInSettings()
@@ -141,33 +186,46 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
       if (toastType === 'success') {
         toast.success(
           <div>
-            <p className="font-medium">{successMessage}</p>
-            <p className="text-sm mt-1">Checked in at {checkInTime} MST</p>
+            <p className="font-semibold text-lg">{successMessage}</p>
+            <p className="text-sm text-gray-600 mt-1">Checked in at {checkInTime} MST</p>
+            <div dangerouslySetInnerHTML={{ __html: pointsDetails }} />
+            <div className="mt-3 p-2 bg-green-50 rounded">
+              <p className="text-xs text-green-700">Current Streak: {newStreakDay} days 🔥</p>
+            </div>
           </div>,
-          { duration: 5000 }
+          { duration: 6000 }
         )
       } else {
         toast.warning(
           <div>
-            <p className="font-medium">{successMessage}</p>
-            <p className="text-sm mt-1">Checked in at {checkInTime} MST (Late)</p>
-            <p className="text-xs mt-1">Try to check in before 8:02 AM for points!</p>
+            <p className="font-semibold text-lg">{successMessage}</p>
+            <p className="text-sm text-gray-600 mt-1">Checked in at {checkInTime} MST</p>
+            <div dangerouslySetInnerHTML={{ __html: pointsDetails }} />
+            <div className="mt-3 p-2 bg-yellow-50 rounded">
+              <p className="text-xs text-yellow-700">💡 Tip: Check in before 8:02 AM to earn points!</p>
+              <p className="text-xs text-yellow-700 mt-1">Current Streak: {newStreakDay} days</p>
+            </div>
           </div>,
-          { duration: 5000 }
+          { duration: 6000 }
         )
       }
       
       // Show motivational quote after a delay
       setTimeout(() => {
-        toast(
-          <div className="p-2">
-            <p className="font-medium text-gray-800 mb-2">💪 Daily Motivation</p>
-            <p className="text-sm text-gray-600 italic">"{quote.text}"</p>
-            <p className="text-xs text-gray-500 mt-1">- {quote.author}</p>
+        toast.custom(
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-lg shadow-lg max-w-md">
+            <div className="flex items-start space-x-3">
+              <div className="text-2xl">💪</div>
+              <div className="flex-1">
+                <p className="font-bold text-sm mb-2">Daily Motivation</p>
+                <p className="text-sm italic leading-relaxed">"{quote.text}"</p>
+                <p className="text-xs mt-2 opacity-90">- {quote.author}</p>
+              </div>
+            </div>
           </div>,
-          { duration: 8000 }
+          { duration: 8000, position: 'top-center' }
         )
-      }, 2000)
+      }, 2500)
       
       await refreshUser()
       onCheckInSuccess()
