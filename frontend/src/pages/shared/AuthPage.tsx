@@ -1,14 +1,42 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@clerk/clerk-react'
+import { useNavigate } from 'react-router-dom'
 import { DemoCredentials } from '../../components/DemoCredentials'
 import { DemoSignIn } from '../../components/DemoSignIn'
 import { SimpleClerkAuth } from '../../components/SimpleClerkAuth'
+import { LoadingSpinner } from '../../components/shared/LoadingSpinner'
+import { useAuthModeFallback } from '../../components/AuthModeFallback'
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
+  const { isSignedIn, isLoaded } = useAuth()
+  const navigate = useNavigate()
+  const shouldFallbackToDemo = useAuthModeFallback()
+  
+  // Check URL params for demo mode override
+  const urlParams = new URLSearchParams(window.location.search)
+  const forceDemoMode = urlParams.get('demo') === 'true'
+  
   // Check if we're in demo mode
-  const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
+  const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true' || shouldFallbackToDemo || forceDemoMode
   // Start with demo login if in demo mode, otherwise show Clerk
   const [showDemoLogin, setShowDemoLogin] = useState(isDemoMode)
+  
+  // Redirect if already signed in with Clerk
+  useEffect(() => {
+    if (isLoaded && isSignedIn && !isDemoMode) {
+      navigate('/', { replace: true })
+    }
+  }, [isLoaded, isSignedIn, isDemoMode, navigate])
+  
+  // Show loading while Clerk is initializing
+  if (!isDemoMode && !isLoaded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center">
+        <LoadingSpinner size="large" text="Loading authentication..." />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center p-4">
@@ -62,6 +90,14 @@ export default function AuthPage() {
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
               <p className="text-sm text-blue-700 text-center">
                 🔐 Regular authentication is available. Click "Use regular sign in" above.
+              </p>
+            </div>
+          )}
+          
+          {shouldFallbackToDemo && (
+            <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+              <p className="text-sm text-yellow-700 text-center">
+                ⚠️ Authentication service is experiencing issues. Using demo mode as fallback.
               </p>
             </div>
           )}

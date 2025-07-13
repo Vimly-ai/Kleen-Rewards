@@ -21,21 +21,17 @@ export function SimpleClerkAuth({ mode }: SimpleClerkAuthProps) {
     }
   }
 
-  // Use afterSignInUrl and afterSignUpUrl instead of redirectUrl
+  // Simplified props without routing to prevent conflicts
   const signInProps = {
     appearance,
-    afterSignInUrl: '/',
-    signUpUrl: '/auth',
-    routing: 'path' as const,
-    path: '/auth'
+    afterSignInUrl: window.location.origin,
+    signUpUrl: window.location.origin + '/auth'
   }
 
   const signUpProps = {
     appearance,
-    afterSignUpUrl: '/',
-    signInUrl: '/auth',
-    routing: 'path' as const,
-    path: '/auth'
+    afterSignUpUrl: window.location.origin,
+    signInUrl: window.location.origin + '/auth'
   }
 
   return (
