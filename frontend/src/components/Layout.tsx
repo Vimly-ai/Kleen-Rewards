@@ -33,6 +33,7 @@ export function Layout({ children }: LayoutProps) {
   const adminNavItems = [
     { path: '/admin/dashboard', icon: Settings, label: 'Admin' },
     { path: '/admin/users', icon: User, label: 'Users' },
+    { path: '/admin/redemptions', icon: Gift, label: 'Redemptions' },
     { path: '/admin/analytics', icon: Trophy, label: 'Analytics' },
     { path: '/admin/qr-settings', icon: QrCode, label: 'QR Settings' },
     { path: '/admin/profile', icon: User, label: 'Profile' }

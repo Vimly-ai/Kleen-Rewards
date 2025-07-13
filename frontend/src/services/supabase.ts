@@ -866,6 +866,70 @@ export class SupabaseService {
     }
   }
 
+  // Award bonus points (admin function)
+  static async awardBonusPoints(userId: string, points: number, reason: string, awardedBy: string): Promise<any> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: awardBonusPoints called', { userId, points, reason, awardedBy })
+      
+      // In demo mode, just simulate success
+      const transaction = {
+        id: `bonus-${Date.now()}`,
+        user_id: userId,
+        transaction_type: 'earned' as const,
+        points_amount: points,
+        reference_type: 'admin_adjustment' as const,
+        reference_id: `admin-${Date.now()}`,
+        description: reason,
+        created_by: awardedBy,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      // Update the demo user's points in memory (for demo purposes)
+      const demoUser = demoData.DEMO_USERS.find(u => u.id === userId)
+      if (demoUser) {
+        demoUser.points += points
+        demoUser.totalPointsEarned += points
+      }
+      
+      return transaction
+    }
+    
+    // In production, this would:
+    // 1. Create a point transaction
+    // 2. Update user's points balance
+    // 3. Send notification to user
+    
+    const transaction = await this.createPointTransaction({
+      user_id: userId,
+      transaction_type: 'earned',
+      points_amount: points,
+      reference_type: 'admin_adjustment',
+      reference_id: `admin-${Date.now()}`,
+      description: reason,
+      created_by: awardedBy
+    })
+    
+    // Update user points
+    const { data: user } = await supabase
+      .from('employees')
+      .select('points_balance, total_points_earned')
+      .eq('id', userId)
+      .single()
+    
+    if (user) {
+      await supabase
+        .from('employees')
+        .update({
+          points_balance: user.points_balance + points,
+          total_points_earned: user.total_points_earned + points
+        })
+        .eq('id', userId)
+    }
+    
+    return transaction
+  }
+
   // Point Transactions
   static async createPointTransaction(transactionData: Omit<PointTransaction, 'id' | 'created_at' | 'updated_at'>): Promise<PointTransaction> {
     const { data, error } = await supabase

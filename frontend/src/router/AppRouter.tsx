@@ -26,6 +26,7 @@ const AdminUserManagement = lazy(() => import('../pages/admin/UserManagement'))
 const AdminAnalytics = lazy(() => import('../pages/admin/Analytics'))
 const AdminSettings = lazy(() => import('../pages/admin/Settings'))
 const QRCodeSettings = lazy(() => import('../pages/admin/QRCodeSettings'))
+const AdminRedemptions = lazy(() => import('../pages/admin/Redemptions'))
 const AdminProfile = lazy(() => import('../pages/admin/Profile'))
 
 // Enhanced loading component
@@ -124,6 +125,7 @@ export function AppRouter() {
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="qr-settings" element={<QRCodeSettings />} />
+          <Route path="redemptions" element={<AdminRedemptions />} />
           <Route path="profile" element={<AdminProfile />} />
         </Route>
 

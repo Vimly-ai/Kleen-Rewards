@@ -20,9 +20,12 @@ import {
   X,
   Gift,
   Eye,
-  Edit
+  Edit,
+  Trash2
 } from 'lucide-react'
 import { clsx } from 'clsx'
+import { toast } from 'sonner'
+import { DEMO_USERS } from '../../services/demoData'
 import type { User } from '../../types'
 
 const USER_STATUSES = [
@@ -45,60 +48,43 @@ export default function AdminUserManagement() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [showBonusModal, setShowBonusModal] = useState(false)
+  const [showUserDetailsModal, setShowUserDetailsModal] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [bonusPoints, setBonusPoints] = useState('')
   const [bonusReason, setBonusReason] = useState('')
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState<User['role']>('employee')
 
   const bulkUpdateMutation = useBulkUserUpdate()
   const awardBonusMutation = useAwardBonusPoints()
 
-  const { data: usersData, isLoading } = useQuery({
-    queryKey: queryKeys.admin.users(currentPage, searchTerm || undefined),
+  const { data: usersData, isLoading, refetch } = useQuery({
+    queryKey: queryKeys.admin.users(currentPage, searchTerm || undefined, statusFilter),
     queryFn: async () => {
-      // Mock data - replace with actual API call
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          email: 'sarah.johnson@company.com',
-          name: 'Sarah Johnson',
-          role: 'employee',
-          company: 'Tech Corp',
-          department: 'Engineering',
-          status: 'approved',
-          created: '2024-01-15T00:00:00Z',
-          updated: '2024-01-15T00:00:00Z'
-        },
-        {
-          id: '2',
-          email: 'mike.chen@company.com',
-          name: 'Mike Chen',
-          role: 'employee',
-          company: 'Tech Corp',
-          department: 'Design',
-          status: 'approved',
-          created: '2024-01-16T00:00:00Z',
-          updated: '2024-01-16T00:00:00Z'
-        },
-        {
-          id: '3',
-          email: 'emily.davis@company.com',
-          name: 'Emily Davis',
-          role: 'employee',
-          company: 'Tech Corp',
-          department: 'Marketing',
-          status: 'pending',
-          created: '2024-01-17T00:00:00Z',
-          updated: '2024-01-17T00:00:00Z'
-        }
-      ]
+      // Map demo users to User type with proper status
+      const allUsers: User[] = DEMO_USERS.map(demoUser => ({
+        id: demoUser.id,
+        email: demoUser.email,
+        name: demoUser.name,
+        role: demoUser.role as User['role'],
+        company: 'System Kleen',
+        department: demoUser.department,
+        status: demoUser.status as User['status'] || 'approved',
+        approvedBy: demoUser.role === 'admin' ? 'system' : 'demo-admin-1',
+        approvedAt: demoUser.joinedAt.toISOString(),
+        created: demoUser.joinedAt.toISOString(),
+        updated: new Date().toISOString()
+      }))
       
-      let filteredUsers = mockUsers
+      let filteredUsers = allUsers
       
       if (searchTerm) {
+        const search = searchTerm.toLowerCase()
         filteredUsers = filteredUsers.filter(user =>
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.department?.toLowerCase().includes(searchTerm.toLowerCase())
+          user.name.toLowerCase().includes(search) ||
+          user.email.toLowerCase().includes(search) ||
+          (user.department?.toLowerCase().includes(search) ?? false)
         )
       }
       
@@ -151,17 +137,65 @@ export default function AdminUserManagement() {
         userId: selectedUser.id,
         points: parseInt(bonusPoints),
         reason: bonusReason,
-        awardedBy: 'current-admin-id' // This should come from current admin user
+        awardedBy: 'demo-admin-1' // Demo admin ID
       })
+      
+      // Show success message
+      toast.success(
+        <div>
+          <p className="font-medium">Points Awarded Successfully!</p>
+          <p className="text-sm">{bonusPoints} points awarded to {selectedUser.name}</p>
+          <p className="text-xs mt-1">Reason: {bonusReason}</p>
+        </div>,
+        { duration: 5000 }
+      )
       
       // Close modal and reset form after successful award
       setShowBonusModal(false)
       setSelectedUser(null)
       setBonusPoints('')
       setBonusReason('')
+      
+      // Refresh the user list to show updated points
+      refetch()
     } catch (error) {
       // Error is handled by the mutation
       console.error('Failed to award bonus points:', error)
+      toast.error('Failed to award bonus points. Please try again.')
+    }
+  }
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      // In a real app, this would call an API
+      toast.success('User deleted successfully')
+      refetch()
+    } catch (error) {
+      toast.error('Failed to delete user')
+    }
+  }
+
+  const handleInviteUser = async () => {
+    if (!inviteEmail) return
+
+    try {
+      // In a real app, this would send an invitation email
+      toast.success(
+        <div>
+          <p className="font-medium">Invitation Sent!</p>
+          <p className="text-sm">Invitation sent to {inviteEmail}</p>
+        </div>
+      )
+      
+      setShowInviteModal(false)
+      setInviteEmail('')
+      setInviteRole('employee')
+    } catch (error) {
+      toast.error('Failed to send invitation')
     }
   }
 
@@ -206,7 +240,10 @@ export default function AdminUserManagement() {
           </p>
         </div>
         
-        <Button className="flex items-center gap-2">
+        <Button 
+          onClick={() => setShowInviteModal(true)}
+          className="flex items-center gap-2"
+        >
           <UserPlus className="w-4 h-4" />
           Invite User
         </Button>
@@ -382,14 +419,26 @@ export default function AdminUserManagement() {
                         variant="secondary"
                         size="small"
                         onClick={() => {
-                          // Navigate to user detail page or open modal
-                          window.location.href = `/admin/users/${user.id}`
+                          setSelectedUser(user)
+                          setShowUserDetailsModal(true)
                         }}
                         className="flex items-center gap-1"
                       >
                         <Eye className="w-3 h-3" />
                         View
                       </Button>
+                      
+                      {user.role !== 'admin' && user.role !== 'super_admin' && (
+                        <Button
+                          variant="danger"
+                          size="small"
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Delete
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -500,6 +549,176 @@ export default function AdminUserManagement() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* User Details Modal */}
+      <Modal
+        isOpen={showUserDetailsModal}
+        onClose={() => {
+          setShowUserDetailsModal(false)
+          setSelectedUser(null)
+        }}
+        title="User Details"
+        size="lg"
+      >
+        {selectedUser && (
+          <div className="space-y-6">
+            <div className="text-center">
+              <Avatar src={undefined} alt={selectedUser.name} size="large" className="mx-auto mb-3" />
+              <h3 className="text-xl font-bold text-gray-900">{selectedUser.name}</h3>
+              <p className="text-gray-600">{selectedUser.email}</p>
+              <div className="flex justify-center gap-2 mt-3">
+                {getRoleBadge(selectedUser.role)}
+                {getStatusBadge(selectedUser.status)}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">Department</p>
+                <p className="font-medium">{selectedUser.department || 'Not assigned'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Company</p>
+                <p className="font-medium">{selectedUser.company}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Joined Date</p>
+                <p className="font-medium">{new Date(selectedUser.created).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Last Updated</p>
+                <p className="font-medium">{new Date(selectedUser.updated).toLocaleDateString()}</p>
+              </div>
+            </div>
+            
+            {/* Get user stats from demo data */}
+            {(() => {
+              const demoUser = DEMO_USERS.find(u => u.id === selectedUser.id)
+              if (demoUser) {
+                return (
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-900 mb-3">Performance Stats</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm text-gray-500">Current Points</p>
+                        <p className="text-2xl font-bold text-primary-600">{demoUser.points}</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm text-gray-500">Total Earned</p>
+                        <p className="text-2xl font-bold text-green-600">{demoUser.totalPointsEarned}</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm text-gray-500">Current Streak</p>
+                        <p className="text-2xl font-bold text-orange-600">{demoUser.currentStreak} days</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm text-gray-500">Achievements</p>
+                        <p className="text-2xl font-bold text-purple-600">{demoUser.achievements}</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              return null
+            })()}
+            
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowUserDetailsModal(false)
+                  setSelectedUser(null)
+                }}
+                className="flex-1"
+              >
+                Close
+              </Button>
+              {selectedUser.role !== 'admin' && selectedUser.role !== 'super_admin' && (
+                <Button
+                  variant="danger"
+                  onClick={() => {
+                    handleDeleteUser(selectedUser.id)
+                    setShowUserDetailsModal(false)
+                    setSelectedUser(null)
+                  }}
+                  className="flex-1"
+                >
+                  Delete User
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Invite User Modal */}
+      <Modal
+        isOpen={showInviteModal}
+        onClose={() => {
+          setShowInviteModal(false)
+          setInviteEmail('')
+          setInviteRole('employee')
+        }}
+        title="Invite New User"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address
+            </label>
+            <Input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="user@example.com"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Role
+            </label>
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value as User['role'])}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+            >
+              {USER_ROLES.map(role => (
+                <option key={role.key} value={role.key}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800">
+              An invitation email will be sent to the user with instructions to set up their account.
+            </p>
+          </div>
+          
+          <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowInviteModal(false)
+                setInviteEmail('')
+                setInviteRole('employee')
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleInviteUser}
+              disabled={!inviteEmail}
+              className="flex-1"
+            >
+              Send Invitation
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   )
