@@ -7,8 +7,8 @@ export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
   // Check if we're in demo mode
   const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
-  // In demo mode, always show demo login
-  const [showDemoLogin, setShowDemoLogin] = useState(true)
+  // Start with demo login if in demo mode, otherwise show Clerk
+  const [showDemoLogin, setShowDemoLogin] = useState(isDemoMode)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center p-4">
@@ -47,19 +47,25 @@ export default function AuthPage() {
           </>
         )}
         
-        {/* Demo Mode Options - Only show toggle in development */}
-        {!isDemoMode && (
-          <div className="mt-4 space-y-3">
-            <div className="text-center">
-              <button
-                onClick={() => setShowDemoLogin(!showDemoLogin)}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium underline"
-              >
-                {showDemoLogin ? 'Use regular sign in' : 'Use demo accounts'}
-              </button>
-            </div>
+        {/* Demo Mode Options */}
+        <div className="mt-4 space-y-3">
+          <div className="text-center">
+            <button
+              onClick={() => setShowDemoLogin(!showDemoLogin)}
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium underline"
+            >
+              {showDemoLogin ? 'Use regular sign in' : 'Use demo accounts'}
+            </button>
           </div>
-        )}
+          
+          {!isDemoMode && showDemoLogin && (
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <p className="text-sm text-blue-700 text-center">
+                🔐 Regular authentication is available. Click "Use regular sign in" above.
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Toggle - Only show when not using demo login */}
         {!showDemoLogin && (

@@ -14,6 +14,7 @@ import { AppRouter } from './router/AppRouter'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { LoadingSpinner } from './components/shared/LoadingSpinner'
 import { InstallPrompt, UpdatePrompt, OfflineIndicator } from './components/pwa'
+import { ClerkDebug } from './components/ClerkDebug'
 
 // Services and Utils
 import { useNotificationService } from './services/notifications'
@@ -167,6 +168,9 @@ function AppContent() {
       <InstallPrompt showMinimized />
       <UpdatePrompt />
       <OfflineIndicator />
+      
+      {/* Debug Component */}
+      <ClerkDebug />
     </>
   )
 }

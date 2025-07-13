@@ -31,7 +31,5 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  VITE_ENABLE_MOCK_DATA = "true"
-  VITE_SUPABASE_URL = "https://demo.supabase.co"
-  VITE_SUPABASE_ANON_KEY = "demo-key"
-  VITE_CLERK_PUBLISHABLE_KEY = "pk_test_Z29sZGVuLWdyYWNrbGUtODguY2xlcmsuYWNjb3VudHMuZGV2JA"
+  # Environment variables should be set in Netlify dashboard
+  # Do not commit real API keys to version control

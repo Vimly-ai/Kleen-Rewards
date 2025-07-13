@@ -1,10 +1,16 @@
 import { SignIn, SignUp } from '@clerk/clerk-react'
+import { useEffect } from 'react'
+import { ClerkErrorBoundary } from './ClerkErrorBoundary'
 
 interface SimpleClerkAuthProps {
   mode: 'signin' | 'signup'
 }
 
 export function SimpleClerkAuth({ mode }: SimpleClerkAuthProps) {
+  useEffect(() => {
+    console.log('SimpleClerkAuth rendering, mode:', mode)
+  }, [mode])
+
   const appearance = {
     elements: {
       rootBox: 'w-full',
@@ -15,21 +21,30 @@ export function SimpleClerkAuth({ mode }: SimpleClerkAuthProps) {
     }
   }
 
-  if (mode === 'signup') {
-    return (
-      <SignUp 
-        appearance={appearance}
-        redirectUrl="/"
-        signInUrl="/auth"
-      />
-    )
+  // Use afterSignInUrl and afterSignUpUrl instead of redirectUrl
+  const signInProps = {
+    appearance,
+    afterSignInUrl: '/',
+    signUpUrl: '/auth',
+    routing: 'path' as const,
+    path: '/auth'
+  }
+
+  const signUpProps = {
+    appearance,
+    afterSignUpUrl: '/',
+    signInUrl: '/auth',
+    routing: 'path' as const,
+    path: '/auth'
   }
 
   return (
-    <SignIn 
-      appearance={appearance}
-      redirectUrl="/"
-      signUpUrl="/auth"
-    />
+    <ClerkErrorBoundary>
+      {mode === 'signup' ? (
+        <SignUp {...signUpProps} />
+      ) : (
+        <SignIn {...signInProps} />
+      )}
+    </ClerkErrorBoundary>
   )
 }
