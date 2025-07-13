@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import * as demoData from './demoData'
+import { demoRedemptionStore } from './demoRedemptionStore'
 
 // Supabase configuration - MUST be set via environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -693,11 +694,8 @@ export class SupabaseService {
         }
       }
       
-      // Store the redemption in demo data (optional, for persistence)
-      if (!demoData.DEMO_REDEMPTIONS) {
-        (demoData as any).DEMO_REDEMPTIONS = []
-      }
-      (demoData as any).DEMO_REDEMPTIONS.push(mockRedemption)
+      // Store the redemption in demo store for persistence
+      demoRedemptionStore.add(mockRedemption)
       
       return mockRedemption
     }
@@ -809,9 +807,8 @@ export class SupabaseService {
   static async getUserRedemptions(userId: string): Promise<any[]> {
     if (USE_MOCK_DATA || !supabase) {
       console.log('Mock: getUserRedemptions called for', userId)
-      // Return stored mock redemptions
-      const redemptions = (demoData as any).DEMO_REDEMPTIONS || []
-      const userRedemptions = redemptions.filter((r: any) => r.user_id === userId)
+      // Get redemptions from store
+      const userRedemptions = demoRedemptionStore.getByUserId(userId)
       
       // Transform to expected format
       return userRedemptions.map((r: any) => ({
@@ -871,6 +868,36 @@ export class SupabaseService {
   }
 
   static async getAllRedemptions(): Promise<Redemption[]> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: getAllRedemptions called')
+      // Get all redemptions from store
+      const allRedemptions = demoRedemptionStore.getAll()
+      
+      // Add user details
+      return allRedemptions.map(r => {
+        const user = demoData.DEMO_USERS.find(u => u.id === r.user_id || u.clerkId === r.user_id)
+        return {
+          ...r,
+          user: user ? {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            employee_id: user.id,
+            department: user.department,
+            role: user.role,
+            status: 'active' as const,
+            points_balance: user.points,
+            total_points_earned: user.totalPointsEarned,
+            current_streak: user.currentStreak,
+            longest_streak: user.longestStreak,
+            hire_date: user.joinedAt.toISOString().split('T')[0],
+            created_at: user.joinedAt.toISOString(),
+            updated_at: new Date().toISOString()
+          } : undefined
+        } as Redemption
+      })
+    }
+    
     const { data, error } = await supabase
       .from('redemptions')
       .select(`
@@ -895,6 +922,33 @@ export class SupabaseService {
     rejectionReason?: string,
     fulfillmentNotes?: string
   ): Promise<Redemption> {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log('Mock: updateRedemptionStatus called', { redemptionId, status })
+      
+      // Get all redemptions
+      const allRedemptions = demoRedemptionStore.getAll()
+      const redemption = allRedemptions.find(r => r.id === redemptionId)
+      
+      if (!redemption) {
+        throw new Error('Redemption not found')
+      }
+      
+      // Update the redemption
+      const updated = {
+        ...redemption,
+        status,
+        processed_date: new Date().toISOString(),
+        processed_by: processedBy,
+        rejection_reason: rejectionReason,
+        fulfillment_notes: fulfillmentNotes,
+        updated_at: new Date().toISOString()
+      }
+      
+      demoRedemptionStore.update(redemptionId, updated)
+      
+      return updated as Redemption
+    }
+    
     const { data, error } = await supabase
       .from('redemptions')
       .update({

@@ -252,7 +252,8 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
   }
 
   const handleDemoCheckIn = async () => {
-    if (import.meta.env.DEV) {
+    if (import.meta.env.DEV || localStorage.getItem('demoMode') === 'true') {
+      console.log('Demo check-in button clicked')
       await handleCheckIn()
     }
   }
