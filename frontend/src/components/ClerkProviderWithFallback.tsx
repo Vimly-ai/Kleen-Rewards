@@ -9,39 +9,52 @@ interface ClerkProviderWithFallbackProps {
 
 export function ClerkProviderWithFallback({ children, publishableKey }: ClerkProviderWithFallbackProps) {
   const [clerkError, setClerkError] = useState<string | null>(null)
-  const [isValidKey, setIsValidKey] = useState(true)
 
   useEffect(() => {
-    // Validate key format - accept the specific key provided by user
-    const isValid = publishableKey.startsWith('pk_test_') || publishableKey.startsWith('pk_live_')
-    // Special case for the user's specific key
-    const isUserProvidedKey = publishableKey === 'pk_test_Z29sZGVuLWdyYWNrbGUtODguY2xlcmsuYWNjb3VudHMuZGV2JA'
+    // Log for debugging
+    console.log('Clerk Provider initialized with key:', publishableKey ? publishableKey.substring(0, 40) + '...' : 'No key')
     
-    setIsValidKey(isValid || isUserProvidedKey)
-    
-    if (!isValid && !isUserProvidedKey) {
-      console.error('Invalid Clerk publishable key format. Please check your .env file.')
+    // Add global error handler for Clerk issues
+    const handleError = (event: ErrorEvent) => {
+      if (event.message.includes('Clerk') || event.message.includes('clerk')) {
+        console.error('Clerk initialization error:', event.message)
+        setClerkError(event.message)
+      }
     }
+    
+    window.addEventListener('error', handleError)
+    return () => window.removeEventListener('error', handleError)
   }, [publishableKey])
 
-  // If key is invalid, render children without Clerk
-  if (!isValidKey) {
-    console.warn('Clerk disabled due to invalid configuration. Using demo mode.')
+  // If no key provided, render children without Clerk
+  if (!publishableKey) {
+    console.warn('No Clerk key provided. Using demo mode.')
     return <>{children}</>
   }
 
-  return (
-    <ClerkProvider 
-      publishableKey={publishableKey}
-      navigate={(to) => window.location.href = to}
-      appearance={{
-        elements: {
-          rootBox: 'clerk-root-box',
-          card: 'clerk-card'
-        }
-      }}
-    >
-      {children}
-    </ClerkProvider>
-  )
+  // Show error if Clerk fails
+  if (clerkError) {
+    console.error('Clerk error:', clerkError)
+  }
+
+  try {
+    return (
+      <ClerkProvider 
+        publishableKey={publishableKey}
+        navigate={(to) => window.location.href = to}
+        appearance={{
+          elements: {
+            rootBox: 'clerk-root-box',
+            card: 'clerk-card'
+          }
+        }}
+      >
+        {children}
+      </ClerkProvider>
+    )
+  } catch (error) {
+    console.error('Failed to initialize Clerk:', error)
+    // Fallback to rendering children without Clerk
+    return <>{children}</>
+  }
 }

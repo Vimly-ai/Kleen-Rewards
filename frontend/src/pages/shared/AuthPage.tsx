@@ -15,10 +15,9 @@ export default function AuthPage() {
   const navigate = useNavigate()
   const shouldFallbackToDemo = useAuthModeFallback()
   
-  // Check if Clerk key is valid
+  // Check if Clerk key exists (let Clerk validate it)
   const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || ''
-  const hasValidClerkKey = clerkKey.startsWith('pk_test_') || clerkKey.startsWith('pk_live_') || 
-    clerkKey === 'pk_test_Z29sZGVuLWdyYWNrbGUtODguY2xlcmsuYWNjb3VudHMuZGV2JA'
+  const hasClerkKey = !!clerkKey
   
   // Check URL params for demo mode override
   const urlParams = new URLSearchParams(window.location.search)
@@ -66,14 +65,14 @@ export default function AuthPage() {
         </div>
 
         {/* Key Validator (only show in dev mode or when debugging) */}
-        {(import.meta.env.DEV || !hasValidClerkKey) && (
+        {(import.meta.env.DEV || !hasClerkKey) && (
           <ClerkKeyValidator />
         )}
 
         {/* Auth Component */}
         {showDemoLogin && isDemoMode ? (
           <DemoSignIn />
-        ) : !hasValidClerkKey ? (
+        ) : !hasClerkKey ? (
           <ClerkSetupGuide />
         ) : (
           <div className="bg-white rounded-lg shadow-lg p-6">
@@ -125,7 +124,7 @@ export default function AuthPage() {
         )}
         
         {/* Setup Guide for invalid Clerk configuration */}
-        {!showDemoLogin && !hasValidClerkKey && (
+        {!showDemoLogin && !hasClerkKey && (
           <ClerkSetupGuide />
         )}
           </div>
