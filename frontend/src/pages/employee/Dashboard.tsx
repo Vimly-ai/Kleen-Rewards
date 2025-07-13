@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { isDemoMode, getCurrentDemoUser, getDemoActivities } from '../../services/demoService'
 
 export default function EmployeeDashboard() {
   const navigate = useNavigate()
@@ -71,30 +72,41 @@ export default function EmployeeDashboard() {
 
   const hasCheckedInToday = !!todayCheckIn
 
-  // Get real activity data - empty for new users
-  const userActivities = userStats?.badges?.map((badge, index) => ({
-    id: `badge-${index}`,
-    type: 'achievement' as const,
-    title: 'Achievement Unlocked',
-    description: `You unlocked a new badge!`,
-    timestamp: new Date(badge.unlockedAt),
-    points: 100
-  })) || []
+  // Get activity data - use demo data if in demo mode
+  let userActivities = []
   
-  // Add today's check-in if exists
-  if (todayCheckIn) {
-    userActivities.unshift({
-      id: 'today-checkin',
-      type: 'check_in' as const,
-      title: 'Daily Check-in',
-      description: `Checked in at ${new Date(todayCheckIn.checkInTime).toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        hour12: true 
-      })}`,
-      timestamp: new Date(todayCheckIn.checkInTime),
-      points: todayCheckIn.pointsEarned || 50
-    })
+  if (isDemoMode()) {
+    const demoUser = getCurrentDemoUser()
+    if (demoUser) {
+      const demoActivities = getDemoActivities(demoUser.id, demoUser.role === 'employee' ? 'employee' : 'admin')
+      userActivities = demoActivities
+    }
+  } else {
+    // Get real activity data - empty for new users
+    userActivities = userStats?.badges?.map((badge, index) => ({
+      id: `badge-${index}`,
+      type: 'achievement' as const,
+      title: 'Achievement Unlocked',
+      description: `You unlocked a new badge!`,
+      timestamp: new Date(badge.unlockedAt),
+      points: 100
+    })) || []
+    
+    // Add today's check-in if exists
+    if (todayCheckIn) {
+      userActivities.unshift({
+        id: 'today-checkin',
+        type: 'check_in' as const,
+        title: 'Daily Check-in',
+        description: `Checked in at ${new Date(todayCheckIn.checkInTime).toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit', 
+          hour12: true 
+        })}`,
+        timestamp: new Date(todayCheckIn.checkInTime),
+        points: todayCheckIn.pointsEarned || 50
+      })
+    }
   }
 
   // Calculate today's points from today's check-in

@@ -34,6 +34,7 @@ import {
   Target
 } from 'lucide-react'
 import { clsx } from 'clsx'
+import { isDemoMode, getCurrentDemoUser, getDemoActivities } from '../../services/demoService'
 
 export default function EmployeeProfile() {
   const { user: clerkUser } = useUser()
@@ -60,28 +61,36 @@ export default function EmployeeProfile() {
     }
   }, [dbUser])
   
-  // Get real user activities from their data
-  const userActivities = []
+  // Get user activities - use demo data if in demo mode
+  let userActivities = []
   
-  // Add achievements as activities
-  if (userStats?.badges) {
-    userActivities.push(...userStats.badges.map((badge, index) => ({
-      id: `achievement-${index}`,
-      type: 'achievement_unlocked' as const,
-      title: 'Achievement Unlocked',
-      description: `You unlocked a new achievement!`,
-      timestamp: new Date(badge.unlockedAt),
-      points: 100
-    })))
+  if (isDemoMode()) {
+    const demoUser = getCurrentDemoUser()
+    if (demoUser) {
+      userActivities = getDemoActivities(demoUser.id, demoUser.role === 'employee' ? 'employee' : 'admin')
+    }
+  } else {
+    // Get real user activities from their data
+    // Add achievements as activities
+    if (userStats?.badges) {
+      userActivities.push(...userStats.badges.map((badge, index) => ({
+        id: `achievement-${index}`,
+        type: 'achievement_unlocked' as const,
+        title: 'Achievement Unlocked',
+        description: `You unlocked a new achievement!`,
+        timestamp: new Date(badge.unlockedAt),
+        points: 100
+      })))
+    }
+    
+    // For now, we'll show empty state for new users until they have real activities
+    // In a full implementation, this would include:
+    // - Check-in history from database
+    // - Point transactions
+    // - Reward redemptions
+    // - Level ups
+    // - Streak milestones
   }
-  
-  // For now, we'll show empty state for new users until they have real activities
-  // In a full implementation, this would include:
-  // - Check-in history from database
-  // - Point transactions
-  // - Reward redemptions
-  // - Level ups
-  // - Streak milestones
 
   const handleSaveProfile = async () => {
     if (!dbUser) return

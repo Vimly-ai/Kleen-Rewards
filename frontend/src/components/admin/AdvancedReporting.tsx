@@ -21,6 +21,7 @@ import {
   DollarSign
 } from 'lucide-react'
 import { clsx } from 'clsx'
+import { isDemoMode, getDemoAnalytics, generateLeaderboard } from '../../services/demoService'
 
 interface ReportData {
   engagementTrends: Array<{
@@ -84,6 +85,52 @@ export function AdvancedReporting() {
       // Simulate API call with mock data
       await new Promise(resolve => setTimeout(resolve, 1000))
       
+      if (isDemoMode()) {
+        const demoAnalytics = getDemoAnalytics()
+        const leaderboard = generateLeaderboard()
+        
+        return {
+          engagementTrends: demoAnalytics.trends.daily.map((day, idx) => ({
+            name: day.date,
+            checkIns: day.checkIns,
+            uniqueUsers: Math.floor(day.checkIns * 0.9),
+            pointsDistributed: day.checkIns * 65 // avg 65 points per check-in
+          })),
+          departmentPerformance: demoAnalytics.departments.map(dept => ({
+            name: dept.name,
+            value: dept.avgPoints,
+            color: dept.name === 'Operations' ? '#3b82f6' : 
+                   dept.name === 'Sales' ? '#10b981' :
+                   dept.name === 'Marketing' ? '#f59e0b' :
+                   dept.name === 'IT' ? '#ef4444' : '#8b5cf6'
+          })),
+          checkInPatterns: [
+            { name: 'Monday', early: 45, onTime: 78, late: 12 },
+            { name: 'Tuesday', early: 52, onTime: 71, late: 8 },
+            { name: 'Wednesday', early: 48, onTime: 75, late: 10 },
+            { name: 'Thursday', early: 41, onTime: 80, late: 14 },
+            { name: 'Friday', early: 38, onTime: 69, late: 18 }
+          ],
+          pointsDistribution: demoAnalytics.trends.monthly.slice(0, 4).map(month => ({
+            name: month.month,
+            earned: month.totalPoints,
+            redeemed: Math.floor(month.totalPoints * 0.55) // 55% redemption rate
+          })),
+          topPerformers: leaderboard.slice(0, 5).map(emp => ({
+            name: emp.name,
+            points: emp.points,
+            checkIns: Math.floor(emp.points / 65), // estimate based on avg points
+            department: emp.department
+          })),
+          kpis: {
+            participationRate: demoAnalytics.overview.onTimeRate,
+            averagePointsPerUser: Math.floor(demoAnalytics.trends.monthly[0].totalPoints / demoAnalytics.overview.totalEmployees),
+            retentionRate: 92.1,
+            engagementScore: 87.5
+          }
+        }
+      }
+      
       return {
         engagementTrends: [
           { name: 'Week 1', checkIns: 245, uniqueUsers: 89, pointsDistributed: 12500 },
@@ -126,7 +173,7 @@ export function AdvancedReporting() {
         }
       }
     },
-    refetchInterval: 60000 // Refetch every minute
+    refetchInterval: isDemoMode() ? false : 60000 // No refresh in demo mode
   })
   
   const chartLines = useMemo(() => [
