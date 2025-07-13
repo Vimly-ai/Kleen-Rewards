@@ -328,13 +328,13 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
             {checkingIn ? 'Checking In...' : 'Scan QR Code'}
           </button>
           
-          {import.meta.env.DEV && (
+          {(import.meta.env.DEV || localStorage.getItem('demoMode') === 'true') && (
             <button
               onClick={handleDemoCheckIn}
               disabled={checkingIn}
               className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-700 transition disabled:opacity-50 text-sm"
             >
-              Demo Check-In (Dev Only)
+              Demo Check-In (Test)
             </button>
           )}
         </div>

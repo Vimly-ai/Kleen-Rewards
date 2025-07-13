@@ -108,7 +108,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
         })
         streamRef.current = stream
         
-        await readerRef.current.decodeFromVideoDevice(
+        const controls = await readerRef.current.decodeFromVideoDevice(
           selectedDeviceId,
           videoRef.current,
           (result, error) => {
@@ -118,27 +118,27 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
               setHasScanned(true)
               console.log('QR Code detected:', result.getText())
               
-              // Stop the reader immediately to prevent further scanning
-              if (readerRef.current) {
-                readerRef.current.reset()
-              }
+              // Call success callback immediately
+              onScanSuccess(result.getText())
               
-              // Stop scanning and cleanup
-              stopScanning()
-              
-              // Call success callback after ensuring scanner is stopped
+              // Stop scanning and close after a short delay
               setTimeout(() => {
-                onScanSuccess(result.getText())
+                stopScanning()
                 onClose()
                 isProcessingRef.current = false
               }, 100)
             }
-            if (error && error.name !== 'NotFoundException' && !hasScanned) {
+            if (error && error.name !== 'NotFoundException' && !hasScanned && !isProcessingRef.current) {
               // Log scanning errors (but don't stop scanning for "not found" errors)
               console.debug('Scanning error:', error)
             }
           }
         )
+        
+        // Store the controls so we can stop it later
+        if (controls) {
+          (readerRef.current as any).controls = controls
+        }
         setIsScanning(true)
       }
     } catch (err: any) {
@@ -156,10 +156,12 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
         scanTimeoutRef.current = null
       }
       
-      // Reset the reader if it exists
+      // Stop the reader if it has controls
       if (readerRef.current) {
-        // This stops the decode loop
-        readerRef.current.reset()
+        const controls = (readerRef.current as any).controls
+        if (controls && typeof controls.stop === 'function') {
+          controls.stop()
+        }
         readerRef.current = null
       }
       
