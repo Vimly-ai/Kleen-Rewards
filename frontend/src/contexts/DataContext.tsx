@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useMemo } from '
 import { useAuth } from '../hooks/useAuth'
 import SupabaseService from '../services/supabase'
 import type { User as SBUser } from '../services/supabase'
+import { isDemoMode, getCurrentDemoUser } from '../services/demoService'
 
 interface DataContextType {
   user: SBUser | null
@@ -21,6 +22,39 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize or sync user data between auth provider and database
   const initializeUser = async () => {
+    // Check if we're in demo mode first
+    if (isDemoMode()) {
+      const demoUser = getCurrentDemoUser()
+      if (demoUser) {
+        // Create a mock Supabase user object for demo mode
+        const mockUser: SBUser = {
+          id: demoUser.id,
+          email: demoUser.email,
+          name: demoUser.name,
+          first_name: demoUser.name.split(' ')[0],
+          last_name: demoUser.name.split(' ')[1] || '',
+          employee_id: demoUser.id,
+          department: demoUser.department,
+          hire_date: demoUser.joinDate.toISOString().split('T')[0],
+          role: demoUser.role as 'employee' | 'admin',
+          company: 'System Kleen',
+          location: 'Main Office',
+          is_active: true,
+          points_balance: 0, // Will be overridden by demo stats
+          total_points_earned: 0, // Will be overridden by demo stats
+          current_streak: 0, // Will be overridden by demo stats
+          longest_streak: 0, // Will be overridden by demo stats
+          total_check_ins: 0, // Will be overridden by demo stats
+          last_check_in: null,
+          created_at: demoUser.joinDate.toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        setUser(mockUser)
+        setLoading(false)
+        return
+      }
+    }
+    
     if (!authUser || !isLoaded) {
       setLoading(false)
       return
@@ -93,8 +127,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Initialize user when auth user loads
+  // Initialize user when auth user loads or demo mode changes
   useEffect(() => {
+    // Check for demo mode first
+    if (isDemoMode()) {
+      initializeUser()
+      return
+    }
+    
     // Add a guard to prevent re-initialization if user already exists
     if (!isLoaded) return
     if (!authUser) {

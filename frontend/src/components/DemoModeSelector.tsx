@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom'
 import { Users, Shield, Eye, ChevronRight } from 'lucide-react'
 import { DEMO_ACCOUNTS, setDemoMode, setCurrentDemoUser } from '../services/demoService'
+import { useDemoAuth } from '../contexts/DemoAuthContext'
 
 export function DemoModeSelector() {
   const navigate = useNavigate()
+  const { signIn } = useDemoAuth()
   
-  const handleDemoLogin = (userType: 'employee' | 'admin') => {
+  const handleDemoLogin = async (userType: 'employee' | 'admin') => {
     // Enable demo mode
     setDemoMode(true)
     setCurrentDemoUser(userType)
@@ -18,12 +20,8 @@ export function DemoModeSelector() {
       isDemoMode: true
     }))
     
-    // Navigate to appropriate dashboard
-    if (userType === 'admin') {
-      navigate('/admin/dashboard')
-    } else {
-      navigate('/employee/dashboard')
-    }
+    // Force reload to ensure all contexts pick up the demo mode
+    window.location.href = userType === 'admin' ? '/admin/dashboard' : '/employee/dashboard'
   }
   
   return (

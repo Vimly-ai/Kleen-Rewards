@@ -283,7 +283,9 @@ export function generateLeaderboard() {
 export function getDemoUserStats(userType: 'employee' | 'admin'): DemoStats {
   const isAdmin = userType === 'admin'
   
-  return {
+  console.log('[DemoService] Getting demo stats for:', userType)
+  
+  const stats = {
     totalCheckIns: isAdmin ? 245 : 152,
     totalPoints: isAdmin ? 4850 : 3420,
     currentStreak: isAdmin ? 15 : 28,
@@ -302,6 +304,9 @@ export function getDemoUserStats(userType: 'employee' | 'admin'): DemoStats {
     level: isAdmin ? 8 : 6,
     pointsBalance: isAdmin ? 2150 : 1620
   }
+  
+  console.log('[DemoService] Returning stats:', stats)
+  return stats
 }
 
 // Get demo activities
