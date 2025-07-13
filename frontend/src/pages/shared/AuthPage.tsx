@@ -19,6 +19,15 @@ export default function AuthPage() {
   const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || ''
   const hasClerkKey = !!clerkKey
   
+  // Debug logging
+  console.log('Auth Page Debug:', {
+    clerkKey: clerkKey ? clerkKey.substring(0, 40) + '...' : 'No key',
+    hasClerkKey,
+    isDemoMode,
+    showDemoLogin,
+    VITE_ENABLE_MOCK_DATA: import.meta.env.VITE_ENABLE_MOCK_DATA
+  })
+  
   // Check URL params for demo mode override
   const urlParams = new URLSearchParams(window.location.search)
   const forceDemoMode = urlParams.get('demo') === 'true'
@@ -73,7 +82,15 @@ export default function AuthPage() {
         {showDemoLogin && isDemoMode ? (
           <DemoSignIn />
         ) : !hasClerkKey ? (
-          <ClerkSetupGuide />
+          <>
+            <ClerkSetupGuide />
+            <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p className="text-sm text-yellow-800">
+                <strong>Are you seeing this in production?</strong> You need to set the VITE_CLERK_PUBLISHABLE_KEY 
+                environment variable in Netlify. See NETLIFY_ENV_SETUP.md for instructions.
+              </p>
+            </div>
+          </>
         ) : (
           <div className="bg-white rounded-lg shadow-lg p-6">
             <SimpleClerkAuth mode={isSignUp ? 'signup' : 'signin'} />
