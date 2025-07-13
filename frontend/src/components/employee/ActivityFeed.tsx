@@ -16,7 +16,7 @@ import {
 
 interface ActivityItem {
   id: string
-  type: 'check_in' | 'points_earned' | 'achievement' | 'reward_redeemed' | 'streak_milestone' | 'level_up'
+  type: 'check_in' | 'points_earned' | 'achievement' | 'achievement_unlocked' | 'bonus_points' | 'reward_redeemed' | 'streak_milestone' | 'level_up' | 'admin_action'
   title: string
   description: string
   timestamp: Date
@@ -48,6 +48,16 @@ const activityConfig = {
     type: 'warning' as const,
     color: 'text-yellow-600'
   },
+  achievement_unlocked: {
+    icon: <Trophy className="w-4 h-4" />,
+    type: 'warning' as const,
+    color: 'text-yellow-600'
+  },
+  bonus_points: {
+    icon: <Star className="w-4 h-4" />,
+    type: 'info' as const,
+    color: 'text-blue-600'
+  },
   reward_redeemed: {
     icon: <Gift className="w-4 h-4" />,
     type: 'default' as const,
@@ -62,6 +72,11 @@ const activityConfig = {
     icon: <Award className="w-4 h-4" />,
     type: 'success' as const,
     color: 'text-emerald-600'
+  },
+  admin_action: {
+    icon: <Users className="w-4 h-4" />,
+    type: 'default' as const,
+    color: 'text-gray-600'
   }
 }
 
@@ -78,17 +93,25 @@ export function ActivityFeed({
   
   const filteredActivities = filter === 'all' 
     ? displayActivities 
-    : displayActivities.filter(activity => activity.type === filter)
+    : displayActivities.filter(activity => {
+        if (filter === 'achievement') {
+          return activity.type === 'achievement' || activity.type === 'achievement_unlocked'
+        }
+        if (filter === 'points') {
+          return activity.type === 'points_earned' || activity.type === 'bonus_points'
+        }
+        return activity.type === filter
+      })
 
   const filters = [
     { key: 'all', label: 'All Activities', count: activities.length },
     { key: 'check_in', label: 'Check-ins', count: activities.filter(a => a.type === 'check_in').length },
-    { key: 'achievement', label: 'Achievements', count: activities.filter(a => a.type === 'achievement').length },
-    { key: 'points_earned', label: 'Points', count: activities.filter(a => a.type === 'points_earned').length }
+    { key: 'achievement', label: 'Achievements', count: activities.filter(a => a.type === 'achievement' || a.type === 'achievement_unlocked').length },
+    { key: 'points', label: 'Points', count: activities.filter(a => a.type === 'points_earned' || a.type === 'bonus_points').length }
   ]
 
   const timelineItems = filteredActivities.map(activity => {
-    const config = activityConfig[activity.type]
+    const config = activityConfig[activity.type] || activityConfig.check_in // Fallback to check_in if type not found
     
     return {
       id: activity.id,
