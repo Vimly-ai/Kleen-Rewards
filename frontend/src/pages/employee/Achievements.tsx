@@ -50,6 +50,8 @@ const RARITY_CONFIG = {
 export default function EmployeeAchievements() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [showOnlyUnlocked, setShowOnlyUnlocked] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
+  const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null)
 
   const { data: user } = useCurrentUser()
   const { data: userStats } = useUserStats(user?.id || '')
@@ -69,8 +71,12 @@ export default function EmployeeAchievements() {
           criteria: { type: 'check_ins', target: 5, period: 'all_time' },
           rarity: 'common',
           points: 50,
-          unlocked: true,
-          unlockedAt: '2024-01-15T08:00:00Z'
+          unlocked: false,
+          progress: {
+            current: 0,
+            target: 5,
+            percentage: 0
+          }
         },
         {
           id: '2',
@@ -241,11 +247,15 @@ export default function EmployeeAchievements() {
             <Card
               key={achievement.id}
               className={clsx(
-                'relative overflow-hidden transition-all hover:shadow-lg',
+                'relative overflow-hidden transition-all hover:shadow-lg cursor-pointer',
                 achievement.unlocked
                   ? 'bg-gradient-to-br from-white to-primary-50 border-primary-200'
                   : 'bg-gray-50 border-gray-200'
               )}
+              onClick={() => {
+                setSelectedAchievement(achievement)
+                setShowDetails(true)
+              }}
             >
               <div className="p-6">
                 {/* Rarity Badge */}

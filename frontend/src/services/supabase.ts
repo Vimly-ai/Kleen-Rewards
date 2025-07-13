@@ -1260,30 +1260,35 @@ export class SupabaseService {
         }
       }
       
+      // For new users, return empty stats
       return {
-        totalCheckIns: 25,
-        totalPoints: 300,
-        currentStreak: 5,
-        longestStreak: 12,
-        averageCheckInTime: '08:45 AM',
-        recentAchievements: 3,
-        rank: 2,
-        weeklyProgress: 85,
+        totalCheckIns: 0,
+        totalPoints: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        averageCheckInTime: 'N/A',
+        recentAchievements: 0,
+        rank: 0,
+        weeklyProgress: 0,
         badges: [],
         level: 1,
-        pointsBalance: 150
+        pointsBalance: 0
       }
     }
-    // Return mock stats for now
+    
+    // For new users without demo data, return empty stats
     return {
-      totalCheckIns: 25,
-      totalPoints: 300,
-      currentStreak: 5,
-      longestStreak: 12,
-      averageCheckInTime: '08:45 AM',
-      recentAchievements: 3,
-      rank: 2,
-      weeklyProgress: 85
+      totalCheckIns: 0,
+      totalPoints: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      averageCheckInTime: 'N/A',
+      recentAchievements: 0,
+      rank: 0,
+      weeklyProgress: 0,
+      badges: [],
+      level: 1,
+      pointsBalance: 0
     }
   }
 
