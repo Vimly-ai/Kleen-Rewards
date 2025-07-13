@@ -115,23 +115,22 @@ export default function AuthPage() {
             </div>
           </div>
         )}
-          
-          {!isDemoMode && showDemoLogin && (
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <p className="text-sm text-blue-700 text-center">
-                🔐 Regular authentication is available. Click "Use regular sign in" above.
-              </p>
-            </div>
-          )}
-          
-          {shouldFallbackToDemo && (
-            <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-              <p className="text-sm text-yellow-700 text-center">
-                ⚠️ Authentication service is experiencing issues. Using demo mode as fallback.
-              </p>
-            </div>
-          )}
-        </div>
+        
+        {!isDemoMode && showDemoLogin && (
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <p className="text-sm text-blue-700 text-center">
+              🔐 Regular authentication is available. Click "Use regular sign in" above.
+            </p>
+          </div>
+        )}
+        
+        {shouldFallbackToDemo && (
+          <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+            <p className="text-sm text-yellow-700 text-center">
+              ⚠️ Authentication service is experiencing issues. Using demo mode as fallback.
+            </p>
+          </div>
+        )}
 
         {/* Toggle - Only show when not using demo login */}
         {!showDemoLogin && (
