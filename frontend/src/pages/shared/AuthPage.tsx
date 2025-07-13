@@ -19,8 +19,8 @@ export default function AuthPage() {
   
   // Check if we're in demo mode
   const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true' || shouldFallbackToDemo || forceDemoMode
-  // Start with demo login if in demo mode, otherwise show Clerk
-  const [showDemoLogin, setShowDemoLogin] = useState(isDemoMode)
+  // Always start with Clerk auth, user can switch to demo if needed
+  const [showDemoLogin, setShowDemoLogin] = useState(false)
   
   // Redirect if already signed in with Clerk
   useEffect(() => {

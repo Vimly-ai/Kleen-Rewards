@@ -37,7 +37,6 @@ export function useNotifications(options: NotificationOptions = {}) {
           })
           
           // Send subscription to server
-          console.log('Push subscription:', subscription)
         } catch (error) {
           console.warn('Failed to subscribe to push notifications:', error)
         }

@@ -22,6 +22,7 @@ import { toast } from 'sonner'
 import { DEMO_REWARDS, DEMO_USERS } from '../../services/demoData'
 import SupabaseService from '../../services/supabase'
 import type { Redemption } from '../../services/supabase'
+import { useData } from '../../contexts/DataContext'
 
 const REDEMPTION_STATUSES = [
   { key: 'all', label: 'All Requests', color: 'bg-gray-100 text-gray-800' },
@@ -32,6 +33,7 @@ const REDEMPTION_STATUSES = [
 ]
 
 export default function AdminRedemptions() {
+  const { user } = useData()
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedRedemption, setSelectedRedemption] = useState<Redemption | null>(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
@@ -73,7 +75,7 @@ export default function AdminRedemptions() {
       await SupabaseService.updateRedemptionStatus(
         redemptionId,
         newStatus as 'approved' | 'rejected' | 'fulfilled',
-        'admin', // TODO: Get actual admin ID
+        user?.id || 'admin',
         newStatus === 'rejected' ? reason : undefined,
         newStatus === 'completed' || newStatus === 'fulfilled' ? reason : undefined
       )

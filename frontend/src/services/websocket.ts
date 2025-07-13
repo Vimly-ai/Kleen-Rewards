@@ -24,10 +24,8 @@ export function useMockWebSocket() {
       { id: '3', name: 'Emily Davis', avatar: null, status: 'online' }
     ],
     autoConnect: (userId: string) => {
-      console.log('Mock WebSocket autoConnect for user:', userId)
     },
     disconnect: () => {
-      console.log('Mock WebSocket disconnect')
     }
   }
 }
@@ -94,7 +92,6 @@ class WebSocketServiceImpl implements WebSocketService {
 
     // Connection events
     this.socket.on('connect', () => {
-      console.log('WebSocket connected')
       this.reconnectAttempts = 0
       store.updateRealtimeStats({ 
         totalCheckIns: 0, 
@@ -104,7 +101,6 @@ class WebSocketServiceImpl implements WebSocketService {
     })
 
     this.socket.on('disconnect', (reason) => {
-      console.log('WebSocket disconnected:', reason)
       if (reason === 'io server disconnect') {
         // Server initiated disconnect, try to reconnect
         this.socket?.connect()
@@ -179,7 +175,6 @@ class WebSocketServiceImpl implements WebSocketService {
       }>
     }) => {
       // Could update leaderboard cache here
-      console.log('Leaderboard updated:', data)
     })
 
     this.socket.on('admin_announcement', (data: {
@@ -297,11 +292,9 @@ export function useWebSocket() {
         { id: '3', name: 'Emily Davis', avatar: null, status: 'online' }
       ],
       autoConnect: (userId: string) => {
-        console.log('Mock WebSocket autoConnect for user:', userId)
-      },
+        },
       disconnect: () => {
-        console.log('Mock WebSocket disconnect')
-      },
+        },
       isConnected: true,
       connectionStatus: 'connected' as const
     }

@@ -138,7 +138,6 @@ export class QRCodeService {
    * Validate QR code format and check if active
    */
   static validateQRCode(url: string): { valid: boolean; code?: string; error?: string } {
-    console.log('Validating QR code URL:', url)
     
     const QR_URL_PATTERN = /^https?:\/\/systemkleen\.com\/checkin\/([A-Z0-9-]+)$/
     const match = url.match(QR_URL_PATTERN)
@@ -149,7 +148,6 @@ export class QRCodeService {
     }
     
     const code = match[1]
-    console.log('Extracted code:', code)
     
     // Check format
     if (!code.startsWith('SK') || code.length < 10) {
@@ -160,13 +158,11 @@ export class QRCodeService {
     // In demo mode, accept the hardcoded demo QR code
     const DEMO_QR_CODE = 'SK2024-MAIN-001'
     if (code === DEMO_QR_CODE) {
-      console.log('Demo QR code accepted')
       return { valid: true, code }
     }
     
     // Check if it's the active code
     const activeCode = this.getActiveQRCode()
-    console.log('Active QR code:', activeCode)
     
     if (!activeCode || activeCode.code !== code) {
       console.error('Code mismatch. Expected:', activeCode?.code, 'Got:', code)
@@ -177,7 +173,6 @@ export class QRCodeService {
     activeCode.usageCount++
     this.saveActiveQRCode(activeCode)
     
-    console.log('QR code validated successfully')
     return { valid: true, code }
   }
 

@@ -146,7 +146,6 @@ class NotificationService {
 
       // Check if already subscribed
       if (this.currentSubscription) {
-        console.log('Already subscribed to push notifications')
         return this.formatSubscription(this.currentSubscription, userId)
       }
 
@@ -163,7 +162,6 @@ class NotificationService {
       // Send subscription to server
       await this.sendSubscriptionToServer(subscriptionData)
 
-      console.log('Successfully subscribed to push notifications')
       return subscriptionData
     } catch (error) {
       console.error('Failed to subscribe to push notifications:', error)
@@ -177,7 +175,6 @@ class NotificationService {
   async unsubscribe(): Promise<boolean> {
     try {
       if (!this.currentSubscription) {
-        console.log('Not subscribed to push notifications')
         return true
       }
 
@@ -187,7 +184,6 @@ class NotificationService {
         // Remove subscription from server
         await this.removeSubscriptionFromServer()
         this.currentSubscription = null
-        console.log('Successfully unsubscribed from push notifications')
       }
 
       return success
@@ -304,7 +300,7 @@ class NotificationService {
       } else {
         // For longer delays, we'd need to use service worker background sync
         // or server-side scheduling
-        console.log('Long-term reminder scheduled on server')
+        // Long-term reminder would be scheduled on server
       }
 
       return true

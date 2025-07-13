@@ -52,13 +52,10 @@ export function useRedeemReward() {
       userId: string
       rewardId: string
     }) => {
-      console.log('Starting reward redemption:', data)
       const redemption = await SupabaseService.redeemReward(data.userId, data.rewardId)
-      console.log('Redemption completed:', redemption)
       return redemption
     },
     onSuccess: (redemption, variables) => {
-      console.log('Redemption success, invalidating queries...')
       
       // Invalidate user's redemptions
       queryClient.invalidateQueries({ 

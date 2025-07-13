@@ -19,10 +19,6 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
   const [lastCheckInAttempt, setLastCheckInAttempt] = useState<number>(0)
   
   // Debug user data
-  useEffect(() => {
-    console.log('CheckInSection - dbUser:', dbUser)
-    console.log('CheckInSection - hasCheckedInToday:', hasCheckedInToday)
-  }, [dbUser, hasCheckedInToday])
 
   const getUniqueMotivationalQuote = async (category: 'early' | 'ontime' | 'late') => {
     const quotes = {
@@ -93,21 +89,13 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
 
 
   const handleCheckIn = async () => {
-    console.log('handleCheckIn called', { dbUser, hasCheckedInToday, checkingIn })
-    
     if (!dbUser?.id || hasCheckedInToday || checkingIn) {
-      console.log('Check-in blocked:', { 
-        noUser: !dbUser?.id, 
-        alreadyCheckedIn: hasCheckedInToday, 
-        processing: checkingIn 
-      })
       return
     }
 
     // Prevent multiple check-ins within 5 seconds
     const now = Date.now()
     if (now - lastCheckInAttempt < 5000) {
-      console.log('Check-in attempt too soon, ignoring')
       return
     }
     setLastCheckInAttempt(now)
@@ -253,23 +241,19 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
 
   const handleDemoCheckIn = async () => {
     if (import.meta.env.DEV || localStorage.getItem('demoMode') === 'true') {
-      console.log('Demo check-in button clicked')
       await handleCheckIn()
     }
   }
 
   const handleQRScan = async (data: string) => {
-    console.log('QR Scan received data:', data)
     
     // Close scanner immediately to prevent multiple scans
     setShowQRScanner(false)
     
     // Validate QR code using the service
     const validation = QRCodeService.validateQRCode(data)
-    console.log('QR validation result:', validation)
     
     if (validation.valid && validation.code) {
-      console.log('Valid QR code scanned:', validation.code)
       toast.info('Processing check-in...', { duration: 2000 })
       
       // Small delay to ensure scanner modal is fully closed before check-in

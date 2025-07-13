@@ -116,7 +116,6 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
               // Prevent multiple scans
               isProcessingRef.current = true
               setHasScanned(true)
-              console.log('QR Code detected:', result.getText())
               
               // Call success callback immediately
               onScanSuccess(result.getText())
@@ -208,7 +207,6 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            console.log('Close button clicked - stopping scanner')
             // Create a proper close handler
             const handleClose = () => {
               stopScanning()

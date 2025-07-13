@@ -104,7 +104,6 @@ export const SimpleQRScanner: React.FC<SimpleQRScannerProps> = ({ onScanSuccess,
         const barcodes = await barcodeDetector.detect(imageData)
         
         if (barcodes.length > 0) {
-          console.log('QR Code detected:', barcodes[0].rawValue)
           onScanSuccess(barcodes[0].rawValue)
           stopScanning()
           onClose()
@@ -112,7 +111,6 @@ export const SimpleQRScanner: React.FC<SimpleQRScannerProps> = ({ onScanSuccess,
       }
     } catch (error) {
       // BarcodeDetector not available or failed
-      console.log('BarcodeDetector not available or failed:', error)
     }
   }
 

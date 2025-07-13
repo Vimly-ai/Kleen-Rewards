@@ -53,7 +53,6 @@ if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Publishable Key')
 }
 
-console.log('Using Clerk key:', PUBLISHABLE_KEY.substring(0, 20) + '...')
 
 // Performance and Feature Initialization Component
 function AppInitializer() {
@@ -72,11 +71,9 @@ function AppInitializer() {
         if (swUtils.isSupported()) {
           await swUtils.register({
             onUpdate: () => {
-              console.log('Service worker update available')
               // You could dispatch an action to show update notification
             },
             onSuccess: () => {
-              console.log('Service worker registered successfully')
             },
             onError: (error) => {
               console.error('Service worker registration failed:', error)

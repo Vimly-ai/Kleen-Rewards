@@ -37,7 +37,6 @@ export const useWebSocketStore = create<WebSocketState>()(
       realtimeStats: null,
       
       initialize: () => {
-        console.log('WebSocket store initialized')
         // In demo mode, just set some mock data
         if (import.meta.env.VITE_ENABLE_MOCK_DATA === 'true') {
           set({

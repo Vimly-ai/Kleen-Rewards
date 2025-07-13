@@ -35,7 +35,7 @@ export function DemoAuthProvider({ children }: { children: React.ReactNode }) {
   const [demoUser, setDemoUser] = useState<DemoUser | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   // Always enable demo mode for now
-  const isDemoMode = true // import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
+  const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 
   // Disabled auto-restore of demo sessions to prevent automatic redirect issues
   // Users must explicitly click demo login buttons

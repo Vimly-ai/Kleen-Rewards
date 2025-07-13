@@ -7,9 +7,6 @@ interface SimpleClerkAuthProps {
 }
 
 export function SimpleClerkAuth({ mode }: SimpleClerkAuthProps) {
-  useEffect(() => {
-    console.log('SimpleClerkAuth rendering, mode:', mode)
-  }, [mode])
 
   const appearance = {
     elements: {

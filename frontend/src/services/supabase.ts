@@ -18,12 +18,6 @@ export const supabase = USE_MOCK_DATA
   ? null 
   : createClient(supabaseUrl, supabaseAnonKey)
 
-console.log('Supabase config:', { 
-  url: supabaseUrl, 
-  hasKey: !!supabaseAnonKey, 
-  keyLength: supabaseAnonKey?.length,
-  useMock: USE_MOCK_DATA 
-})
 
 // Types for our data models
 export interface User {
@@ -235,12 +229,10 @@ export class SupabaseService {
   // Users (synced from Clerk)
   static async getOrCreateUser(clerkUserId: string, userData: Partial<User>): Promise<User> {
     if (USE_MOCK_DATA) {
-      console.log('Using mock data for user:', clerkUserId)
       return MOCK_USER(clerkUserId, userData)
     }
 
     try {
-      console.log('Attempting to get/create user:', clerkUserId, userData)
       
       // Try to get existing user
       const { data: existingUser, error: fetchError } = await supabase
@@ -249,7 +241,6 @@ export class SupabaseService {
         .eq('id', clerkUserId)
         .single()
 
-      console.log('Fetch result:', { existingUser, fetchError })
 
       if (existingUser && !fetchError) {
         return existingUser
@@ -262,7 +253,6 @@ export class SupabaseService {
         return MOCK_USER(clerkUserId, userData)
       }
 
-      console.log('Creating new user...')
       const { data: newUser, error: createError } = await supabase
         .from('employees')
         .insert([{
@@ -277,7 +267,6 @@ export class SupabaseService {
         .select()
         .single()
 
-      console.log('Create result:', { newUser, createError })
 
       if (createError) {
         console.error('Database create error:', createError)
@@ -313,7 +302,6 @@ export class SupabaseService {
 
   static async updateUser(userId: string, userData: Partial<User>): Promise<User> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: updateUser called for', userId, userData)
       return MOCK_USER(userId, userData)
     }
 
@@ -404,7 +392,6 @@ export class SupabaseService {
 
   static async getUserCheckIns(userId: string, limit?: number): Promise<CheckIn[]> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: getUserCheckIns called for', userId)
       // Return some mock check-ins
       const mockCheckIns: CheckIn[] = [
         {
@@ -455,7 +442,6 @@ export class SupabaseService {
 
   static async getTodaysCheckIn(userId: string): Promise<CheckIn | null> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: getTodaysCheckIn called for', userId)
       const checkIn = demoData.getTodayCheckIn(userId)
       if (!checkIn) return null
       
@@ -511,7 +497,6 @@ export class SupabaseService {
   // Rewards
   static async getRewards(category?: string): Promise<Reward[]> {
     if (USE_MOCK_DATA) {
-      console.log('Using mock data for rewards')
       let rewards = MOCK_REWARDS()
       if (category) {
         rewards = rewards.filter(r => r.category === category)
@@ -554,14 +539,10 @@ export class SupabaseService {
 
   static async getAvailableRewards(category?: string): Promise<Reward[]> {
     if (USE_MOCK_DATA) {
-      console.log('Using mock data for available rewards')
       const mockRewards = MOCK_REWARDS()
-      console.log('Mock rewards loaded:', mockRewards.length, 'rewards')
-      console.log('First reward example:', mockRewards[0])
       const filteredRewards = mockRewards.filter(r => 
         (!category || r.category === category)
       )
-      console.log('Filtered rewards:', filteredRewards.length, 'rewards')
       return filteredRewards
     }
     
@@ -586,7 +567,6 @@ export class SupabaseService {
 
   static async getRewardById(rewardId: string): Promise<Reward | null> {
     if (USE_MOCK_DATA) {
-      console.log('Using mock data for reward by id')
       const mockReward = demoData.DEMO_REWARDS.find(r => r.id === rewardId)
       if (!mockReward) return null
       
@@ -649,7 +629,6 @@ export class SupabaseService {
   // Redemptions
   static async redeemReward(userId: string, rewardId: string): Promise<Redemption> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: redeemReward called', { userId, rewardId })
       
       // Get reward details
       const reward = demoData.DEMO_REWARDS.find(r => r.id === rewardId)
@@ -806,7 +785,6 @@ export class SupabaseService {
 
   static async getUserRedemptions(userId: string): Promise<any[]> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: getUserRedemptions called for', userId)
       // Get redemptions from store
       const userRedemptions = demoRedemptionStore.getByUserId(userId)
       
@@ -869,7 +847,6 @@ export class SupabaseService {
 
   static async getAllRedemptions(): Promise<Redemption[]> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: getAllRedemptions called')
       // Get all redemptions from store
       const allRedemptions = demoRedemptionStore.getAll()
       
@@ -923,7 +900,6 @@ export class SupabaseService {
     fulfillmentNotes?: string
   ): Promise<Redemption> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: updateRedemptionStatus called', { redemptionId, status })
       
       // Get all redemptions
       const allRedemptions = demoRedemptionStore.getAll()
@@ -972,7 +948,6 @@ export class SupabaseService {
   // Badges
   static async getUserBadges(userId: string): Promise<UserBadge[]> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: getUserBadges called for', userId)
       const userBadges = demoData.getUserBadges(userId)
       const badges = demoData.DEMO_BADGES
       
@@ -1131,7 +1106,6 @@ export class SupabaseService {
   // Award bonus points (admin function)
   static async awardBonusPoints(userId: string, points: number, reason: string, awardedBy: string): Promise<any> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: awardBonusPoints called', { userId, points, reason, awardedBy })
       
       // In demo mode, just simulate success
       const transaction = {
@@ -1244,7 +1218,6 @@ export class SupabaseService {
   // Additional user methods for enhanced queries
   static async getCurrentUser(): Promise<User | null> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: getCurrentUser called')
       // In demo mode, this should be handled by DataContext
       // Return null here as the actual user will be set via getOrCreateUser
       return null
@@ -1255,7 +1228,6 @@ export class SupabaseService {
 
   static async getUserById(userId: string): Promise<User | null> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: getUserById called for', userId)
       const user = demoData.DEMO_USERS.find(u => u.id === userId || u.clerkId === userId)
       if (user) {
         return MOCK_USER(userId, { email: user.email })
@@ -1267,7 +1239,6 @@ export class SupabaseService {
 
   static async getUserStats(userId: string): Promise<any> {
     if (USE_MOCK_DATA || !supabase) {
-      console.log('Mock: getUserStats called for', userId)
       const user = demoData.DEMO_USERS.find(u => u.id === userId || u.clerkId === userId)
       const userBadges = demoData.getUserBadges(userId)
       const leaderboard = demoData.getLeaderboard()
@@ -1319,7 +1290,6 @@ export class SupabaseService {
   // Leaderboard
   static async getLeaderboard(limit: number = 10): Promise<User[]> {
     if (USE_MOCK_DATA) {
-      console.log('Using mock data for leaderboard')
       return MOCK_LEADERBOARD().slice(0, limit)
     }
 
