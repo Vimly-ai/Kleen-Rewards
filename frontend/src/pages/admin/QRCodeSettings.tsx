@@ -168,6 +168,9 @@ export default function QRCodeSettings() {
         usageCount: 0
       }
       
+      // Save to localStorage for QR scanner validation
+      localStorage.setItem('systemkleen_active_qr_code', JSON.stringify(newQRCode))
+      
       // Deactivate current code
       if (activeQRCode) {
         const deactivatedCode = {

@@ -87,7 +87,16 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
 
 
   const handleCheckIn = async () => {
-    if (!dbUser?.id || hasCheckedInToday || checkingIn) return
+    console.log('handleCheckIn called', { dbUser, hasCheckedInToday, checkingIn })
+    
+    if (!dbUser?.id || hasCheckedInToday || checkingIn) {
+      console.log('Check-in blocked:', { 
+        noUser: !dbUser?.id, 
+        alreadyCheckedIn: hasCheckedInToday, 
+        processing: checkingIn 
+      })
+      return
+    }
 
     // Prevent multiple check-ins within 5 seconds
     const now = Date.now()
@@ -242,19 +251,30 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
   }
 
   const handleQRScan = async (data: string) => {
+    console.log('QR Scan received data:', data)
+    
     // Close scanner immediately to prevent multiple scans
     setShowQRScanner(false)
     
     // Validate QR code using the service
     const validation = QRCodeService.validateQRCode(data)
+    console.log('QR validation result:', validation)
     
     if (validation.valid && validation.code) {
       console.log('Valid QR code scanned:', validation.code)
+      toast.info('Processing check-in...', { duration: 2000 })
+      
       // Small delay to ensure scanner is fully closed
       setTimeout(async () => {
-        await handleCheckIn()
-      }, 200)
+        try {
+          await handleCheckIn()
+        } catch (error) {
+          console.error('Check-in error:', error)
+          toast.error('Failed to complete check-in. Please try again.')
+        }
+      }, 500)
     } else {
+      console.error('Invalid QR code:', validation.error)
       toast.error(
         <div>
           <p className="font-medium">Invalid QR Code</p>
