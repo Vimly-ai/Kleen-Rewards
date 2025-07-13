@@ -19,23 +19,28 @@ export default function AuthPage() {
   const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || ''
   const hasClerkKey = !!clerkKey
   
-  // Debug logging
-  console.log('Auth Page Debug:', {
-    clerkKey: clerkKey ? clerkKey.substring(0, 40) + '...' : 'No key',
-    hasClerkKey,
-    isDemoMode,
-    showDemoLogin,
-    VITE_ENABLE_MOCK_DATA: import.meta.env.VITE_ENABLE_MOCK_DATA
-  })
-  
   // Check URL params for demo mode override
   const urlParams = new URLSearchParams(window.location.search)
   const forceDemoMode = urlParams.get('demo') === 'true'
   
   // Check if we're in demo mode
   const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true' || shouldFallbackToDemo || forceDemoMode
-  // Show demo login if Clerk is not configured or in demo mode
-  const [showDemoLogin, setShowDemoLogin] = useState(!hasClerkKey || isDemoMode)
+  
+  // For real deployment, force OAuth mode when we have a key
+  const [showDemoLogin, setShowDemoLogin] = useState(false)
+  
+  // Debug logging (moved after all variables are defined)
+  useEffect(() => {
+    console.log('Auth Page Debug:', {
+      clerkKey: clerkKey ? clerkKey.substring(0, 40) + '...' : 'No key',
+      hasClerkKey,
+      isDemoMode,
+      showDemoLogin,
+      VITE_ENABLE_MOCK_DATA: import.meta.env.VITE_ENABLE_MOCK_DATA,
+      forceDemoMode,
+      shouldFallbackToDemo
+    })
+  }, [clerkKey, hasClerkKey, isDemoMode, showDemoLogin])
   
   // Redirect if already signed in with Clerk
   useEffect(() => {
@@ -78,10 +83,14 @@ export default function AuthPage() {
           <ClerkKeyValidator />
         )}
 
-        {/* Auth Component */}
-        {showDemoLogin && isDemoMode ? (
+        {/* Auth Component - Prioritize OAuth when key exists */}
+        {hasClerkKey && !showDemoLogin ? (
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <SimpleClerkAuth mode={isSignUp ? 'signup' : 'signin'} />
+          </div>
+        ) : showDemoLogin ? (
           <DemoSignIn />
-        ) : !hasClerkKey ? (
+        ) : (
           <>
             <ClerkSetupGuide />
             <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
@@ -91,22 +100,21 @@ export default function AuthPage() {
               </p>
             </div>
           </>
-        ) : (
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <SimpleClerkAuth mode={isSignUp ? 'signup' : 'signin'} />
-          </div>
         )}
         
-        {/* Demo Mode Options */}
-        <div className="mt-4 space-y-3">
-          <div className="text-center">
-            <button
-              onClick={() => setShowDemoLogin(!showDemoLogin)}
-              className="text-sm text-primary-600 hover:text-primary-700 font-medium underline"
-            >
-              {showDemoLogin ? 'Use regular sign in' : 'Use demo accounts'}
-            </button>
+        {/* Demo Mode Options - Only show if no Clerk key or explicitly in demo mode */}
+        {(!hasClerkKey || isDemoMode) && (
+          <div className="mt-4 space-y-3">
+            <div className="text-center">
+              <button
+                onClick={() => setShowDemoLogin(!showDemoLogin)}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium underline"
+              >
+                {showDemoLogin ? 'Use regular sign in' : 'Use demo accounts'}
+              </button>
+            </div>
           </div>
+        )}
           
           {!isDemoMode && showDemoLogin && (
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
