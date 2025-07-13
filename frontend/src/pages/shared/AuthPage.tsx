@@ -5,9 +5,10 @@ import { SimpleClerkAuth } from '../../components/SimpleClerkAuth'
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
-  // Start with demo login shown by default in demo mode
-  const isDemoMode = true // import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
-  const [showDemoLogin, setShowDemoLogin] = useState(isDemoMode)
+  // Check if we're in demo mode
+  const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
+  // In demo mode, always show demo login
+  const [showDemoLogin, setShowDemoLogin] = useState(true)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center p-4">
@@ -46,8 +47,8 @@ export default function AuthPage() {
           </>
         )}
         
-        {/* Demo Mode Options */}
-        {isDemoMode && (
+        {/* Demo Mode Options - Only show toggle in development */}
+        {!isDemoMode && (
           <div className="mt-4 space-y-3">
             <div className="text-center">
               <button
@@ -57,29 +58,23 @@ export default function AuthPage() {
                 {showDemoLogin ? 'Use regular sign in' : 'Use demo accounts'}
               </button>
             </div>
-            
-            {!showDemoLogin && (
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <p className="text-sm text-blue-700 text-center">
-                  🎯 To test with demo accounts, click "Use demo accounts" above
-                </p>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Toggle */}
-        <div className="text-center">
-          <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-primary-600 hover:text-primary-700 font-medium"
-          >
-            {isSignUp 
-              ? 'Already have an account? Sign in' 
-              : "Don't have an account? Sign up"
-            }
-          </button>
-        </div>
+        {/* Toggle - Only show when not using demo login */}
+        {!showDemoLogin && (
+          <div className="text-center">
+            <button
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-primary-600 hover:text-primary-700 font-medium"
+            >
+              {isSignUp 
+                ? 'Already have an account? Sign in' 
+                : "Don't have an account? Sign up"
+              }
+            </button>
+          </div>
+        )}
           </div>
           
           {/* Demo Credentials (only shown in demo mode) */}
