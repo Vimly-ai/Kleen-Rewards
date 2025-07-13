@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { QrCode } from 'lucide-react'
 import { toast } from 'sonner'
 import QRScanner from '../QRScanner'
@@ -17,6 +17,12 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
   const [showQRScanner, setShowQRScanner] = useState(false)
   const [checkingIn, setCheckingIn] = useState(false)
   const [lastCheckInAttempt, setLastCheckInAttempt] = useState<number>(0)
+  
+  // Debug user data
+  useEffect(() => {
+    console.log('CheckInSection - dbUser:', dbUser)
+    console.log('CheckInSection - hasCheckedInToday:', hasCheckedInToday)
+  }, [dbUser, hasCheckedInToday])
 
   const getUniqueMotivationalQuote = async (category: 'early' | 'ontime' | 'late') => {
     const quotes = {
@@ -132,7 +138,8 @@ export function CheckInSection({ hasCheckedInToday, onCheckInSuccess }: CheckInS
       
       // Calculate bonuses
       let bonusPoints = 0
-      const newStreakDay = dbUser.current_streak + 1
+      const currentStreak = dbUser.current_streak || 0
+      const newStreakDay = currentStreak + 1
       
       // Perfect week bonus (every 7 days)
       if (newStreakDay % 7 === 0) {

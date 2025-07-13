@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { BrowserMultiFormatReader } from '@zxing/browser'
+import { BrowserQRCodeReader } from '@zxing/browser'
 import { X, Camera } from 'lucide-react'
 import QRCodeService from '../services/qrCodeService'
 
@@ -14,7 +14,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
   const [error, setError] = useState<string | null>(null)
   const [hasScanned, setHasScanned] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const readerRef = useRef<BrowserMultiFormatReader | null>(null)
+  const readerRef = useRef<BrowserQRCodeReader | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isProcessingRef = useRef<boolean>(false)
@@ -56,7 +56,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose, is
 
       // Initialize the reader
       if (!readerRef.current) {
-        readerRef.current = new BrowserMultiFormatReader()
+        readerRef.current = new BrowserQRCodeReader()
       }
 
       // Check for camera permissions first
