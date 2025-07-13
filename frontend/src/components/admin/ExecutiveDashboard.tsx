@@ -28,6 +28,7 @@ import {
   Zap
 } from 'lucide-react'
 import { clsx } from 'clsx'
+import { isDemoMode, getDemoAnalytics } from '../../services/demoService'
 
 interface ExecutiveKPIs {
   businessMetrics: {
@@ -99,6 +100,50 @@ export function ExecutiveDashboard() {
     queryFn: async (): Promise<ExecutiveKPIs> => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Check if we're in demo mode
+      if (isDemoMode()) {
+        const demoAnalytics = getDemoAnalytics()
+        
+        return {
+          businessMetrics: {
+            totalRevenue: 2850000,
+            costPerEmployee: 1250,
+            roi: 340,
+            budgetUtilization: 78.5
+          },
+          engagementMetrics: {
+            participationRate: demoAnalytics.overview.onTimeRate,
+            dailyActiveUsers: demoAnalytics.overview.activeToday,
+            retentionRate: 94.1,
+            nps: 8.7
+          },
+          operationalMetrics: {
+            systemUptime: 99.97,
+            avgResponseTime: 245,
+            errorRate: 0.12,
+            dataAccuracy: 99.8
+          },
+          trends: {
+            revenue: [
+              { name: 'Q1', value: 650000 },
+              { name: 'Q2', value: 720000 },
+              { name: 'Q3', value: 680000 },
+              { name: 'Q4', value: 800000 }
+            ],
+            engagement: demoAnalytics.trends.daily.map((day, idx) => ({
+              name: day.date,
+              participation: Math.round((day.checkIns / demoAnalytics.overview.totalEmployees) * 100),
+              satisfaction: 8.0 + (idx * 0.1)
+            })),
+            costs: demoAnalytics.trends.monthly.slice(0, 4).map(month => ({
+              name: month.month,
+              operational: Math.floor(month.totalPoints * 0.8),
+              rewards: Math.floor(month.totalPoints * 0.2)
+            }))
+          }
+        }
+      }
       
       return {
         businessMetrics: {

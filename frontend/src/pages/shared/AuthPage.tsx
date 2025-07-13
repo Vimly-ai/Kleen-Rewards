@@ -8,6 +8,7 @@ import { LoadingSpinner } from '../../components/shared/LoadingSpinner'
 import { useAuthModeFallback } from '../../components/AuthModeFallback'
 import { ClerkSetupGuide } from '../../components/ClerkSetupGuide'
 import { ClerkKeyValidator } from '../../components/ClerkKeyValidator'
+import { DemoModeSelector } from '../../components/DemoModeSelector'
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -28,6 +29,7 @@ export default function AuthPage() {
   
   // For real deployment, force OAuth mode when we have a key
   const [showDemoLogin, setShowDemoLogin] = useState(false)
+  const [showDemoSelector, setShowDemoSelector] = useState(false)
   
   // Debug logging (moved after all variables are defined)
   useEffect(() => {
@@ -84,7 +86,9 @@ export default function AuthPage() {
         )}
 
         {/* Auth Component - Prioritize OAuth when key exists */}
-        {hasClerkKey && !showDemoLogin ? (
+        {showDemoSelector ? (
+          <DemoModeSelector />
+        ) : hasClerkKey && !showDemoLogin ? (
           <div className="bg-white rounded-lg shadow-lg p-6">
             <SimpleClerkAuth mode={isSignUp ? 'signup' : 'signin'} />
           </div>
@@ -102,8 +106,32 @@ export default function AuthPage() {
           </>
         )}
         
+        {/* Demo Mode Options - Show demo selector for easy access */}
+        {!showDemoSelector && hasClerkKey && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setShowDemoSelector(true)}
+              className="text-sm text-gray-500 hover:text-gray-700 font-medium"
+            >
+              View demo mode →
+            </button>
+          </div>
+        )}
+        
+        {/* Back button when in demo selector */}
+        {showDemoSelector && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setShowDemoSelector(false)}
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium underline"
+            >
+              ← Back to sign in
+            </button>
+          </div>
+        )}
+        
         {/* Demo Mode Options - Only show if no Clerk key or explicitly in demo mode */}
-        {(!hasClerkKey || isDemoMode) && (
+        {!showDemoSelector && (!hasClerkKey || isDemoMode) && (
           <div className="mt-4 space-y-3">
             <div className="text-center">
               <button
@@ -132,8 +160,8 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* Toggle - Only show when not using demo login */}
-        {!showDemoLogin && (
+        {/* Toggle - Only show when not using demo login or selector */}
+        {!showDemoLogin && !showDemoSelector && (
           <div className="text-center">
             <button
               onClick={() => setIsSignUp(!isSignUp)}

@@ -8,6 +8,7 @@ import { Modal } from '../../components/ui/Modal'
 import { AchievementBadge } from '../../components/ui/AchievementBadge'
 import { Trophy, Star, Target, Calendar, Zap, Users, Gift, TrendingUp } from 'lucide-react'
 import { clsx } from 'clsx'
+import { isDemoMode, getCurrentDemoUser, getDemoAchievements } from '../../services/demoService'
 
 interface Achievement {
   id: string
@@ -56,11 +57,42 @@ export default function EmployeeAchievements() {
   const { data: user } = useCurrentUser()
   const { data: userStats } = useUserStats(user?.id || '')
 
-  // Mock achievements data - in real app, this would come from API
+  // Get achievements data
   const { data: achievements, isLoading } = useQuery({
     queryKey: ['achievements', user?.id],
     queryFn: async (): Promise<Achievement[]> => {
-      // Mock data - replace with actual API call
+      // Check if we're in demo mode
+      if (isDemoMode()) {
+        const demoUser = getCurrentDemoUser()
+        if (demoUser) {
+          const userType = demoUser.role === 'admin' || demoUser.role === 'super_admin' ? 'admin' : 'employee'
+          const demoAchievements = getDemoAchievements(userType)
+          
+          // Map demo achievements to the expected format
+          return demoAchievements.map(a => ({
+            id: a.id,
+            name: a.title,
+            description: a.description,
+            icon: a.icon,
+            category: a.category as Achievement['category'],
+            criteria: {
+              type: 'custom' as const,
+              target: a.maxProgress
+            },
+            rarity: a.points >= 400 ? 'legendary' : a.points >= 200 ? 'epic' : a.points >= 100 ? 'rare' : 'common',
+            points: a.points,
+            unlocked: a.unlocked,
+            unlockedAt: a.unlockedAt,
+            progress: {
+              current: a.progress,
+              target: a.maxProgress,
+              percentage: (a.progress / a.maxProgress) * 100
+            }
+          }))
+        }
+      }
+      
+      // Mock data for non-demo mode - replace with actual API call
       const mockAchievements: Achievement[] = [
         {
           id: '1',

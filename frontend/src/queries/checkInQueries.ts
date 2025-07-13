@@ -3,17 +3,27 @@ import { queryKeys } from '../lib/queryClient'
 import SupabaseService from '../services/supabase'
 import { useNotifications } from '../stores/notificationStore'
 import type { CheckIn, CheckInResult } from '../types'
+import { isDemoMode, getCurrentDemoUser, getDemoCheckIns } from '../services/demoService'
 
 // Get user's check-ins
 export function useUserCheckIns(userId: string, limit?: number) {
   return useQuery({
     queryKey: queryKeys.checkIns.list(userId, limit),
     queryFn: async () => {
+      // Check if we're in demo mode
+      if (isDemoMode()) {
+        const demoUser = getCurrentDemoUser()
+        if (demoUser) {
+          const checkIns = getDemoCheckIns(demoUser.id)
+          return limit ? checkIns.slice(0, limit) : checkIns
+        }
+      }
+      
       const checkIns = await SupabaseService.getUserCheckIns(userId, limit)
       return checkIns
     },
     enabled: !!userId,
-    staleTime: 2 * 60 * 1000 // 2 minutes
+    staleTime: isDemoMode() ? Infinity : 2 * 60 * 1000
   })
 }
 
@@ -22,12 +32,28 @@ export function useTodaysCheckIn(userId: string) {
   return useQuery({
     queryKey: queryKeys.checkIns.today(userId),
     queryFn: async () => {
+      // Check if we're in demo mode
+      if (isDemoMode()) {
+        const demoUser = getCurrentDemoUser()
+        if (demoUser) {
+          const checkIns = getDemoCheckIns(demoUser.id)
+          // Return today's check-in if exists
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          return checkIns.find(c => {
+            const checkInDate = new Date(c.checkInTime)
+            checkInDate.setHours(0, 0, 0, 0)
+            return checkInDate.getTime() === today.getTime()
+          }) || null
+        }
+      }
+      
       const checkIn = await SupabaseService.getTodaysCheckIn(userId)
       return checkIn
     },
     enabled: !!userId,
-    staleTime: 1 * 60 * 1000, // 1 minute
-    refetchInterval: 5 * 60 * 1000 // Refetch every 5 minutes
+    staleTime: isDemoMode() ? Infinity : 1 * 60 * 1000,
+    refetchInterval: isDemoMode() ? false : 5 * 60 * 1000
   })
 }
 

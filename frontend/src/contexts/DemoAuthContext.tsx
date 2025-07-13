@@ -6,6 +6,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { DEMO_USERS } from '../services/demoData'
+import { getCurrentDemoUser, isDemoMode as checkDemoMode } from '../services/demoService'
 
 interface DemoUser {
   id: string
@@ -34,14 +35,27 @@ const DemoAuthContext = createContext<DemoAuthContextType | null>(null)
 export function DemoAuthProvider({ children }: { children: React.ReactNode }) {
   const [demoUser, setDemoUser] = useState<DemoUser | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  // Always enable demo mode for now
-  const isDemoMode = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
+  // Check if demo mode is enabled
+  const isDemoMode = checkDemoMode() || import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 
-  // Disabled auto-restore of demo sessions to prevent automatic redirect issues
-  // Users must explicitly click demo login buttons
+  // Check for demo user on mount
   useEffect(() => {
-    // Clear any stored demo session on mount to ensure clean state
-    localStorage.removeItem('demo_user_email')
+    const currentDemoUser = getCurrentDemoUser()
+    if (currentDemoUser && checkDemoMode()) {
+      const demoUserData: DemoUser = {
+        id: currentDemoUser.id,
+        email: currentDemoUser.email,
+        firstName: currentDemoUser.name.split(' ')[0],
+        lastName: currentDemoUser.name.split(' ')[1] || '',
+        fullName: currentDemoUser.name,
+        imageUrl: currentDemoUser.avatar || '',
+        publicMetadata: {
+          role: currentDemoUser.role as 'admin' | 'employee',
+          department: currentDemoUser.department
+        }
+      }
+      setDemoUser(demoUserData)
+    }
   }, [])
 
   const signIn = async (email: string, password: string): Promise<boolean> => {

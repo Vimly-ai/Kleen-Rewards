@@ -16,6 +16,7 @@ import { LoadingSpinner } from './components/shared/LoadingSpinner'
 import { InstallPrompt, UpdatePrompt, OfflineIndicator } from './components/pwa'
 import { ClerkDebug } from './components/ClerkDebug'
 import { ClerkAuthDebug } from './components/ClerkAuthDebug'
+import { DemoBanner } from './components/DemoBanner'
 
 // Services and Utils
 import { useNotificationService } from './services/notifications'
@@ -158,6 +159,9 @@ function AppContent() {
 
   return (
     <>
+      {/* Demo Mode Banner */}
+      <DemoBanner />
+      
       <AppInitializer />
       <AppRouter />
       

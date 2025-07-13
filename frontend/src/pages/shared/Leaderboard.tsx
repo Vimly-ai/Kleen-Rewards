@@ -5,6 +5,7 @@ import { LoadingSpinner } from '../../components/shared/LoadingSpinner'
 import { Card } from '../../components/ui/Card'
 import { Avatar } from '../../components/ui/Avatar'
 import { Badge } from '../../components/ui/Badge'
+import { isDemoMode, generateLeaderboard } from '../../services/demoService'
 
 interface LeaderboardEntry {
   id: string
@@ -26,7 +27,25 @@ export default function Leaderboard() {
   const { data: leaderboard, isLoading, error } = useQuery({
     queryKey: ['leaderboard', selectedPeriod],
     queryFn: async () => {
-      // TODO: Replace with actual API call
+      // Check if we're in demo mode
+      if (isDemoMode()) {
+        const demoLeaderboard = generateLeaderboard()
+        
+        // Map demo data to expected format
+        return demoLeaderboard.map((entry, index) => ({
+          id: `user-${index + 1}`,
+          name: entry.name,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${entry.name}`,
+          totalPoints: entry.points,
+          weeklyPoints: Math.floor(entry.points * 0.15), // Estimate weekly as 15% of total
+          monthlyPoints: Math.floor(entry.points * 0.35), // Estimate monthly as 35% of total
+          currentStreak: entry.streak,
+          rank: entry.rank,
+          department: entry.department
+        }))
+      }
+      
+      // TODO: Replace with actual API call for real data
       const mockData: LeaderboardEntry[] = [
         {
           id: '1',

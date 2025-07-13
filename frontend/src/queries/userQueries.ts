@@ -3,17 +3,36 @@ import { queryKeys } from '../lib/queryClient'
 import SupabaseService from '../services/supabase'
 import { useNotifications } from '../stores/notificationStore'
 import type { User, UserStats } from '../types'
+import { isDemoMode, getCurrentDemoUser, getDemoUserStats, DEMO_ACCOUNTS } from '../services/demoService'
 
 // Get current user
 export function useCurrentUser() {
   return useQuery({
     queryKey: queryKeys.user.current(),
     queryFn: async () => {
+      // Check if we're in demo mode
+      if (isDemoMode()) {
+        const demoUser = getCurrentDemoUser()
+        if (demoUser) {
+          return {
+            id: demoUser.id,
+            email: demoUser.email,
+            name: demoUser.name,
+            role: demoUser.role,
+            status: 'active' as const,
+            company: 'System Kleen',
+            department: demoUser.department,
+            created_at: demoUser.joinDate.toISOString(),
+            updated_at: new Date().toISOString()
+          } as User
+        }
+      }
+      
       const user = await SupabaseService.getCurrentUser()
       return user
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    retry: 2
+    staleTime: isDemoMode() ? Infinity : 10 * 60 * 1000, // No stale in demo mode
+    retry: isDemoMode() ? 0 : 2
   })
 }
 
@@ -35,11 +54,20 @@ export function useUserStats(userId: string) {
   return useQuery({
     queryKey: queryKeys.user.stats(userId),
     queryFn: async () => {
+      // Check if we're in demo mode
+      if (isDemoMode()) {
+        const demoUser = getCurrentDemoUser()
+        if (demoUser) {
+          const userType = demoUser.role === 'admin' || demoUser.role === 'super_admin' ? 'admin' : 'employee'
+          return getDemoUserStats(userType)
+        }
+      }
+      
       const stats = await SupabaseService.getUserStats(userId)
       return stats
     },
     enabled: !!userId,
-    refetchInterval: 2 * 60 * 1000 // Refetch every 2 minutes
+    refetchInterval: isDemoMode() ? false : 2 * 60 * 1000 // No refetch in demo mode
   })
 }
 
