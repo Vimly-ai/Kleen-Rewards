@@ -27,7 +27,7 @@ export interface User {
   employee_id: string
   department: string
   hire_date: string
-  role: 'employee' | 'admin'
+  role: 'employee' | 'admin' | 'super_admin'
   status: 'active' | 'inactive' | 'pending'
   points_balance: number
   total_points_earned: number
@@ -326,6 +326,40 @@ export class SupabaseService {
       .select('*')
       .eq('role', 'employee')
       .order('points_balance', { ascending: false })
+
+    if (error) {
+      throw error
+    }
+
+    return data || []
+  }
+
+  static async getAllUsers(): Promise<User[]> {
+    if (USE_MOCK_DATA || !supabase) {
+      // Return demo users mapped to User type
+      return demoData.DEMO_USERS.map(demoUser => ({
+        id: demoUser.id,
+        email: demoUser.email,
+        name: demoUser.name,
+        employee_id: demoUser.id,
+        department: demoUser.department,
+        hire_date: demoUser.joinedAt.toISOString().split('T')[0],
+        role: demoUser.role,
+        status: 'active' as const,
+        points_balance: demoUser.points,
+        total_points_earned: demoUser.totalPointsEarned,
+        current_streak: demoUser.currentStreak,
+        longest_streak: demoUser.longestStreak,
+        avatar_url: demoUser.avatarUrl || undefined,
+        created_at: demoUser.joinedAt.toISOString(),
+        updated_at: new Date().toISOString()
+      }))
+    }
+
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .order('created_at', { ascending: false })
 
     if (error) {
       throw error

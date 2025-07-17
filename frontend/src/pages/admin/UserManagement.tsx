@@ -27,6 +27,7 @@ import { clsx } from 'clsx'
 import { toast } from 'sonner'
 import { DEMO_USERS } from '../../services/demoData'
 import type { User } from '../../types'
+import { SupabaseService } from '../../services/supabase'
 
 const USER_STATUSES = [
   { key: 'all', label: 'All Users', color: 'bg-gray-100 text-gray-800' },
@@ -62,22 +63,25 @@ export default function AdminUserManagement() {
   const { data: usersData, isLoading, refetch } = useQuery({
     queryKey: queryKeys.admin.users(currentPage, searchTerm || undefined, statusFilter),
     queryFn: async () => {
-      // Map demo users to User type with proper status
-      const allUsers: User[] = DEMO_USERS.map(demoUser => ({
-        id: demoUser.id,
-        email: demoUser.email,
-        name: demoUser.name,
-        role: demoUser.role as User['role'],
+      // Get all users from Supabase (or demo data if enabled)
+      const allUsers = await SupabaseService.getAllUsers()
+      
+      // Map to the User type expected by the admin interface
+      const mappedUsers: User[] = allUsers.map(user => ({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role as User['role'],
         company: 'System Kleen',
-        department: demoUser.department,
-        status: demoUser.approvalStatus as User['status'] || 'approved',
-        approvedBy: demoUser.role === 'admin' ? 'system' : 'demo-admin-1',
-        approvedAt: demoUser.joinedAt.toISOString(),
-        created: demoUser.joinedAt.toISOString(),
-        updated: new Date().toISOString()
+        department: user.department,
+        status: 'approved' as User['status'], // All users are approved by default
+        approvedBy: user.role === 'admin' ? 'system' : 'admin',
+        approvedAt: user.created_at,
+        created: user.created_at,
+        updated: user.updated_at
       }))
       
-      let filteredUsers = allUsers
+      let filteredUsers = mappedUsers
       
       if (searchTerm) {
         const search = searchTerm.toLowerCase()
