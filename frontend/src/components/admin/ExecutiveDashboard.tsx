@@ -65,21 +65,25 @@ interface AlertSummary {
 
 export function ExecutiveDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'quarter'>('month')
-  const [autoRefresh, setAutoRefresh] = useState(true) // Enable auto-refresh for real-time updates
+  const [autoRefresh, setAutoRefresh] = useState(false) // Disable auto-refresh by default
   
   const { realtimeMetrics, updateRealtimeMetrics, alerts } = useAdminStore()
   const { isConnected, service, autoConnect } = useWebSocket()
   
-  // Ensure WebSocket connection for admins
+  // Ensure WebSocket connection for admins (only if WebSocket is enabled)
   useEffect(() => {
-    if (service && !isConnected) {
+    if (import.meta.env.VITE_ENABLE_MOCK_DATA === 'false') {
+      return // Skip WebSocket connection if mock data is disabled
+    }
+    
+    if (service && !isConnected && typeof service.joinAdminRoom === 'function') {
       service.joinAdminRoom() // Join admin-specific WebSocket room
     }
   }, [isConnected, service])
   
-  // Real-time data updates
+  // Real-time data updates (only if mock data is enabled)
   useEffect(() => {
-    if (!autoRefresh) return
+    if (!autoRefresh || import.meta.env.VITE_ENABLE_MOCK_DATA === 'false') return
     
     const interval = setInterval(() => {
       // Simulate real-time metrics updates
@@ -239,25 +243,35 @@ export function ExecutiveDashboard() {
           {/* Connection Status */}
           <div className={clsx(
             'flex items-center gap-2 px-3 py-1 rounded-full text-sm',
-            isConnected 
-              ? 'bg-green-100 text-green-700' 
-              : 'bg-red-100 text-red-700'
+            import.meta.env.VITE_ENABLE_MOCK_DATA === 'false'
+              ? 'bg-blue-100 text-blue-700'
+              : isConnected 
+                ? 'bg-green-100 text-green-700' 
+                : 'bg-red-100 text-red-700'
           )}>
             <div className={clsx(
               'w-2 h-2 rounded-full',
-              isConnected ? 'bg-green-500' : 'bg-red-500'
+              import.meta.env.VITE_ENABLE_MOCK_DATA === 'false'
+                ? 'bg-blue-500'
+                : isConnected ? 'bg-green-500' : 'bg-red-500'
             )} />
-            {isConnected ? 'Live Data' : 'Offline'}
+            {import.meta.env.VITE_ENABLE_MOCK_DATA === 'false' 
+              ? 'Static Data' 
+              : isConnected ? 'Live Data' : 'Offline'
+            }
           </div>
           
           {/* Auto Refresh Toggle */}
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
+            disabled={import.meta.env.VITE_ENABLE_MOCK_DATA === 'false'}
             className={clsx(
               'px-3 py-1 rounded-lg text-sm font-medium transition-colors',
-              autoRefresh
-                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              import.meta.env.VITE_ENABLE_MOCK_DATA === 'false'
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : autoRefresh
+                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             )}
           >
             <RefreshCw className={clsx('w-4 h-4 inline mr-1', autoRefresh && 'animate-spin')} />

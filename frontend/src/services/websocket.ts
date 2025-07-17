@@ -296,7 +296,8 @@ export function useWebSocket() {
       disconnect: () => {
         },
       isConnected: true,
-      connectionStatus: 'connected' as const
+      connectionStatus: 'connected' as const,
+      service: null
     }
   }
   

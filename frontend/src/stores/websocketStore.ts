@@ -37,19 +37,28 @@ export const useWebSocketStore = create<WebSocketState>()(
       realtimeStats: null,
       
       initialize: () => {
-        // In demo mode, just set some mock data
-        if (import.meta.env.VITE_ENABLE_MOCK_DATA === 'true') {
+        // Don't initialize WebSocket if mock data is disabled
+        if (import.meta.env.VITE_ENABLE_MOCK_DATA === 'false') {
           set({
-            isConnected: true,
-            connectionStatus: 'connected',
-            realtimeStats: {
-              totalCheckIns: 25,
-              activeUsers: 15,
-              todayPoints: 1250
-            },
-            onlineUsers: ['user1', 'user2', 'user3']
+            isConnected: false,
+            connectionStatus: 'disconnected',
+            realtimeStats: null,
+            onlineUsers: []
           })
+          return
         }
+        
+        // In demo mode, just set some mock data
+        set({
+          isConnected: true,
+          connectionStatus: 'connected',
+          realtimeStats: {
+            totalCheckIns: 25,
+            activeUsers: 15,
+            todayPoints: 1250
+          },
+          onlineUsers: ['user1', 'user2', 'user3']
+        })
       },
       
       connect: (userId) => {
