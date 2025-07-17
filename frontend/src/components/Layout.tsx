@@ -19,9 +19,21 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { user } = useAuth();
-  const { isDemoMode, signOut: demoSignOut } = useDemoAuth();
   const navigate = useNavigate();
   const isAdmin = user?.publicMetadata?.role === 'admin' || user?.publicMetadata?.role === 'super_admin';
+
+  // Only use demo auth if we're in demo mode
+  let isDemoMode = false;
+  let demoSignOut = () => {};
+  
+  try {
+    const demoAuth = useDemoAuth();
+    isDemoMode = demoAuth.isDemoMode;
+    demoSignOut = demoAuth.signOut;
+  } catch (error) {
+    // If useDemoAuth fails, we're not in demo mode
+    isDemoMode = false;
+  }
 
   const employeeNavItems = [
     { path: '/employee/dashboard', icon: Home, label: 'Dashboard' },
