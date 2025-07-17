@@ -20,6 +20,8 @@ import { ClerkAuthDebug } from './components/ClerkAuthDebug'
 import { useNotificationService } from './services/notifications'
 import { performanceMonitor } from './utils/performance'
 import { swUtils } from './utils/pwa'
+import { clearDemoMode } from './utils/clearDemoMode'
+import './utils/debugUtils' // Load debug utilities for console access
 
 // Stores
 import { useAppStore } from './stores/appStore'
@@ -36,7 +38,7 @@ const queryClient = new QueryClient({
       retry: 3,
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
       staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
     },
@@ -62,6 +64,11 @@ function AppInitializer() {
   const features = useAppStore((state) => state.features)
 
   useEffect(() => {
+    // Clear demo mode if disabled in environment
+    if (import.meta.env.VITE_ENABLE_MOCK_DATA === 'false') {
+      clearDemoMode()
+    }
+    
     // Initialize performance monitoring
     performanceMonitor.initialize()
     performanceMonitor.markStart('app-initialization')
