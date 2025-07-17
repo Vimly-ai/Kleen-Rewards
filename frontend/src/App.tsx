@@ -7,7 +7,6 @@ import { Toaster } from 'sonner'
 
 // Context Providers
 import { DataProvider } from './contexts/DataContext'
-import { DemoAuthProvider } from './contexts/DemoAuthContext'
 
 // Components
 import { AppRouter } from './router/AppRouter'
@@ -16,7 +15,6 @@ import { LoadingSpinner } from './components/shared/LoadingSpinner'
 import { InstallPrompt, UpdatePrompt, OfflineIndicator } from './components/pwa'
 import { ClerkDebug } from './components/ClerkDebug'
 import { ClerkAuthDebug } from './components/ClerkAuthDebug'
-import { DemoBanner } from './components/DemoBanner'
 
 // Services and Utils
 import { useNotificationService } from './services/notifications'
@@ -159,9 +157,6 @@ function AppContent() {
 
   return (
     <>
-      {/* Demo Mode Banner */}
-      <DemoBanner />
-      
       <AppInitializer />
       <AppRouter />
       
@@ -203,26 +198,24 @@ export default function App() {
         performanceMonitor.recordError(error)
       }}
     >
-      <DemoAuthProvider>
-        <ClerkProviderWithFallback 
-          publishableKey={PUBLISHABLE_KEY}
-        >
-          <QueryClientProvider client={queryClient}>
-            <DataProvider>
-              <BrowserRouter>
-                <Suspense fallback={<AppLoader />}>
-                  <AppContent />
-                </Suspense>
-                
-                {/* Development Tools */}
-                {import.meta.env.DEV && (
-                  <ReactQueryDevtools initialIsOpen={false} />
-                )}
-              </BrowserRouter>
-            </DataProvider>
-          </QueryClientProvider>
-        </ClerkProviderWithFallback>
-      </DemoAuthProvider>
+      <ClerkProviderWithFallback 
+        publishableKey={PUBLISHABLE_KEY}
+      >
+        <QueryClientProvider client={queryClient}>
+          <DataProvider>
+            <BrowserRouter>
+              <Suspense fallback={<AppLoader />}>
+                <AppContent />
+              </Suspense>
+              
+              {/* Development Tools */}
+              {import.meta.env.DEV && (
+                <ReactQueryDevtools initialIsOpen={false} />
+              )}
+            </BrowserRouter>
+          </DataProvider>
+        </QueryClientProvider>
+      </ClerkProviderWithFallback>
     </ErrorBoundary>
   )
 }

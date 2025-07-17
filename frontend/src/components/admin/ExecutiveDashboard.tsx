@@ -65,10 +65,17 @@ interface AlertSummary {
 
 export function ExecutiveDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'quarter'>('month')
-  const [autoRefresh, setAutoRefresh] = useState(false) // Disable auto-refresh by default
+  const [autoRefresh, setAutoRefresh] = useState(true) // Enable auto-refresh for real-time updates
   
   const { realtimeMetrics, updateRealtimeMetrics, alerts } = useAdminStore()
-  const { isConnected, service } = useWebSocket()
+  const { isConnected, service, autoConnect } = useWebSocket()
+  
+  // Ensure WebSocket connection for admins
+  useEffect(() => {
+    if (service && !isConnected) {
+      service.joinAdminRoom() // Join admin-specific WebSocket room
+    }
+  }, [isConnected, service])
   
   // Real-time data updates
   useEffect(() => {

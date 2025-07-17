@@ -58,6 +58,10 @@ export default function EmployeeProfile() {
         name: dbUser.name,
         department: dbUser.department || ''
       })
+      // Load saved avatar
+      if (dbUser.avatar_url) {
+        setCurrentAvatar(dbUser.avatar_url)
+      }
     }
   }, [dbUser])
   
@@ -107,9 +111,20 @@ export default function EmployeeProfile() {
     }
   }
   
-  const handleAvatarChange = (avatarId: string) => {
+  const handleAvatarChange = async (avatarId: string) => {
     setCurrentAvatar(avatarId)
-    // In real app, this would save to backend
+    // Save to backend
+    if (dbUser) {
+      try {
+        await updateProfileMutation.mutateAsync({
+          id: dbUser.id,
+          avatar_url: avatarId
+        })
+      } catch (error) {
+        // Error is handled by mutation
+        console.error('Failed to save avatar:', error)
+      }
+    }
   }
 
   const handleCancelEdit = () => {

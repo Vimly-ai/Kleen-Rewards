@@ -6,7 +6,8 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
-import { installUtils, InstallState } from '../../utils/pwa/installPrompt'
+import { installUtils } from '../../utils/pwa/installPrompt'
+import type { InstallState } from '../../utils/pwa/installPrompt'
 
 interface InstallPromptProps {
   className?: string

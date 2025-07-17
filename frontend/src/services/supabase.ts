@@ -33,6 +33,7 @@ export interface User {
   total_points_earned: number
   current_streak: number
   longest_streak: number
+  avatar_url?: string
   created_at: string
   updated_at: string
 }

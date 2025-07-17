@@ -6,7 +6,8 @@
 import React, { useState, useEffect } from 'react'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
-import { offlineUtils, SyncStats } from '../../utils/pwa/offlineStorage'
+import { offlineUtils } from '../../utils/pwa/offlineStorage'
+import type { SyncStats } from '../../utils/pwa/offlineStorage'
 
 interface OfflineIndicatorProps {
   className?: string

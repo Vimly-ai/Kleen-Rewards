@@ -5,16 +5,88 @@
  * including admin/user accounts, points, achievements, rewards, etc.
  */
 
-import { 
-  User, 
-  Badge, 
-  UserBadge, 
-  CheckIn, 
-  Reward, 
-  Transaction,
-  Notification,
-  Activity
-} from '../types'
+// Import types directly from types index
+import type { Activity } from '../types/index'
+
+// Define all necessary types inline for demo data
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  clerkId?: string;
+  role: 'employee' | 'admin' | 'super_admin';
+  company: string;
+  department: string;
+  status: 'active' | 'inactive' | 'pending';
+  points: number;
+  totalPointsEarned: number;
+  currentStreak: number;
+  longestStreak: number;
+  totalCheckIns: number;
+  level: number;
+  joinedAt: Date;
+  joinDate: Date;
+}
+
+interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  points: number;
+  criteria: {
+    type: string;
+    value: number;
+  };
+}
+
+interface UserBadge {
+  id: string;
+  userId: string;
+  badgeId: string;
+  unlockedAt: Date;
+}
+
+interface CheckIn {
+  id: string;
+  userId: string;
+  checkInTime: Date;
+  points: number;
+  bonusPoints?: number;
+  isEarly: boolean;
+  streakDay: number;
+  mood?: 'great' | 'good' | 'okay' | 'tired';
+}
+
+interface Reward {
+  id: string;
+  name: string;
+  description: string;
+  pointCost: number;
+  category: 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'special';
+  icon?: string;
+  stock?: number;
+  expiresAt?: Date;
+}
+
+interface Transaction {
+  id: string;
+  userId: string;
+  amount: number;
+  type: 'earned' | 'spent' | 'bonus';
+  description: string;
+  createdAt: Date;
+}
+
+interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning';
+  read: boolean;
+  createdAt: Date;
+}
 
 // Demo user accounts with different roles and states
 export const DEMO_USERS: User[] = [

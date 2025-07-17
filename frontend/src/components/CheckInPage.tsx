@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { QrCode, Camera, Clock } from 'lucide-react'
 import { useData } from '../contexts/DataContext'
 import SupabaseService from '../services/supabase'
+import QRCodeService from '../services/qrCodeService'
 import { toast } from 'sonner'
 import SimpleQRScanner from './SimpleQRScanner'
 
@@ -191,14 +192,18 @@ export function CheckInPage() {
     setCheckingIn(true)
     try {
       const now = new Date()
-      const currentTime = now.getHours() * 60 + now.getMinutes()
+      
+      // Get MST time (Mountain Standard Time)
+      const mstTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Denver"}))
+      const currentTime = mstTime.getHours() * 60 + mstTime.getMinutes()
+      
       const checkInWindowStart = 6 * 60 // 06:00
       const checkInWindowEnd = 9 * 60 // 09:00
       const earlyEnd = 7 * 60 + 45 // 07:45
       const onTimeEnd = 8 * 60 + 1 // 08:01
 
-      // Check if within allowed check-in window (disable for testing)
-      if (false && (currentTime < checkInWindowStart || currentTime > checkInWindowEnd)) {
+      // Check if within allowed check-in window
+      if (!import.meta.env.VITE_ENABLE_MOCK_DATA && (currentTime < checkInWindowStart || currentTime > checkInWindowEnd)) {
         toast.error('Check-in is only allowed between 6:00 AM - 9:00 AM MST')
         setCheckingIn(false)
         return
@@ -254,13 +259,40 @@ export function CheckInPage() {
   }
 
   const handleQRScan = (qrData: string) => {
-    if (qrData.includes('systemkleen-checkin') || qrData.includes('check-in') || qrData.includes('test') || qrData.includes('demo')) {
+    // Check if QR data is a full URL or just a code
+    let qrUrl = qrData
+    if (!qrData.startsWith('http')) {
+      // If it's just a code, construct the URL
+      if (qrData.includes('systemkleen-checkin') || qrData.includes('check-in') || qrData.includes('test') || qrData.includes('demo')) {
+        // For legacy/test QR codes, just proceed with check-in
+        setTimeout(() => {
+          performCheckIn()
+        }, 100)
+        return
+      } else if (qrData.startsWith('SK')) {
+        // Proper QR code format
+        qrUrl = `https://systemkleen.com/checkin/${qrData}`
+      }
+    }
+    
+    // Validate the QR code
+    const validation = QRCodeService.validateQRCode(qrUrl)
+    
+    if (validation.valid) {
+      // Check if within check-in window
+      const checkInWindow = QRCodeService.isWithinCheckInWindow()
+      
+      if (!checkInWindow.allowed && !import.meta.env.VITE_ENABLE_MOCK_DATA) {
+        toast.error(checkInWindow.message || 'Check-in is not allowed at this time')
+        return
+      }
+      
       // Add a small delay to ensure scanner closes first
       setTimeout(() => {
         performCheckIn()
       }, 100)
     } else {
-      toast.error('Invalid QR code. Please scan the correct check-in QR code.')
+      toast.error(validation.error || 'Invalid QR code. Please scan the correct check-in QR code.')
     }
   }
 

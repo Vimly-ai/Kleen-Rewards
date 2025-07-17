@@ -340,6 +340,11 @@ class OfflineStorageManager {
 
       console.log(`Sync completed: ${completed} successful, ${failed} failed`)
 
+      // Update last sync time if any actions were processed
+      if (pendingActions.length > 0) {
+        await this.setLastSyncTime(Date.now())
+      }
+
       const stats = await this.getSyncStats()
       this.notifySyncCallbacks(stats)
       return stats
@@ -389,7 +394,6 @@ class OfflineStorageManager {
     try {
       const transaction = this.db.transaction(['actions'], 'readonly')
       const store = transaction.objectStore('actions')
-      const statusIndex = store.index('status')
 
       const [pending, completed, failed] = await Promise.all([
         this.countByStatus('pending'),

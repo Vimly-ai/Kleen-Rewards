@@ -151,3 +151,36 @@ export interface CheckInResult {
     author: string;
   };
 }
+
+export interface Activity {
+  id: string;
+  type: 'check_in' | 'points_earned' | 'achievement' | 'achievement_unlocked' | 'bonus_points' | 'reward_redeemed' | 'streak_milestone' | 'level_up' | 'admin_action';
+  title: string;
+  description: string;
+  timestamp: Date;
+  points?: number;
+  metadata?: Record<string, any>;
+}
+
+export interface Transaction {
+  id: string;
+  user: string;
+  type: 'earned' | 'spent' | 'bonus' | 'refund';
+  amount: number;
+  description: string;
+  relatedTo?: string;
+  created: string;
+  updated: string;
+}
+
+export interface Notification {
+  id: string;
+  user: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  title: string;
+  message: string;
+  read: boolean;
+  actionUrl?: string;
+  created: string;
+  updated: string;
+}
